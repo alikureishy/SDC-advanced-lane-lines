@@ -1,0 +1,68 @@
+{
+    "Pipeline": [
+    	"Undistorter",
+    	"RegionMasker",
+    	"Thresholder",
+    	"Perspective",
+    	"CurveExtractor",
+    	"LaneFiller"
+    ],
+    "Undistorter": {
+		"ToPlot": 1,
+        "CalibrationFile": "config/calibration.pickle"
+	},
+    "RegionMasker": {
+		"ToPlot": 1,
+        "RelativePoints": [
+        	[0.25, 0.20], 
+        	[0.25, 0.70], 
+        	[0.75, 0.20],
+        	[0.75, 0.70]
+        ]
+    },
+    "Thresholder": {
+		"ToPlot": 1,
+		"ToPlotTerms": 1,
+		"Term":
+		{
+			"Operator": "OR",
+			"Operands": [
+				{
+					"Operator": "AND",
+					"Operands": [
+				    	{"SobelX": { "kernel": 3, "minmax": [0, 1.57]}},
+				    	{"SobelY": { "kernel": 3, "minmax": [0, 1.57]}}
+					]
+				},
+				{
+					"Operator": "AND",
+					"Operands": [
+				    	{"SobelTanXY": {"kernel": 3, "minmax": [0, 1.57]}},
+				    	{"SobelXY": { "kernel": 3, "minmax": [0, 1.57]}}
+					]
+				},
+		    	{"Color": { "space": "HLS", "channel": 0, "minmax": [0,255] }}
+			]
+		}
+    },
+    "Perspective": {
+		"ToPlot": 1,
+        "RelativePoints": [
+        	[0.25, 0.20], 
+        	[0.25, 0.70], 
+        	[0.75, 0.20],
+        	[0.75, 0.70]
+        ]
+    },
+    "CurveExtractor": {
+		"ToPlot": 1,
+        "LeftCurveKey": "LeftCurve",
+        "RightCurveKey": "RightCurve"
+    },
+    "LaneFiller": {
+		"ToPlot": 1,
+    	"FillColor": [2,5,5],
+        "LeftCurveKey": "LeftCurve",
+        "RightCurveKey": "RightCurve"
+    }
+}

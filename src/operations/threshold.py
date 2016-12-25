@@ -16,17 +16,17 @@ import matplotlib.image as mpimg
 # then takes an absolute value and applies a threshold.
 # Note: calling your function with orient='x', thresh_min=5, thresh_max=100
 # should produce output like the example image shown above this quiz.
-def abs_sobel_thresh(img, orient='x', sobel_kernel=3, thresh=(0, 255)):
+def abs_sobel_thresh(image, orient='x', sobel_kernel=3, thresh=(0, 255)):
 
     gray = None
-    if len(img.shape)<3:
-        gray = img
-    elif img.shape[2]<3:
-        gray = img
+    if len(image.shape)<3:
+        gray = image
+    elif image.shape[2]<3:
+        gray = image
     else:
-        # Apply the following steps to img
+        # Apply the following steps to image
         # 1) Convert to grayscale
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
     # 2) Take the derivative in x or y given orient = 'x' or 'y'
     sobel = None
@@ -55,17 +55,17 @@ def abs_sobel_thresh(img, orient='x', sobel_kernel=3, thresh=(0, 255)):
 # Define a function that applies Sobel x and y, 
 # then computes the magnitude of the gradient
 # and applies a threshold
-def mag_thresh(img, sobel_kernel=3, mag_thresh=(0, 255)):
+def mag_thresh(image, sobel_kernel=3, mag_thresh=(0, 255)):
     
     gray = None
-    if len(img.shape)<3:
-        gray = img
-    elif img.shape[2]<3:
-        gray = img
+    if len(image.shape)<3:
+        gray = image
+    elif image.shape[2]<3:
+        gray = image
     else:
-        # Apply the following steps to img
+        # Apply the following steps to image
         # 1) Convert to grayscale
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
     # 2) Take the gradient in x and y separately
     sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=sobel_kernel)
@@ -88,17 +88,17 @@ def mag_thresh(img, sobel_kernel=3, mag_thresh=(0, 255)):
 # Define a function that applies Sobel x and y, 
 # then computes the direction of the gradient
 # and applies a threshold.
-def dir_threshold(img, sobel_kernel=3, thresh=(0, np.pi/2)):
+def dir_threshold(image, sobel_kernel=3, thresh=(0, np.pi/2)):
     
     gray = None
-    if len(img.shape)<3:
-        gray = img
-    elif img.shape[2]<3:
-        gray = img
+    if len(image.shape)<3:
+        gray = image
+    elif image.shape[2]<3:
+        gray = image
     else:
-        # Apply the following steps to img
+        # Apply the following steps to image
         # 1) Convert to grayscale
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
     # 2) Take the gradient in x and y separately
     sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=sobel_kernel)
@@ -206,4 +206,4 @@ def combined_threshold(image, sobel_settings={}):
     return None
 
 # Lablacian:
-# laplacian = cv2.Laplacian(img,cv2.CV_64F)
+# laplacian = cv2.Laplacian(image,cv2.CV_64F)

@@ -7,12 +7,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class Plotter(object):
-    def __init__(self, realtime=True):
-        self.__isrealtime__ = realtime
+    def __init__(self):
         self.__chains__
         raise "Not implemented"
 
-    def register(self, chain):
+    def register(self, pipeline):
         raise "Not implemented"
 
     def nextframe(self):
@@ -21,6 +20,9 @@ class Plotter(object):
 # Each instance is for a new set of frames
 class Plot(object):
     def __init__(self, params):
+        raise "Not implemented"
+    
+    def add(self, image, title, stats):
         raise "Not implemented"
     
     def render(self):
