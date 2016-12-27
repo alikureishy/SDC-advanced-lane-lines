@@ -1,6 +1,7 @@
 {
     "Pipeline": [
     	"ShowOriginal",
+    	"ColorSpacer",
     	"Undistorter",
     	"RegionMasker",
     	"Thresholder",
@@ -10,6 +11,11 @@
     ],
     "ShowOriginal": {
 		"ToPlot": 1
+	},
+    "ColorSpacer": {
+		"ToPlot": 1,
+		"Original": "BGR",
+		"Target": "RGB"
 	},
     "Undistorter": {
 		"ToPlot": 1,

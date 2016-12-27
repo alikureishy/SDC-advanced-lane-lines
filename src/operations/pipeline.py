@@ -11,6 +11,7 @@ from operations.lanefiller import LaneFiller
 from operations.curveextractor import CurveExtractor
 from operations.showoriginal import ShowOriginal
 from operations.resizer import Resizer
+from operations.colorspacer import ColorSpacer
 
 PipelineSection = 'Pipeline'
 # from operations import *
@@ -22,7 +23,9 @@ class Pipeline(object):
         if selector is None:
             self.__sequence__ = config[PipelineSection]
         else:
-            self.__sequence__ = ['ShowOriginal', selector]
+            if not 0<selector<=len(config[PipelineSection]):
+                raise "Selector value of {} was not valid. Must be [1..{}]".format(selector, len(config[PipelineSection]))
+            self.__sequence__ = config[PipelineSection][0:selector]
 
         for operation in self.__sequence__:
             op = self.__create_operation__(operation, config[operation])
@@ -34,6 +37,8 @@ class Pipeline(object):
         instance = None
         if name == 'ShowOriginal':
             return ShowOriginal(config)
+        elif name == 'ColorSpacer':
+            return ColorSpacer(config)
         elif name == 'Resizer':
             return Resizer(config)
         elif name == 'Undistorter':

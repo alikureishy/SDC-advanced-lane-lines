@@ -23,5 +23,5 @@ class Undistorter(Operation):
 
     def __processinternal__(self, original, latest, data, frame):
         undistorted = cv2.undistort(latest, self.__mtx__, self.__dist__, None, self.__mtx__)
-        frame.add(undistorted, None, "Undistorter", None)
+        self.__plot__(frame, undistorted, None, "Undistorter", None)
         return undistorted

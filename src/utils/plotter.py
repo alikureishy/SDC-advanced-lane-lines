@@ -11,6 +11,7 @@ class Plotter(object):
         self.__figure__ = None
         self.__axes__ = None
         self.__axes_images__ = None
+        self.__framecount__ = 0
         
     def nextframe(self):
         return Frame(self)
@@ -36,8 +37,11 @@ class Plotter(object):
                     axes.set_title(title, fontsize=font)
                     axes.set_xticks([])
                     axes.set_yticks([])
+                    
+                    #TODO: Show stats?
                     axesimage = axes.imshow(image, cmap=cmap)
                     self.__axes_images__[i].append(axesimage)
+            plt.ion()
             plt.show()
         else:
             for i in range(v):
@@ -47,11 +51,15 @@ class Plotter(object):
                     
                     (image, cmap, title, stats) = sections[i][j]
                     axesimage = self.__axes_images__[i][j]
+#                     axesimage.autoscale()
                     axesimage.set_data(image)
                     # TODO:
                     # Update stats?
-
             self.__figure__.canvas.draw()
+            plt.pause(0.00001)
+            
+        print ("Plotted frame: {}". format(self.__framecount__))
+        self.__framecount__ += 1
     
 # A Frame represents state that is to be reflected in the current
 # pyplot frame. The actual plotting is performed by the Plotter

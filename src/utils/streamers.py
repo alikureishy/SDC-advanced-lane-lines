@@ -6,28 +6,29 @@ Created on Dec 22, 2016
 import cv2
 
 class BaseStreamer(object):
-    def __init__(self, input, output):
+    def __init__(self, input, output, dry=False):
         self.__inputfile__=input
         self.__outputfile__=output
+        self.__dry__ = dry
         
 class ImageStreamer(BaseStreamer):
-    def __init__(self, input, output):
-        BaseStreamer.__init__(self, input, output)
+    def __init__(self, input, output, dry=False):
+        BaseStreamer.__init__(self, input, output, dry)
 
     def iterator(self):
         pre_image = cv2.imread(self.__inputfile__)
         return [pre_image]
 
     def write (self, post_image):
-        if not self.__outputfile__==None:
+        if not ((self.__outputfile__==None) | (self.__dry__==True)):
             cv2.imwrite(self.__outputfile__, post_image)
 
     def __exit__(self):
         pass
         
 class VideoStreamer(BaseStreamer):
-    def __init__(self, inputfile, outputfile):
-        BaseStreamer.__init__(self, inputfile, outputfile)
+    def __init__(self, inputfile, outputfile, dry=False):
+        BaseStreamer.__init__(self, inputfile, outputfile, dry)
         self.__reader__ = cv2.VideoCapture(self.__inputfile__)
         if not self.__reader__.isOpened():
             raise "Unable to open input video file: {}".format(self.__inputfile__)
@@ -37,10 +38,17 @@ class VideoStreamer(BaseStreamer):
         #     cv2.VideoWriter_fourcc('M', 'J', 'E', 'G')
         # http://www.pyimagesearch.com/2016/02/22/writing-to-video-with-opencv/
         # http://stackoverflow.com/questions/12290023/opencv-2-4-in-python-video-processing
+        fps = int(self.__reader__.get(cv2.CAP_PROP_FPS))
+        width = int(self.__reader__.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(self.__reader__.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        count = int(self.__reader__.get(cv2.CAP_PROP_FRAME_COUNT))
+        print ("{}:\n\tFPS = {}\n\tWidth, Height= ({}, {})\n\tFrame Count={}".format(inputfile, fps, width, height, count))
+        
+        self.__writer__ = None
         self.__writer__ = cv2.VideoWriter(self.__outputfile__, \
                                        -1, \
-                                       self.__reader__.get('CV_CAP_PROP_FPS'), \
-                                       (self.__reader__.get('CV_CAP_PROP_FRAME_WIDTH'),self.__reader__.get('CV_CAP_PROP_FRAME_HEIGHT')))
+                                       fps, \
+                                       (width,height))
         if not self.__writer__.isOpened():
             raise "Unable to open output video file: {}".format(self.__outputfile__)
         
@@ -56,10 +64,11 @@ class VideoStreamer(BaseStreamer):
             yield image
 
     def write (self, post_image):
-        if not self.__outputfile__==None:
+        if not ((self.__outputfile__==None) | (self.__dry__==True)):
             self.__writer__.write(post_image)
             self.__frameswritten__ += 1
+            print ("\tWrote frame: {}". format(self.__framecount__))
 
     def __del__(self):
-        self.__writer__.release()
-        pass
+        if not self.__writer__ == None:
+            self.__writer__.release()

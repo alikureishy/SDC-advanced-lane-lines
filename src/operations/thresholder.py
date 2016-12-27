@@ -88,7 +88,7 @@ class Thresholder(Operation):
 
             title = "{}".format(term)
             stats = None
-            frame.add(binary_image, 'gray', title, stats)
+            self.__plot__(frame, binary_image, 'gray', title, stats)
             return binary_image
 
     def __makegray__(self, image):
@@ -96,7 +96,7 @@ class Thresholder(Operation):
         if ((len(image.shape) < 3) or (image.shape[2] < 3)):
             gray = image
         else:
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         return gray
 
     def __binaryforrange__(self, minmax, image):
@@ -164,21 +164,21 @@ class Thresholder(Operation):
         if space == self.Color.HLS:
             if len(image.shape)<3 | image.shape[2]<3:
                 raise "Image provided with shape {} cannot be used to extract target {}".format(image.shape, space)
-            hls = cv2.cvtColor(image, cv2.COLOR_BGR2HLS)
+            hls = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
             component = hls[:,:,channel]
         elif space == self.Color.HSV:
             if len(image.shape)<3 | image.shape[2]<3:
                 raise "Image provided with shape {} cannot be used to extract target {}".format(image.shape, space)
-            hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+            hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
             component = hsv[:,:,channel]
         elif space == self.Color.RGB:
             if len(image.shape)<3 | image.shape[2]<3:
                 raise "Image provided with shape {} cannot be used to extract target {}".format(image.shape, space)
-            rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) # This is because CV2 reads images as BGR, and we're using CV2
+            rgb = image # Since we should have converted to RGB earlier
             component = rgb[:,:,channel]
         elif space == self.Color.Gray:
             if len(image.shape)==3 & image.shape[2]==3:
-                component = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+                component = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
             else:
                 component = image
         else:

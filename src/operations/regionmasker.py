@@ -37,6 +37,6 @@ class RegionMasker(Operation):
         
         title = "RegionMasker {}".format(self.__relativepoints__)
         stats = None
-        frame.add(masked_image, cmap, title, stats)
+        self.__plot__(frame, masked_image, cmap, title, stats)
         
         return masked_image

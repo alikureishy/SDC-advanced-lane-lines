@@ -52,6 +52,10 @@ class Operation(object):
     def isplotting(self):
         return bool(self.__options__[self.IsPlotting])
 
+    def __plot__(self, frame, image, cmap, title, stats):
+        if self.isplotting():
+            frame.add(image, cmap, title, stats)
+
 # class Canny(Operation):
 #     def __init__(self, params):
 #         raise "Not implemented"

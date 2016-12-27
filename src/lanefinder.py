@@ -4,8 +4,7 @@ Created on Dec 21, 2016
 @author: safdar
 '''
 import matplotlib
-import cv2
-matplotlib.use('TKAgg')
+matplotlib.use('TkAgg')
 import argparse
 import os
 from operations.pipeline import Pipeline
@@ -22,7 +21,7 @@ if __name__ == '__main__':
     parser.add_argument('-i', dest='input',    required=True, type=str, help='Path to image file, image folder, or video file.')
     parser.add_argument('-o', dest='output',   type=str, help='Location of output (Will be treated as the same as input type)')
     parser.add_argument('-c', dest='configs',   required=True, nargs='*', type=str, help="Configuration files.")
-    parser.add_argument('-s', dest='selector', help='Short circuit the pipeline to perform only selected operation.')
+    parser.add_argument('-s', dest='selector', type=int, help='Short circuit the pipeline to perform only specified # of operations.')
     parser.add_argument('-d', dest='dry', action='store_true', help='Dry run. Will not save anything to disk (default: false).')
     args = parser.parse_args()
 
@@ -43,9 +42,9 @@ if __name__ == '__main__':
     streamer = None
     if os.path.isfile(args.input):
         if args.input.endswith('.jpg') | args.input.endswith('.JPG'):
-            streamer = ImageStreamer(args.input, args.output)
+            streamer = ImageStreamer(args.input, args.output, args.dry)
         elif args.input.endswith('.mp4') | args.input.endswith('.MP4'):
-            streamer = VideoStreamer(args.input, args.output)
+            streamer = VideoStreamer(args.input, args.output, args.dry)
         else:
             raise "Unrecognized input file type: {}".format(args.input)
     else:
@@ -57,8 +56,7 @@ if __name__ == '__main__':
         for (name, pipeline) in pipelines:
             frame.newsection(name)
             processed = pipeline.execute(image, frame)
-            if not args.dry:
-                streamer.write(processed)
+            streamer.write(processed)
         frame.render()
     
     # End
