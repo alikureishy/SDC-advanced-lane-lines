@@ -7,25 +7,21 @@ import cv2
 from operations.baseoperation import Operation
 import pickle
 
-class Calibrator(Operation):
+class Undistorter(Operation):
     # Parameters
     CalibrationFile = 'CalibrationFile'
-    MTX = 'features'
+    MTX = 'mtx'
     DIST = "dist"
     
     def __init__(self, params):
-        Operation.__init__(params)
+        Operation.__init__(self, params)
         file = self.getparam(self.CalibrationFile)
         with open(file, mode='rb') as f:
             calibration_data = pickle.load(f)
             self.__mtx__ = calibration_data[self.MTX]
             self.__dist__ = calibration_data[self.DIST]
 
-    def __processinternal__(self, original, latest, data, plot):
-        assert latest==None, "This should be the first item in the pipeline"
-        undistorted = cv2.undistort(original, self.__mtx__, self.__dist__, None, self.__mtx__)
-        plot.add(undistorted)
+    def __processinternal__(self, original, latest, data, frame):
+        undistorted = cv2.undistort(latest, self.__mtx__, self.__dist__, None, self.__mtx__)
+        frame.add(undistorted, None, "Undistorter", None)
         return undistorted
-
-    def __plotcount__(self):
-        return 1

@@ -8,54 +8,64 @@ import matplotlib.pyplot as plt
 
 class Plotter(object):
     def __init__(self):
-        self.__chains__
-        raise "Not implemented"
-
-    def register(self, pipeline):
-        raise "Not implemented"
-
+        self.__figure__ = None
+        self.__axes__ = None
+        self.__axes_images__ = None
+        
     def nextframe(self):
-        raise "Not implemented"
+        return Frame(self)
     
-# Each instance is for a new set of frames
-class Plot(object):
-    def __init__(self, params):
-        raise "Not implemented"
+    def redraw(self, sections):
+        _, maxsection = max(enumerate(sections), key = lambda tup: len(tup[1]))
+        h = len(maxsection)
+        v = len(sections)
+
+        if self.__figure__ == None:
+            self.__figure__, _  = plt.subplots (v, h)
+            self.__axes_images__ = []
+            for i in range(v):
+                self.__axes_images__.append([])
+                for j in range(h):
+                    if j >= len(sections[i]):
+                        break # We've finished one section (horizontal plots). Goto next i.
+
+                    (image, cmap, title, stats) = sections[i][j]
+                    idx = (i*h) + j
+                    axes = self.__figure__.get_axes()[idx]
+                    font = min (max (int( 100 / (np.sqrt(len(title)) * v * h)), 10), 30)
+                    axes.set_title(title, fontsize=font)
+                    axes.set_xticks([])
+                    axes.set_yticks([])
+                    axesimage = axes.imshow(image, cmap=cmap)
+                    self.__axes_images__[i].append(axesimage)
+            plt.show()
+        else:
+            for i in range(v):
+                for j in range(h):
+                    if j >= len(sections[i]):
+                        break # We've finished one section (horizontal plots). Goto next i.
+                    
+                    (image, cmap, title, stats) = sections[i][j]
+                    axesimage = self.__axes_images__[i][j]
+                    axesimage.set_data(image)
+                    # TODO:
+                    # Update stats?
+
+            self.__figure__.canvas.draw()
     
-    def add(self, image, title, stats):
-        raise "Not implemented"
+# A Frame represents state that is to be reflected in the current
+# pyplot frame. The actual plotting is performed by the Plotter
+class Frame(object):
+    def __init__(self, plotter):
+        self.__plotter__ = plotter
+        self.__sections__ = []
+    
+    def add(self, image, cmap, title, stats):
+        assert len(self.__sections__)>0, "Must invoke newsection() first before calling add()"
+        self.__sections__[-1].append((image, cmap, title, stats))
+    
+    def newsection(self, name):
+        self.__sections__.append([])
     
     def render(self):
-        raise "Not implemented"
-    
-# List of (image, title, cmap) tuples
-def plot_multiple(*images, shape=None):
-    N = len(images)
-    x,y = None, None
-    if shape==None:
-        x=int(round(np.sqrt(N)))
-        y=int(np.ceil(N/x))
-    else:
-        x = shape[0]
-        y = shape[1]
-        assert x*y >= N, "Shape provided ({}) is too small to fit {} images".format(shape, N)
-    
-    # Plot the result
-    plots = []
-    for i in range(x):
-        for j in range(y):
-            idx = (i*y) + j
-            if idx >= N:
-                break
-            info = images[idx]
-            plot = plt.subplot2grid((x,y),(i, j))
-            plot.imshow(info[0], cmap=info[2])
-            title = 'Image: {} ({})'.format(idx, info[1])
-            font = min (max (int( 100 / (np.sqrt(len(title)) * N)), 10), 30)
-            plot.set_title(title, fontsize=font)
-            plot.set_xticks([])
-            plot.set_yticks([])
-            plots.append(plot)
-
-#     plt.tight_layout()
-    plt.show()
+        self.__plotter__.redraw(self.__sections__)

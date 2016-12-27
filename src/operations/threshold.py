@@ -6,11 +6,7 @@ Created on Dec 20, 2016
 
 import numpy as np
 import cv2
-import matplotlib
-import enum
 from enum import Enum
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 
 # Define a function that applies Sobel x or y, 
 # then takes an absolute value and applies a threshold.

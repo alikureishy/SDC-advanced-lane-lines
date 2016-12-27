@@ -1,14 +1,14 @@
 '''
-Created on Dec 23, 2016
+Created on Dec 26, 2016
 
 @author: safdar
 '''
 from operations.baseoperation import Operation
-    
-# Detects and fits the lane points, then fills the region between the fitted polynomials    
-class CurveExtractor(Operation):
+
+class ShowOriginal(Operation):
     def __init__(self, params):
         Operation.__init__(self, params)
 
     def __processinternal__(self, original, latest, data, frame):
-        raise "Not implemented"
+        frame.add(original, None, "Original", None)
+        return latest

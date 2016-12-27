@@ -71,3 +71,69 @@ if __name__ == '__main__':
          
     cap.release()
     cv2.destroyAllWindows()
+    
+#################
+
+# List of (image, title, cmap) tuples
+def plot_multiple(*images, shape=None):
+    N = len(images)
+    x,y = None, None
+    if shape==None:
+        x=int(round(np.sqrt(N)))
+        y=int(np.ceil(N/x))
+    else:
+        x = shape[0]
+        y = shape[1]
+        assert x*y >= N, "Shape provided ({}) is too small to fit {} images".format(shape, N)
+    
+    # Frame the result
+    plots = []
+    for i in range(x):
+        for j in range(y):
+            idx = (i*y) + j
+            if idx >= N:
+                break
+            info = images[idx]
+            frame = plt.subplot2grid((x,y),(i, j))
+            frame.imshow(info[0], cmap=info[2])
+            title = 'Image: {} ({})'.format(idx, info[1])
+            font = min (max (int( 100 / (np.sqrt(len(title)) * N)), 10), 30)
+            frame.set_title(title, fontsize=font)
+            frame.set_xticks([])
+            frame.set_yticks([])
+            plots.append(frame)
+
+#     plt.tight_layout()
+    plt.show()
+    
+    
+    
+cols = ['Column {}'.format(col) for col in range(1, 4)]
+rows = ['Row {}'.format(row) for row in ['A', 'B', 'C', 'D']]
+
+fig, axes = plt.subplots(nrows=4, ncols=3, figsize=(12, 8))
+
+for ax, col in zip(axes[0], cols):
+    ax.set_title(col)
+
+for ax, row in zip(axes[:,0], rows):
+    ax.set_ylabel(row, rotation=0, size='large')
+
+fig.tight_layout()
+plt.show()
+
+
+#----
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+images = np.random.uniform(0, 255, size=(40, 50, 50))
+
+fig, ax = plt.subplots()
+
+im = ax.imshow(images[0])
+fig.show()
+for image in images[1:]:
+    im.set_data(image)
+    fig.canvas.draw()

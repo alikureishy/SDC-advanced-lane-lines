@@ -40,16 +40,16 @@ class Thresholder(Operation):
         Gray = 'Gray'
 
     def __init__(self, params):
-        Operation.__init__(params)
+        Operation.__init__(self, params)
         self.__sequence__ = self.getparam(self.Thresholds)
         self.__toplotterms__ = self.getparam(self.ToPlotTerms)
         self.__term__ = self.getparam(self.Term.name())
 
-    def __processinternal__(self, original, latest, data, plot):
+    def __processinternal__(self, original, latest, data, frame):
         term = self.getparam(self.Term.name())
-        return self.__do_threshold__(latest, term, plot)
+        return self.__do_threshold__(latest, term, frame)
         
-    def __do_threshold__(self, image, term, plot):
+    def __do_threshold__(self, image, term, frame):
         assert type(term) is dict, "Every term must be a dictionary:\n{}".format(term)
         
         if self.Operator.name() in term:                    # Recursive case
@@ -57,7 +57,7 @@ class Thresholder(Operation):
             operands = term[self.Operands]
             thresholded_binaries = []
             for term in operands:
-                thresholded_binaries.append(self.__do_threshold__(image, term, plot))
+                thresholded_binaries.append(self.__do_threshold__(image, term, frame))
 
             combined_binary = None
             if operator==self.Operator.OR:
@@ -70,24 +70,25 @@ class Thresholder(Operation):
                 "Combined binary ({}) not the same shape as thresholded binaries ({})".format(combined_binary.shape, thresholded_binaries[0].shape)
             return combined_binary
         else:                                               # Base case
-            # Term is a sequence of thresholds:
             assert len(term.keys())==1, "Term setting should have only one key, but has {}".format(len(term.keys()))
             flavor = term.keys()[0]
             binary_image = None
             if flavor==self.SobelX.name():
-                binary_image = self.filter_sobel_x(image, 'x', term[flavor], plot)
+                binary_image = self.filter_sobel_x(image, 'x', term[flavor], frame)
             elif flavor==self.SobelY.name():
-                binary_image = self.filter_sobel_y(image, 'y', term[flavor], plot)
+                binary_image = self.filter_sobel_y(image, 'y', term[flavor], frame)
             elif flavor==self.SobelXY.name():
-                binary_image = self.filter_sobel_xy(image, term[flavor], plot)
+                binary_image = self.filter_sobel_xy(image, term[flavor], frame)
             elif flavor==self.SobelTanXY.name():
-                binary_image = self.filter_sobel_tanxy(image, term[flavor], plot)
+                binary_image = self.filter_sobel_tanxy(image, term[flavor], frame)
             elif flavor==self.Color.name():
-                binary_image = self.filter_color(image, term[flavor], plot)
+                binary_image = self.filter_color(image, term[flavor], frame)
             else:
                 raise "Threshold type not recognized: {}".format(flavor)
 
-            plot.add(binary_image)
+            title = "{}".format(term)
+            stats = None
+            frame.add(binary_image, 'gray', title, stats)
             return binary_image
 
     def __makegray__(self, image):
@@ -109,7 +110,7 @@ class Thresholder(Operation):
             image = np.uint8(255 * image / np.max(image))
         return image
 
-    def __filter_sobel__(self, image, orientation, term, plot):
+    def __filter_sobel__(self, image, orientation, term, frame):
         kernel = term[self.SobelTanXY.Kernel]
         minmax = term[self.SobelTanXY.MinMax]
         gray = self.__makegray__(image)
@@ -125,13 +126,13 @@ class Thresholder(Operation):
         binary_sobel = self.__binaryforrange__(minmax, scaled_sobel)
         return binary_sobel
 
-    def filter_sobel_x(self, image, term, plot):
-        return self.__filter_sobel__(image, 'x', term, plot)
+    def filter_sobel_x(self, image, term, frame):
+        return self.__filter_sobel__(image, 'x', term, frame)
 
-    def filter_sobel_y(self, image, term, plot):
-        return self.__filter_sobel__(image, 'y', term, plot)
+    def filter_sobel_y(self, image, term, frame):
+        return self.__filter_sobel__(image, 'y', term, frame)
 
-    def filter_sobel_xy(self, image, term, plot):
+    def filter_sobel_xy(self, image, term, frame):
         kernel = term[self.SobelTanXY.Kernel]
         minmax = term[self.SobelTanXY.MinMax]
         gray = self.__makegray__(image)
@@ -142,7 +143,7 @@ class Thresholder(Operation):
         binary_sobel = self.__binaryforrange__(minmax, scaled_sobel)
         return binary_sobel
 
-    def filter_sobel_tanxy(self, image, term, plot):
+    def filter_sobel_tanxy(self, image, term, frame):
         kernel = term[self.SobelTanXY.Kernel]
         minmax = term[self.SobelTanXY.MinMax]
         gray = self.__makegray__(image)
@@ -154,7 +155,7 @@ class Thresholder(Operation):
         binary_sobel = self.__binaryforrange__(minmax, tan_sobel)
         return binary_sobel
     
-    def filter_color(self, image, term, plot):
+    def filter_color(self, image, term, frame):
         space = term[self.Color.Space]
         channel = term[self.Color.Channel]
         minmax = term[self.Color.MinMax]
@@ -186,6 +187,3 @@ class Thresholder(Operation):
         mask = self.__scaleimage__(component)
         binary = self.__binaryforrange__(minmax, mask)
         return binary
-    
-    def __plotcount__(self):
-            return len(self.__sequence__) + 1 # The extra one is for the combined threshold binary

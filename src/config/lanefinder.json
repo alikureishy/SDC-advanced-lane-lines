@@ -1,5 +1,6 @@
 {
     "Pipeline": [
+    	"ShowOriginal",
     	"Undistorter",
     	"RegionMasker",
     	"Thresholder",
@@ -7,6 +8,9 @@
     	"CurveExtractor",
     	"LaneFiller"
     ],
+    "ShowOriginal": {
+		"ToPlot": 1
+	},
     "Undistorter": {
 		"ToPlot": 1,
         "CalibrationFile": "config/calibration.pickle"

@@ -3,6 +3,9 @@ Created on Dec 21, 2016
 
 @author: safdar
 '''
+import matplotlib
+import cv2
+matplotlib.use('TKAgg')
 import argparse
 import os
 from operations.pipeline import Pipeline
@@ -17,7 +20,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Lane Finder')
     parser.add_argument('-i', dest='input',    required=True, type=str, help='Path to image file, image folder, or video file.')
-    parser.add_argument('-o', dest='output',   required=True, type=str, help='Location of output (Will be treated as the same as input type)')
+    parser.add_argument('-o', dest='output',   type=str, help='Location of output (Will be treated as the same as input type)')
     parser.add_argument('-c', dest='configs',   required=True, nargs='*', type=str, help="Configuration files.")
     parser.add_argument('-s', dest='selector', help='Short circuit the pipeline to perform only selected operation.')
     parser.add_argument('-d', dest='dry', action='store_true', help='Dry run. Will not save anything to disk (default: false).')
@@ -29,8 +32,12 @@ if __name__ == '__main__':
     for file in args.configs:
         config = json.load(open(file))
         pipeline = Pipeline(config, args.selector)
-        plotter.register(pipeline)
-        pipelines.add()
+        pipelines.append((file, pipeline))
+
+    if len(pipelines)>1:
+        print ("More than 1 pipeline. Switching to dry mode.")
+        args.output = None
+        args.dry = True
 
     # Create the reader/writer
     streamer = None
@@ -45,14 +52,14 @@ if __name__ == '__main__':
         raise "Unrecognized input type: {}".format(args.input)
 
     # Process:
-    with streamer:
-        for image in streamer.iterator():
-            plot = plotter.nextframe()
-            for pipeline in pipelines:
-                processed = pipeline.execute(image, plot)
-                if not args.dry:
-                    streamer.write(processed)
-            plot.render()
+    for image in streamer.iterator():
+        frame = plotter.nextframe()
+        for (name, pipeline) in pipelines:
+            frame.newsection(name)
+            processed = pipeline.execute(image, frame)
+            if not args.dry:
+                streamer.write(processed)
+        frame.render()
     
     # End
     print ("Thank you. Come again!")

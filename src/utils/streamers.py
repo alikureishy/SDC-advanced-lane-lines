@@ -9,26 +9,25 @@ class BaseStreamer(object):
     def __init__(self, input, output):
         self.__inputfile__=input
         self.__outputfile__=output
-        raise "Not implemented"
         
 class ImageStreamer(BaseStreamer):
     def __init__(self, input, output):
-        BaseStreamer.__init__(input, output)
+        BaseStreamer.__init__(self, input, output)
 
     def iterator(self):
         pre_image = cv2.imread(self.__inputfile__)
-        return enumerate([pre_image])
+        return [pre_image]
 
     def write (self, post_image):
-        cv2.imwrite(self.__outputfile__, post_image)
+        if not self.__outputfile__==None:
+            cv2.imwrite(self.__outputfile__, post_image)
 
     def __exit__(self):
         pass
         
 class VideoStreamer(BaseStreamer):
     def __init__(self, inputfile, outputfile):
-        BaseStreamer.__init__(inputfile, outputfile)
-
+        BaseStreamer.__init__(self, inputfile, outputfile)
         self.__reader__ = cv2.VideoCapture(self.__inputfile__)
         if not self.__reader__.isOpened():
             raise "Unable to open input video file: {}".format(self.__inputfile__)
@@ -57,9 +56,10 @@ class VideoStreamer(BaseStreamer):
             yield image
 
     def write (self, post_image):
-        self.__writer__.write(post_image)
-        self.__frameswritten__ += 1
+        if not self.__outputfile__==None:
+            self.__writer__.write(post_image)
+            self.__frameswritten__ += 1
 
-    def __exit__(self):
+    def __del__(self):
         self.__writer__.release()
         pass
