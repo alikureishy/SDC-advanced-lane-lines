@@ -8,15 +8,20 @@ from operations.baseoperation import Operation
 import cv2
 
 class RegionMasker(Operation):
+    RelativePoints = 'RelativePoints'
+    
     def __init__(self, params):
         Operation.__init__(self, params)
         self.__ratios__ = []
-        for rhs in params:
-            (xratio, yratio) = self.getfloattuple(rhs)
+        self.__relativepoints__ = []
+        for tup in params[self.RelativePoints]:
+            if not len(tup)==2:
+                raise "Invalid # of dimensions: {}".format(tup)
+            [xratio, yratio] = tup
             self.__relativepoints__.append((xratio, yratio))
 
     def __processinternal__(self, original, latest, data, frame):
-        mask = np.zeros_like(latest)   # blank mask
+        mask = np.zeros_like(latest, dtype=np.int32)   # blank mask
         
         cmap = None
         if len(latest.shape) > 2: # if image is color (3 channels) create a color mask
@@ -26,14 +31,15 @@ class RegionMasker(Operation):
             ignore_mask_color = 255
             cmap = 'gray'
 
-        x_dim = latest.shape[0]
-        y_dim = latest.shape[1]
-        vertices = [ (xr*x_dim, yr*y_dim) for [xr,yr] in self.__relavivepoints__]
+        x_dim = latest.shape[1]
+        y_dim = latest.shape[0]
+        vertices = np.array([[ (xr*x_dim, yr*y_dim) for [xr,yr] in self.__relativepoints__]],dtype=np.int32)
 
-        cv2.fillPoly(mask, vertices, ignore_mask_color) #filling pixels inside the polygon defined by "vertices" with the fill color
+        mask = cv2.fillPoly(mask, vertices, ignore_mask_color) #filling pixels inside the polygon defined by "vertices" with the fill color
 
         #returning the image only where mask pixels are nonzero
-        masked_image = cv2.bitwise_and(latest, mask)
+#         masked_image = cv2.bitwise_and(latest, latest, mask=mask)
+        masked_image = latest*mask
         
         title = "RegionMasker {}".format(self.__relativepoints__)
         stats = None

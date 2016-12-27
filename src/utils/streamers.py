@@ -48,7 +48,7 @@ class VideoStreamer(BaseStreamer):
         self.__writer__ = cv2.VideoWriter(self.__outputfile__, \
                                        -1, \
                                        fps, \
-                                       (width,height))
+                                       (height,width))
         if not self.__writer__.isOpened():
             raise "Unable to open output video file: {}".format(self.__outputfile__)
         

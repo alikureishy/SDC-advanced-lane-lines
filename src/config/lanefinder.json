@@ -1,8 +1,9 @@
 {
     "Pipeline": [
     	"ShowOriginal",
-    	"ColorSpacer",
     	"Undistorter",
+    	"Resizer",
+    	"ColorSpacer",
     	"RegionMasker",
     	"Thresholder",
     	"Perspective",
@@ -17,6 +18,10 @@
 		"Original": "BGR",
 		"Target": "RGB"
 	},
+    "Resizer": {
+		"ToPlot": 1,
+		"TargetShape": [216, 384]
+	},
     "Undistorter": {
 		"ToPlot": 1,
         "CalibrationFile": "config/calibration.pickle"
@@ -24,10 +29,10 @@
     "RegionMasker": {
 		"ToPlot": 1,
         "RelativePoints": [
-        	[0.25, 0.20], 
-        	[0.25, 0.70], 
-        	[0.75, 0.20],
-        	[0.75, 0.70]
+        	[0.15, 0.90], 
+        	[0.85, 0.90],
+        	[0.65, 0.55],
+        	[0.35, 0.55]
         ]
     },
     "Thresholder": {

@@ -17,10 +17,23 @@ class Plotter(object):
         return Frame(self)
     
     def redraw(self, sections):
-        _, maxsection = max(enumerate(sections), key = lambda tup: len(tup[1]))
-        h = len(maxsection)
-        v = len(sections)
+        # If there's only one section, split it into rows/cols:
+        h,v = None, None
+        if len(sections)==1:
+            N = len(sections[0])
+            h=int(round(np.sqrt(N)))
+            v=int(np.ceil(N/h))
+            diff = (h*v) - N
+            sample = sections[0][0][0]
+            for _ in range(diff):
+                sections[0].append((np.zeros_like(sample), None, "--Blank--", None))
+            sections = np.reshape(np.array(sections), (v,h,4))
+        else:
+            _, maxsection = max(enumerate(sections), key = lambda tup: len(tup[1]))
+            h = len(maxsection)
+            v = len(sections)
 
+        # Plot:
         if self.__figure__ == None:
             self.__figure__, _  = plt.subplots (v, h)
             self.__axes_images__ = []
