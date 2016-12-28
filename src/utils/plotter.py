@@ -46,7 +46,7 @@ class Plotter(object):
                     (image, cmap, title, stats) = sections[i][j]
                     idx = (i*h) + j
                     axes = self.__figure__.get_axes()[idx]
-                    font = min (max (int( 100 / (np.sqrt(len(title)) * v * h)), 10), 30)
+                    font = min (max (int( 100 / (np.sqrt(len(title)) * v * h)), 7), 15)
                     axes.set_title(title, fontsize=font)
                     axes.set_xticks([])
                     axes.set_yticks([])

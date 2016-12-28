@@ -4,36 +4,39 @@ Created on Dec 23, 2016
 @author: safdar
 '''
 from operations.baseoperation import Operation
-from enum import Enum
 import numpy as np    
 import cv2
 
 class Thresholder(Operation):
-    Thresholds = 'Thresholds'
-    ToPlotTerms = 'ToPlotTerms'
-    class Term(Enum):
-        def name(self):
-            return self.__class__.__name__
-    class Operator(Term):
+    class Term(object):
+        _ = 'Term'
+        ToPlot = 'ToPlot'
+    class Expr(Term):
         OR = 'OR'
         AND = 'AND'
         Operands = 'Operands'
+        Operator = 'Operator'
     class SobelX(Term):
-        Kernel = 'kernel'
-        MinMax = 'threshold'
+        _ = 'SobelX'
+        Kernel = 'Kernel'
+        MinMax = 'MinMax'
     class SobelY(Term):
-        Kernel = 'kernel'
-        MinMax = 'threshold'
+        _ = 'SobelY'
+        Kernel = 'Kernel'
+        MinMax = 'MinMax'
     class SobelXY(Term):
-        Kernel = 'kernel'
-        MinMax = 'threshold'
+        _ = 'SobelXY'
+        Kernel = 'Kernel'
+        MinMax = 'MinMax'
     class SobelTanXY(Term):
-        Kernel = 'kernel'
-        MinMax = 'threshold'
+        _ = 'SobelTanXY'
+        Kernel = 'Kernel'
+        MinMax = 'MinMax'
     class Color(Term):
-        Space = 'space'
-        Channel = 'channel'
-        MinMax = 'threshold'
+        _ = 'Color'
+        Space = 'Space'
+        Channel = 'Channel'
+        MinMax = 'MinMax'
         HLS = 'HLS'
         HSV = 'HSV'
         RGB = 'RGB'
@@ -41,56 +44,65 @@ class Thresholder(Operation):
 
     def __init__(self, params):
         Operation.__init__(self, params)
-        self.__sequence__ = self.getparam(self.Thresholds)
-        self.__toplotterms__ = self.getparam(self.ToPlotTerms)
-        self.__term__ = self.getparam(self.Term.name())
+        self.__term__ = self.getparam(self.Term._)
 
     def __processinternal__(self, original, latest, data, frame):
-        term = self.getparam(self.Term.name())
-        return self.__do_threshold__(latest, term, frame)
+        return self.__do_threshold__(latest, self.__term__, frame)
         
     def __do_threshold__(self, image, term, frame):
         assert type(term) is dict, "Every term must be a dictionary:\n{}".format(term)
         
-        if self.Operator.name() in term:                    # Recursive case
-            operator = term[self.Operator]
-            operands = term[self.Operands]
+        if self.Expr.Operator in term:                    # Recursive case
+            operator = term[self.Expr.Operator]
+            operands = term[self.Expr.Operands]
+            toplot = term[self.Expr.ToPlot]
             thresholded_binaries = []
             for term in operands:
                 thresholded_binaries.append(self.__do_threshold__(image, term, frame))
 
             combined_binary = None
-            if operator==self.Operator.OR:
+            if operator==self.Expr.OR:
                 combined_binary = np.logical_or.reduce(thresholded_binaries)
-            elif operator==self.Operator.AND:
+            elif operator==self.Expr.AND:
                 combined_binary = np.logical_and.reduce(thresholded_binaries)
             else:
                 raise "Operator not supported: {}".format(operator)
             assert combined_binary.shape==thresholded_binaries[0].shape, \
                 "Combined binary ({}) not the same shape as thresholded binaries ({})".format(combined_binary.shape, thresholded_binaries[0].shape)
+
+            title = ">>> {}".format(operator)
+            stats = None
+            self.__show__(toplot, frame, combined_binary, 'gray', title, stats)
             return combined_binary
         else:                                               # Base case
             assert len(term.keys())==1, "Term setting should have only one key, but has {}".format(len(term.keys()))
-            flavor = term.keys()[0]
+            flavor = list(term.keys())[0]
+            termconfig = term[flavor]
+            toplot = termconfig[self.Term.ToPlot]
             binary_image = None
-            if flavor==self.SobelX.name():
-                binary_image = self.filter_sobel_x(image, 'x', term[flavor], frame)
-            elif flavor==self.SobelY.name():
-                binary_image = self.filter_sobel_y(image, 'y', term[flavor], frame)
-            elif flavor==self.SobelXY.name():
-                binary_image = self.filter_sobel_xy(image, term[flavor], frame)
-            elif flavor==self.SobelTanXY.name():
-                binary_image = self.filter_sobel_tanxy(image, term[flavor], frame)
-            elif flavor==self.Color.name():
-                binary_image = self.filter_color(image, term[flavor], frame)
+            if flavor==self.SobelX._:
+                binary_image = self.filter_sobel_x(image, termconfig, frame)
+            elif flavor==self.SobelY._:
+                binary_image = self.filter_sobel_y(image, termconfig, frame)
+            elif flavor==self.SobelXY._:
+                binary_image = self.filter_sobel_xy(image, termconfig, frame)
+            elif flavor==self.SobelTanXY._:
+                binary_image = self.filter_sobel_tanxy(image, termconfig, frame)
+            elif flavor==self.Color._:
+                binary_image = self.filter_color(image, termconfig, frame)
             else:
                 raise "Threshold type not recognized: {}".format(flavor)
 
             title = "{}".format(term)
             stats = None
-            self.__plot__(frame, binary_image, 'gray', title, stats)
+            self.__show__(toplot, frame, binary_image, 'gray', title, stats)
             return binary_image
 
+    #######################################################################
+    def __show__ (self, toplot, frame, image, cmap, title, stats):
+        if toplot:
+            self.__plot__(frame, image, cmap, title, stats)
+    
     def __makegray__(self, image):
         gray = None
         if ((len(image.shape) < 3) or (image.shape[2] < 3)):
@@ -101,7 +113,7 @@ class Thresholder(Operation):
 
     def __binaryforrange__(self, minmax, image):
         binary_sobel = np.zeros_like(image)
-        binary_sobel[(image >= minmax[0]) & (image <= minmax[1])] = 1
+        binary_sobel[(image > minmax[0]) & (image < minmax[1])] = 1
         return binary_sobel
 
     def __scaleimage__(self, image):

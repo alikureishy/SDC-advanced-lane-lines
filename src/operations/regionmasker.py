@@ -39,7 +39,7 @@ class RegionMasker(Operation):
 
         #returning the image only where mask pixels are nonzero
 #         masked_image = cv2.bitwise_and(latest, latest, mask=mask)
-        masked_image = latest*mask
+        masked_image = np.float32(latest*mask)
         
         title = "RegionMasker {}".format(self.__relativepoints__)
         stats = None

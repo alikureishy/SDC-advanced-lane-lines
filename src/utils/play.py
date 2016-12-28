@@ -10,14 +10,8 @@ import matplotlib.image as mpimg
 from matplotlib import pyplot as plt
 import numpy as np
 import cv2
-from plotter import plot_multiple
 
 # Import everything needed to edit/save/watch video clips
-from moviepy.editor import VideoFileClip
-from IPython.display import HTML
-
-from threshold import dir_threshold, abs_sobel_thresh, mag_thresh,\
-    color_threshold, RGB
 
 def process_thresholding (image):
     # Run the functions
@@ -51,7 +45,7 @@ if __name__ == '__main__':
 #     image = r_binary = color_threshold(image, RGB.Red, (200, 255))
 #     plot_multiple((image, "Title", 'gray'))
     
-    input_file = 'challenge_video.mp4'
+    input_file = '../challenge_video.mp4'
     cap = cv2.VideoCapture(input_file)
     i = 0
     while(cap.isOpened()):
@@ -107,33 +101,33 @@ def plot_multiple(*images, shape=None):
     plt.show()
     
     
+def nothing():
+    cols = ['Column {}'.format(col) for col in range(1, 4)]
+    rows = ['Row {}'.format(row) for row in ['A', 'B', 'C', 'D']]
     
-cols = ['Column {}'.format(col) for col in range(1, 4)]
-rows = ['Row {}'.format(row) for row in ['A', 'B', 'C', 'D']]
-
-fig, axes = plt.subplots(nrows=4, ncols=3, figsize=(12, 8))
-
-for ax, col in zip(axes[0], cols):
-    ax.set_title(col)
-
-for ax, row in zip(axes[:,0], rows):
-    ax.set_ylabel(row, rotation=0, size='large')
-
-fig.tight_layout()
-plt.show()
-
-
-#----
-
-import matplotlib.pyplot as plt
-import numpy as np
-
-images = np.random.uniform(0, 255, size=(40, 50, 50))
-
-fig, ax = plt.subplots()
-
-im = ax.imshow(images[0])
-fig.show()
-for image in images[1:]:
-    im.set_data(image)
-    fig.canvas.draw()
+    fig, axes = plt.subplots(nrows=4, ncols=3, figsize=(12, 8))
+    
+    for ax, col in zip(axes[0], cols):
+        ax.set_title(col)
+    
+    for ax, row in zip(axes[:,0], rows):
+        ax.set_ylabel(row, rotation=0, size='large')
+    
+    fig.tight_layout()
+    plt.show()
+    
+    
+    #----
+    
+    import matplotlib.pyplot as plt
+    import numpy as np
+    
+    images = np.random.uniform(0, 255, size=(40, 50, 50))
+    
+    fig, ax = plt.subplots()
+    
+    im = ax.imshow(images[0])
+    fig.show()
+    for image in images[1:]:
+        im.set_data(image)
+        fig.canvas.draw()
