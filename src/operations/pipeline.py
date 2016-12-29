@@ -20,6 +20,7 @@ class Pipeline(object):
     def __init__(self, config, selector=None):
         self.__config__ = config
         self.__operations__ = []
+        self.__data__ = {}
         if selector is None:
             self.__sequence__ = config[PipelineSection]
         else:
@@ -35,23 +36,23 @@ class Pipeline(object):
     
     def __create_operation__(self, name, config):
         instance = None
-        if name == 'ShowOriginal':
+        if name == ShowOriginal.__name__:
             return ShowOriginal(config)
-        elif name == 'ColorSpacer':
+        elif name == ColorSpacer.__name__:
             return ColorSpacer(config)
-        elif name == 'Resizer':
+        elif name == Resizer.__name__:
             return Resizer(config)
-        elif name == 'Undistorter':
+        elif name == Undistorter.__name__:
             return Undistorter(config)
-        elif name == 'Thresholder':
+        elif name == Thresholder.__name__:
             return Thresholder(config)
-        elif name == 'RegionMasker':
+        elif name == RegionMasker.__name__:
             return RegionMasker(config)
-        elif name == 'Perspective':
+        elif name == Perspective.__name__:
             return Perspective(config)
-        elif name == 'CurveExtractor':
+        elif name == CurveExtractor.__name__:
             return CurveExtractor(config)
-        elif name == 'LaneFiller':
+        elif name == LaneFiller.__name__:
             return LaneFiller(config)
         else:
             raise "No operation class exists with name: {}".format(name)   
@@ -71,6 +72,5 @@ class Pipeline(object):
     def execute(self, image, frame):
         processed = None
         if len(self.__operations__)>0:
-            data = {}
-            processed = self.__operations__[0].process(image, image, data, frame)
+            processed = self.__operations__[0].process(image, image, self.__data__, frame)
         return processed

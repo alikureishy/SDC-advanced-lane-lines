@@ -72,8 +72,9 @@ class Thresholder(Operation):
 
             title = ">>> {}".format(operator)
             stats = None
-            self.__show__(toplot, frame, combined_binary, 'gray', title, stats)
-            return combined_binary
+            self.__plot__(frame, combined_binary, 'gray', title, stats, toplot=toplot)
+            return np.int8(combined_binary)
+#             return combined_binary
         else:                                               # Base case
             assert len(term.keys())==1, "Term setting should have only one key, but has {}".format(len(term.keys()))
             flavor = list(term.keys())[0]
@@ -95,13 +96,10 @@ class Thresholder(Operation):
 
             title = "{}".format(term)
             stats = None
-            self.__show__(toplot, frame, binary_image, 'gray', title, stats)
+            self.__plot__(frame, binary_image, 'gray', title, stats, toplot=toplot)
             return binary_image
 
     #######################################################################
-    def __show__ (self, toplot, frame, image, cmap, title, stats):
-        if toplot:
-            self.__plot__(frame, image, cmap, title, stats)
     
     def __makegray__(self, image):
         gray = None

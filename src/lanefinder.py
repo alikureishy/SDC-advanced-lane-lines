@@ -4,6 +4,7 @@ Created on Dec 21, 2016
 @author: safdar
 '''
 import matplotlib
+import cv2
 matplotlib.use('TkAgg')
 import argparse
 import os
@@ -22,6 +23,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', dest='output',   type=str, help='Location of output (Will be treated as the same as input type)')
     parser.add_argument('-c', dest='configs',   required=True, nargs='*', type=str, help="Configuration files.")
     parser.add_argument('-s', dest='selector', type=int, help='Short circuit the pipeline to perform only specified # of operations.')
+    parser.add_argument('-x', dest='speed', type=int, help='Speed (1 ,2, 3 etc) interpreted as 1x, 2x, 3x etc)')
     parser.add_argument('-d', dest='dry', action='store_true', help='Dry run. Will not save anything to disk (default: false).')
     args = parser.parse_args()
 
@@ -51,13 +53,17 @@ if __name__ == '__main__':
         raise "Unrecognized input type: {}".format(args.input)
 
     # Process:
+    framecount = 0
     for image in streamer.iterator():
-        frame = plotter.nextframe()
-        for (name, pipeline) in pipelines:
-            frame.newsection(name)
-            processed = pipeline.execute(image, frame)
-            streamer.write(processed)
-        frame.render()
+        if framecount % args.speed == 0:
+            frame = plotter.nextframe()
+            for (name, pipeline) in pipelines:
+                frame.newsection(name)
+                processed = pipeline.execute(image, frame)
+                streamer.write(processed)
+            frame.render()
+        framecount+=1
     
+    cv2.waitKey()
     # End
     print ("Thank you. Come again!")

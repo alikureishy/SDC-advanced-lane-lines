@@ -12,7 +12,6 @@ class RegionMasker(Operation):
     
     def __init__(self, params):
         Operation.__init__(self, params)
-        self.__ratios__ = []
         self.__relativepoints__ = []
         for tup in params[self.RelativePoints]:
             if not len(tup)==2:

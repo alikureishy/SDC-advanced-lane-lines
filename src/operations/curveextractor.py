@@ -11,4 +11,4 @@ class CurveExtractor(Operation):
         Operation.__init__(self, params)
 
     def __processinternal__(self, original, latest, data, frame):
-        raise "Not implemented"
+        return latest

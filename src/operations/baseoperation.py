@@ -16,10 +16,13 @@ class Operation(object):
 
     def process(self, original, latest, data, frame):
         intermediate = self.__processinternal__(original, latest, data, frame)
+        data[self.__class__.__name__] = intermediate
+        
         if not self.__successor__ == None:
             final = self.__successor__.process(original, intermediate, data, frame)
         else:
             final = intermediate
+            
         return final
 
     def setsuccessor(self, successor):
@@ -52,9 +55,10 @@ class Operation(object):
     def isplotting(self):
         return bool(self.__options__[self.IsPlotting])
 
-    def __plot__(self, frame, image, cmap, title, stats):
+    def __plot__(self, frame, image, cmap, title, stats, toplot=True):
         if self.isplotting():
-            frame.add(image, cmap, title, stats)
+            if toplot:
+                frame.add(image, cmap, title, stats)
 
 # class Canny(Operation):
 #     def __init__(self, params):

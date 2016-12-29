@@ -68,10 +68,9 @@ class Plotter(object):
                     axesimage.set_data(image)
                     # TODO:
                     # Update stats?
+            plt.ion()
             self.__figure__.canvas.draw()
             plt.pause(0.00001)
-            
-        print ("Plotted frame: {}". format(self.__framecount__))
         self.__framecount__ += 1
     
 # A Frame represents state that is to be reflected in the current

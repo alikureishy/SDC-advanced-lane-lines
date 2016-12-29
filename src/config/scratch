@@ -1,0 +1,79 @@
+    "ThresholderExample": {
+		"ToPlot": 1,
+		"Term":
+		{
+			"ToPlot": 0,
+			"Operator": "OR",
+			"Operands": [
+				{
+					"ToPlot": 0,
+					"Operator": "AND",
+					"Operands": [
+				    	{"SobelX": { "Kernel": 3, "MinMax": [0, 255], "ToPlot": 1}},
+				    	{"SobelY": { "Kernel": 3, "MinMax": [0, 255], "ToPlot": 1}}
+					]
+				},
+				{
+					"ToPlot": 0,
+					"Operator": "AND",
+					"Operands": [
+				    	{"SobelTanXY": {"Kernel": 3, "MinMax": [0, 1.57], "ToPlot": 1}},
+				    	{"SobelXY": { "Kernel": 3, "MinMax": [0, 255], "ToPlot": 1}}
+					]
+				},
+		    	{"Color": { "Space": "HLS", "Channel": 0, "MinMax": [0,255], "ToPlot": 1}}
+			]
+		}
+    },
+    
+    
+    "Thresholder": {
+		"ToPlot": 1,
+		"Term":
+		{
+			"ToPlot": 1,
+			"Operator": "OR",
+			"Operands": [
+		    	{"SobelX": { "Kernel": 3, "MinMax": [20, 120], "ToPlot": 1}},
+		    	{"SobelY": { "Kernel": 3, "MinMax": [20, 120], "ToPlot": 1}},
+		    	{"SobelXY": { "Kernel": 3, "MinMax": [20, 120], "ToPlot": 1}},
+		    	{"SobelTanXY": { "Kernel": 3, "MinMax": [0.0, 1.0], "ToPlot": 1}},
+		    	{"Color": { "Space": "HLS", "Channel": 2, "MinMax": [20,120], "ToPlot": 1}}
+			]
+		}
+    },
+    
+    
+# This below worked for the transform of the image in /test_images/solidWhiteRight.jpg
+    "Perspective": {
+		"ToPlot": 1,
+        "SrcPoints": [
+        	[437, 341], 
+        	[533, 341],
+        	[136, 532],
+        	[834, 532]
+        ],
+        "DestPoints": [
+        	[246, 35],
+        	[695, 35],
+        	[246, 532],
+        	[695, 532]
+        ]
+    },
+
+# For the test videos -- Attept # 1 (Pretty good, but straight lines go apart at the top):
+    "Perspective": {
+		"ToPlot": 1,
+        "SrcPoints": [
+        	[597, 451], 
+        	[659, 451],
+        	[270, 692],
+        	[1113, 692]
+        ],
+        "DestPoints": [
+        	[422, 53],
+        	[933, 53],
+        	[422, 692],
+        	[933, 692]
+        ]
+    },
