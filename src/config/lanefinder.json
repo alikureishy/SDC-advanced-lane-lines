@@ -36,7 +36,7 @@
     },
     "Thresholder": {
 		"ToPlot": 1,
-		"Term": {"SobelX": { "Kernel": 3, "MinMax": [20, 120], "ToPlot": 1}}
+		"Term": {"Canny": { "Blur": 3, "MinMax": [50, 120], "ToPlot": 1}}
     },
     "PerspectiveFinder": {
     	"SourcePointsKey": "SourcePoints",

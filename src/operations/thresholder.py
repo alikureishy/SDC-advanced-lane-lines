@@ -32,6 +32,10 @@ class Thresholder(Operation):
         _ = 'SobelTanXY'
         Kernel = 'Kernel'
         MinMax = 'MinMax'
+    class Canny(Term):
+        _ = 'Canny'
+        Blur = 'Blur'
+        MinMax = 'MinMax'
     class Color(Term):
         _ = 'Color'
         Space = 'Space'
@@ -89,6 +93,8 @@ class Thresholder(Operation):
                 binary_image = self.filter_sobel_xy(image, termconfig, frame)
             elif flavor==self.SobelTanXY._:
                 binary_image = self.filter_sobel_tanxy(image, termconfig, frame)
+            elif flavor==self.Canny._:
+                binary_image = self.canny(image, termconfig, frame)
             elif flavor==self.Color._:
                 binary_image = self.filter_color(image, termconfig, frame)
             else:
@@ -164,6 +170,15 @@ class Thresholder(Operation):
         tan_sobel = np.arctan2(abs_sobely, abs_sobelx)
         binary_sobel = self.__binaryforrange__(minmax, tan_sobel)
         return binary_sobel
+    
+    def canny(self, image, term, frame):
+        blur = term[self.Canny.Blur]
+        minmax = term[self.Canny.MinMax]
+        gray = self.__makegray__(image)
+        if blur>0:
+            gray = cv2.GaussianBlur(gray, (blur, blur), 0)
+        canny = cv2.Canny(gray, minmax[0], minmax[1])
+        return canny
     
     def filter_color(self, image, term, frame):
         space = term[self.Color.Space]
