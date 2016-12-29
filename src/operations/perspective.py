@@ -53,6 +53,19 @@ class Perspective(Operation):
         
         return bw_warped
     
+    def __processdownstream__(self, original, latest, data, frame):
+#         x_dim = latest.shape[1]
+#         y_dim = latest.shape[0]
+
+        # Perform perspective transform:
+#         bw_warped = cv2.warpPerspective(np.float32(latest), self.__Minv__, (x_dim, y_dim), flags=cv2.INTER_LINEAR)
+#         title = "Unwarped"
+#         stats = None
+#         self.__plot__(frame, bw_warped, None, title, stats)
+#         
+#         return bw_warped
+        return Operation.__processdownstream__(self, original, latest, data, frame)
+    
     def plotboundary(self, orig, points, color):
         topleft = tuple(points[0])
         topright = tuple(points[1])

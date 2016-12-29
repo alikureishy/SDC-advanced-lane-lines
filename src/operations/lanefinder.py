@@ -9,6 +9,8 @@ from operations.baseoperation import Operation
 # Also detects the position of the car relative to the center of the lane,
 # based on the lane positions.
 class LaneFinder(Operation):
+    
+    
     def __init__(self, params):
         Operation.__init__(self, params)
 

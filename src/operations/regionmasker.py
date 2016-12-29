@@ -37,7 +37,6 @@ class RegionMasker(Operation):
         mask = cv2.fillPoly(mask, vertices, ignore_mask_color) #filling pixels inside the polygon defined by "vertices" with the fill color
 
         #returning the image only where mask pixels are nonzero
-#         masked_image = cv2.bitwise_and(latest, latest, mask=mask)
         masked_image = np.float32(latest*mask)
         
         title = "RegionMasker {}".format(self.__relativepoints__)

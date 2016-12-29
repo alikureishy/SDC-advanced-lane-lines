@@ -10,5 +10,5 @@ class ShowOriginal(Operation):
         Operation.__init__(self, params)
 
     def __processupstream__(self, original, latest, data, frame):
-        self.__plot__(frame, original, None, "Original", None)
+        self.__plot__(frame, original, None, "Original: {}".format(original.shape), None)
         return latest
