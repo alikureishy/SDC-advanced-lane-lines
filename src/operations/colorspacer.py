@@ -35,7 +35,7 @@ class ColorSpacer(Operation):
             raise "Transformation {} -> {} is not supported. Please try another.".format(self.__original__,self.__target__)
         self.__transform__ = self.Transforms[concat]
 
-    def __processinternal__(self, original, latest, data, frame):
+    def __processupstream__(self, original, latest, data, frame):
         latest = cv2.cvtColor(latest, self.__transform__)
         title = "ColorSpace {}->{}".format(self.__original__,self.__target__)
         stats = None

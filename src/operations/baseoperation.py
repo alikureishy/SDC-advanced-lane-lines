@@ -7,6 +7,10 @@ class Operation(object):
     # Parameters
     IsPlotting = 'ToPlot'
     
+    # Data keys:
+    Upstream = 'UpstreamOutputs'
+    Downstream = 'DownstreamOutputs'
+    
     # Data items:
     Original = 'Original'
     
@@ -14,22 +18,50 @@ class Operation(object):
         self.__options__ = options
         self.__successor__ = None
 
-    def process(self, original, latest, data, frame):
-        intermediate = self.__processinternal__(original, latest, data, frame)
-        data[self.__class__.__name__] = intermediate
-        
-        if not self.__successor__ == None:
-            final = self.__successor__.process(original, intermediate, data, frame)
+    def name(self):
+        return self.__class__.__name__
+    
+    def setdata(self, data, key, value):
+        data[self.name()][key] = value
+
+    def getdata(self, data, key, klass=None):
+        if klass is None:
+            return data[self.name()][key]
         else:
-            final = intermediate
-            
-        return final
+            return data[klass.__name__][key]
+
+    def hasdata(self, data, key, section=None):
+        if not data is None:
+            if section is None:
+                return key in data[self.name()]
+            else:
+                return key in data[section]
+        return False
+
+    def process(self, original, latest, data, frame):
+        # Prepare data space for this object:
+        if not self.name() in data:
+            data[self.name()] = {}
+        
+        # Upstream:
+        upstream = self.__processupstream__(original, latest, data, frame)
+        data[self.name()][self.Upstream] = upstream
+        if not self.__successor__ == None:
+            upstream = self.__successor__.process(original, upstream, data, frame)
+
+        # Downstream:
+        downstream = self.__processdownstream__(original, upstream, data, frame)
+        data[self.name()][self.Downstream] = downstream
+        return downstream
 
     def setsuccessor(self, successor):
         self.__successor__ = successor
 
-    def __processinternal__(self,original, latest, data, frame):
+    def __processupstream__(self,original, latest, data, frame):
         raise "Not implemented"
+
+    def __processdownstream__(self, original, latest, data, frame):
+        return latest
 
     def getparam(self, paramname):
         return self.__options__[paramname]

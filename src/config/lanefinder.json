@@ -6,6 +6,7 @@
     	"Thresholder",
     	"RegionMasker",
     	"Perspective",
+    	"LaneFinder",
     	"CurveExtractor",
     	"LaneFiller"
     ],
@@ -28,27 +29,23 @@
     "RegionMasker": {
 		"ToPlot": 1,
         "RelativePoints": [
-        	[0.15, 0.90], 
-        	[0.85, 0.90],
-        	[0.65, 0.55],
-        	[0.35, 0.55]
+        	[0.45, 0.55],
+        	[0.55, 0.55],
+        	[0.10, 0.95], 
+        	[0.90, 0.95]
         ]
     },
     "Thresholder": {
 		"ToPlot": 1,
-		"Term": {"Canny": { "Blur": 3, "MinMax": [50, 120], "ToPlot": 1}}
-    },
-    "PerspectiveFinder": {
-    	"SourcePointsKey": "SourcePoints",
-    	"DestPointsKey": "DestPoints"
+		"Term": {"SobelX": { "Kernel": 3, "MinMax": [50, 120], "ToPlot": 1}}
     },
     "Perspective": {
 		"ToPlot": 1,
         "SrcPoints": [
         	[590, 451], 
         	[690, 451],
-        	[270, 692],
-        	[1113, 692]
+        	[265, 692],
+        	[1100, 692]
         ],
         "DestPoints": [
         	[410, 53],
@@ -56,6 +53,11 @@
         	[410, 692],
         	[890, 692]
         ]
+    },
+    "LaneFinder": {
+		"ToPlot": 1,
+        "LeftLaneKey": "LeftCurve",
+        "RightLaneKey": "RightCurve"
     },
     "CurveExtractor": {
 		"ToPlot": 1,

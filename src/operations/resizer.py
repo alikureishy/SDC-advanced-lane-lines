@@ -14,7 +14,7 @@ class Resizer(Operation):
         self.__targetshape__ = self.getparam(self.TargetShape)
         assert len(self.__targetshape__) == 2, "Shape was supposed to be [x, y] but was {}".format(self.__targetshape__)
 
-    def __processinternal__(self, original, latest, data, frame):
+    def __processupstream__(self, original, latest, data, frame):
         latest = cv2.resize(latest, (self.__targetshape__[1], self.__targetshape__[0]), interpolation = cv2.INTER_AREA)
         title = "Resized to {}".format(self.__targetshape__)
         stats = None

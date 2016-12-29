@@ -23,7 +23,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', dest='output',   type=str, help='Location of output (Will be treated as the same as input type)')
     parser.add_argument('-c', dest='configs',   required=True, nargs='*', type=str, help="Configuration files.")
     parser.add_argument('-s', dest='selector', type=int, help='Short circuit the pipeline to perform only specified # of operations.')
-    parser.add_argument('-x', dest='speed', type=int, help='Speed (1 ,2, 3 etc) interpreted as 1x, 2x, 3x etc)')
+    parser.add_argument('-x', dest='speed', type=int, default=1, help='Speed (1 ,2, 3 etc) interpreted as 1x, 2x, 3x etc)')
     parser.add_argument('-d', dest='dry', action='store_true', help='Dry run. Will not save anything to disk (default: false).')
     args = parser.parse_args()
 

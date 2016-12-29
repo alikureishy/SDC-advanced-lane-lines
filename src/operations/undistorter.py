@@ -21,7 +21,7 @@ class Undistorter(Operation):
             self.__mtx__ = calibration_data[self.MTX]
             self.__dist__ = calibration_data[self.DIST]
 
-    def __processinternal__(self, original, latest, data, frame):
+    def __processupstream__(self, original, latest, data, frame):
         undistorted = cv2.undistort(latest, self.__mtx__, self.__dist__, None, self.__mtx__)
         self.__plot__(frame, undistorted, None, "Undistorter", None)
         return undistorted

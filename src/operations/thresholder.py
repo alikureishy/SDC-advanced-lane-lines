@@ -32,10 +32,15 @@ class Thresholder(Operation):
         _ = 'SobelTanXY'
         Kernel = 'Kernel'
         MinMax = 'MinMax'
-    class Canny(Term):
+    class CannyHough(Term):
         _ = 'Canny'
         Blur = 'Blur'
         MinMax = 'MinMax'
+#         Rho = 'Rho'
+#         Theta = 'Theta'
+#         Threshold = 'Threshold'
+#         MinLen = 'MinLen'
+#         MaxGap = 'MaxGap'
     class Color(Term):
         _ = 'Color'
         Space = 'Space'
@@ -50,7 +55,7 @@ class Thresholder(Operation):
         Operation.__init__(self, params)
         self.__term__ = self.getparam(self.Term._)
 
-    def __processinternal__(self, original, latest, data, frame):
+    def __processupstream__(self, original, latest, data, frame):
         return self.__do_threshold__(latest, self.__term__, frame)
         
     def __do_threshold__(self, image, term, frame):
@@ -179,6 +184,9 @@ class Thresholder(Operation):
             gray = cv2.GaussianBlur(gray, (blur, blur), 0)
         canny = cv2.Canny(gray, minmax[0], minmax[1])
         return canny
+    
+#     def hough_lines(self, image, term, frame):
+#         lines = cv2.HoughLinesP(image, rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
     
     def filter_color(self, image, term, frame):
         space = term[self.Color.Space]

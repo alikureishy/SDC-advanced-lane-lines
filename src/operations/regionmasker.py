@@ -19,7 +19,7 @@ class RegionMasker(Operation):
             [xratio, yratio] = tup
             self.__relativepoints__.append((xratio, yratio))
 
-    def __processinternal__(self, original, latest, data, frame):
+    def __processupstream__(self, original, latest, data, frame):
         mask = np.zeros_like(latest, dtype=np.int32)   # blank mask
         
         cmap = None

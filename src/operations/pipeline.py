@@ -12,6 +12,7 @@ from operations.curveextractor import CurveExtractor
 from operations.showoriginal import ShowOriginal
 from operations.resizer import Resizer
 from operations.colorspacer import ColorSpacer
+from operations.lanefinder import LaneFinder
 
 PipelineSection = 'Pipeline'
 # from operations import *
@@ -50,23 +51,14 @@ class Pipeline(object):
             return RegionMasker(config)
         elif name == Perspective.__name__:
             return Perspective(config)
+        elif name == LaneFinder.__name__:
+            return LaneFinder(config)
         elif name == CurveExtractor.__name__:
             return CurveExtractor(config)
         elif name == LaneFiller.__name__:
             return LaneFiller(config)
         else:
-            raise "No operation class exists with name: {}".format(name)   
-            
-        # It is possible this portion will change, depending on how the config references the operation:
-#         import importlib
-#         module_name, class_name = "operations", name
-#         MyClass = getattr(importlib.import_module(module_name), class_name)
-#         instance = MyClass(optionstring)
-
-#         klass = globals()[name]
-#         instance = klass(optionstring)
-#         instance = name(config)
-        
+            raise ValueError("No operation class exists with name: {}".format(name))
         return instance
         
     def execute(self, image, frame):

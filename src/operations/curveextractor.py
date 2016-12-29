@@ -10,5 +10,5 @@ class CurveExtractor(Operation):
     def __init__(self, params):
         Operation.__init__(self, params)
 
-    def __processinternal__(self, original, latest, data, frame):
+    def __processupstream__(self, original, latest, data, frame):
         return latest
