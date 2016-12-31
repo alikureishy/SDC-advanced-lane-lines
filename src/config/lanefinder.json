@@ -4,7 +4,6 @@
     	"Undistorter",
     	"ColorSpacer",
     	"Thresholder",
-    	"RegionMasker",
     	"Perspective",
     	"LaneFinder",
     	"CurveExtractor",
@@ -37,7 +36,24 @@
     },
     "Thresholder": {
 		"ToPlot": 1,
-		"Term": {"SobelX": { "Kernel": 3, "MinMax": [50, 120], "ToPlot": 1}}
+		"Term":
+		{
+			"ToPlot": 1,
+			"Operator": "OR",
+			"Negate": 1,
+			"Operands": [
+		    	{"SobelX": { "Kernel": 3, "MinMax": [50, 200], "ToPlot": 1, "Negate": 1}},
+		    	{"SobelY": { "Kernel": 3, "MinMax": [50, 200], "ToPlot": 1, "Negate": 1}},
+		    	{"SobelTanXY": {"Kernel": 3, "MinMax": [1.0, 1.57], "ToPlot": 1, "Negate": 1}},
+		    	{"SobelXY": { "Kernel": 3, "MinMax": [50, 200], "ToPlot": 1, "Negate": 1}},
+		    	{"Color": { "Space": "HLS", "Channel": 0, "MinMax": [50,200], "ToPlot": 1, "Negate": 1}},
+		    	{"Color": { "Space": "HLS", "Channel": 1, "MinMax": [50,200], "ToPlot": 1, "Negate": 1}},
+		    	{"Color": { "Space": "HLS", "Channel": 2, "MinMax": [50,200], "ToPlot": 1, "Negate": 1}},
+		    	{"Color": { "Space": "RGB", "Channel": 0, "MinMax": [50,200], "ToPlot": 1, "Negate": 1}},
+		    	{"Color": { "Space": "RGB", "Channel": 1, "MinMax": [50,200], "ToPlot": 1, "Negate": 1}},
+		    	{"Color": { "Space": "RGB", "Channel": 2, "MinMax": [50,200], "ToPlot": 1, "Negate": 1}}
+			]
+		}
     },
     "Perspective": {
 		"ToPlot": 1,

@@ -11,9 +11,11 @@ class Thresholder(Operation):
     class Term(object):
         _ = 'Term'
         ToPlot = 'ToPlot'
+        Negate = 'Negate'
     class Expr(Term):
         OR = 'OR'
         AND = 'AND'
+        SEQ = "SEQ"
         Operands = 'Operands'
         Operator = 'Operator'
     class SobelX(Term):
@@ -32,10 +34,10 @@ class Thresholder(Operation):
         _ = 'SobelTanXY'
         Kernel = 'Kernel'
         MinMax = 'MinMax'
-    class CannyHough(Term):
+    class Canny(Term):
         _ = 'Canny'
         Blur = 'Blur'
-        MinMax = 'MinMax'
+        LowHigh = 'LowHigh'
 #         Rho = 'Rho'
 #         Theta = 'Theta'
 #         Threshold = 'Threshold'
@@ -65,30 +67,45 @@ class Thresholder(Operation):
             operator = term[self.Expr.Operator]
             operands = term[self.Expr.Operands]
             toplot = term[self.Expr.ToPlot]
-            thresholded_binaries = []
-            for term in operands:
-                thresholded_binaries.append(self.__do_threshold__(image, term, frame))
+            negate = term[self.Term.Negate] if self.Term.Negate in term else 0
 
-            combined_binary = None
-            if operator==self.Expr.OR:
-                combined_binary = np.logical_or.reduce(thresholded_binaries)
-            elif operator==self.Expr.AND:
-                combined_binary = np.logical_and.reduce(thresholded_binaries)
+            if operator == self.Expr.SEQ:
+                binary = None
+                for term in operands:
+                    binary = self.__do_threshold__(image, term, frame)
+                    image = binary
+                combined_binary = binary
+            elif operator == self.Expr.AND or operator == self.Expr.OR:
+                thresholded_binaries = []
+                for term in operands:
+                    thresholded_binaries.append(self.__do_threshold__(image, term, frame))
+    
+                combined_binary = None
+                if operator==self.Expr.OR:
+                    combined_binary = np.bitwise_or.reduce(thresholded_binaries)
+                elif operator==self.Expr.AND:
+                    combined_binary = np.bitwise_and.reduce(thresholded_binaries)
             else:
                 raise "Operator not supported: {}".format(operator)
-            assert combined_binary.shape==thresholded_binaries[0].shape, \
-                "Combined binary ({}) not the same shape as thresholded binaries ({})".format(combined_binary.shape, thresholded_binaries[0].shape)
 
-            title = ">>> {}".format(operator)
+            combined_binary = combined_binary * 1
             stats = None
+            title = ">>> {}".format(operator)
             self.__plot__(frame, combined_binary, 'gray', title, stats, toplot=toplot)
-            return np.int8(combined_binary)
-#             return combined_binary
+            
+            if negate:
+                combined_binary = cv2.bitwise_not(combined_binary)
+                title = "{} >>> NOT".format(operator)
+                self.__plot__(frame, combined_binary, 'gray', title, stats, toplot=toplot)
+
+            return combined_binary
         else:                                               # Base case
             assert len(term.keys())==1, "Term setting should have only one key, but has {}".format(len(term.keys()))
             flavor = list(term.keys())[0]
             termconfig = term[flavor]
             toplot = termconfig[self.Term.ToPlot]
+            negate = termconfig[self.Term.Negate] if self.Term.Negate in termconfig else 0
+            
             binary_image = None
             if flavor==self.SobelX._:
                 binary_image = self.filter_sobel_x(image, termconfig, frame)
@@ -105,9 +122,15 @@ class Thresholder(Operation):
             else:
                 raise "Threshold type not recognized: {}".format(flavor)
 
-            title = "{}".format(term)
             stats = None
+            title = "{}".format(term)
             self.__plot__(frame, binary_image, 'gray', title, stats, toplot=toplot)
+
+            if negate:
+                binary_image = cv2.bitwise_not(np.uint8(binary_image))
+                title = "{} >>> NOT".format(flavor)
+                self.__plot__(frame, binary_image, 'gray', title, stats, toplot=toplot)
+
             return binary_image
 
     #######################################################################
@@ -178,11 +201,11 @@ class Thresholder(Operation):
     
     def canny(self, image, term, frame):
         blur = term[self.Canny.Blur]
-        minmax = term[self.Canny.MinMax]
+        lowhigh = term[self.Canny.LowHigh]
         gray = self.__makegray__(image)
         if blur>0:
             gray = cv2.GaussianBlur(gray, (blur, blur), 0)
-        canny = cv2.Canny(gray, minmax[0], minmax[1])
+        canny = cv2.Canny(gray, lowhigh[0], lowhigh[1])
         return canny
     
 #     def hough_lines(self, image, term, frame):
