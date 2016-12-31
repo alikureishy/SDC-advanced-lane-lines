@@ -15,6 +15,29 @@ class CurveExtractor(Operation):
     def __processupstream__(self, original, latest, data, frame):
         return latest
     
+    def temp(self, yvals, left_fit, right_fit, leftx, rightx):
+        # Define conversions in x and y from pixels space to meters
+        ym_per_pix = 30/720 # meters per pixel in y dimension
+        xm_per_pix = 3.7/700 # meteres per pixel in x dimension
+        y_eval = np.max(yvals)
+
+        # Determine the curvature in pixel-space
+        left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) \
+                             /np.absolute(2*left_fit[0])
+        right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) \
+                                        /np.absolute(2*right_fit[0])
+        print(left_curverad, right_curverad)
+
+        left_fit_cr = np.polyfit(yvals*ym_per_pix, leftx*xm_per_pix, 2)
+        right_fit_cr = np.polyfit(yvals*ym_per_pix, rightx*xm_per_pix, 2)
+        left_curverad = ((1 + (2*left_fit_cr[0]*y_eval + left_fit_cr[1])**2)**1.5) \
+                                     /np.absolute(2*left_fit_cr[0])
+        right_curverad = ((1 + (2*right_fit_cr[0]*y_eval + right_fit_cr[1])**2)**1.5) \
+                                        /np.absolute(2*right_fit_cr[0])
+        # Now our radius of curvature is in meters
+        print(left_curverad, 'm', right_curverad, 'm')
+        # Example values: 3380.7 m    3189.3 m        
+    
     def blah(self):
         
         assert len(latest.shape)<3, "Must pass a grayscale image as input into CurveExtractor"
