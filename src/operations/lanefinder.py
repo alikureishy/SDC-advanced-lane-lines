@@ -39,7 +39,7 @@ class LaneFinder(Operation):
 
             # Determine the position of the two lanes:
             center = int(x_dim / 2)
-            leftpeaks = self.findpeaks(histogram[0:center]) # [(x, strength)]
+            leftpeaks = self.findpeaks(histogram[0:center]).reverse() # [(x, strength)]
             rightpeaks = self.findpeaks(histogram[center:]) # [(x, strength)]
             leftbucket.append(leftpeaks)
             rightbucket.append(rightpeaks)
@@ -56,6 +56,10 @@ class LaneFinder(Operation):
             self.__plot__(frame, histimage, 'gray', "Histogram", None)
         
         return latest
+
+def findpeaks(distribution):
+    peaks = []
+    
 
 class LineBuilder(object):
     pass

@@ -123,7 +123,7 @@ class Thresholder(Operation):
                 raise "Threshold type not recognized: {}".format(flavor)
 
             stats = None
-            title = "{}".format(term)
+            title = "{}-{}".format(flavor, self.removekeys(termconfig, [self.Term.ToPlot, self.Term.Negate]))
             self.__plot__(frame, binary_image, 'gray', title, stats, toplot=toplot)
 
             if negate:
@@ -134,6 +134,8 @@ class Thresholder(Operation):
             return binary_image
 
     #######################################################################
+    def removekeys(self, d, keys):
+        return {key: d[key] for key in d if key not in keys}
     
     def __makegray__(self, image):
         gray = None
