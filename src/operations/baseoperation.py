@@ -45,13 +45,13 @@ class Operation(object):
         
         # Upstream:
         upstream = self.__processupstream__(original, latest, data, frame)
-        data[self.name()][self.Upstream] = upstream
+        data[self.name()][self.Upstream] = upstream.copy() if not upstream is None else None 
         if not self.__successor__ == None:
             upstream = self.__successor__.process(original, upstream, data, frame)
 
         # Downstream:
         downstream = self.__processdownstream__(original, upstream, data, frame)
-        data[self.name()][self.Downstream] = downstream
+        data[self.name()][self.Downstream] = downstream.copy() if not downstream is None else None
         return downstream
 
     def setsuccessor(self, successor):

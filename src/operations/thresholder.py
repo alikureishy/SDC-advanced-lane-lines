@@ -172,7 +172,7 @@ class Thresholder(Operation):
         return gray
 
     def __binaryforrange__(self, minmax, image):
-        binary_sobel = np.zeros_like(image)
+        binary_sobel = np.zeros_like(image, dtype=np.uint8)
         binary_sobel[(image > minmax[0]) & (image < minmax[1])] = 1
         return binary_sobel
 
