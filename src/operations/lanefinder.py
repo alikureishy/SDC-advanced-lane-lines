@@ -35,8 +35,8 @@ class LaneFinder(Operation):
         right_fitx = right_fit[0]*yvals**2 + right_fit[1]*yvals + right_fit[2]
 
         # Prepare the lanes for subsequent processing upstream:
-        leftlane = Lane(yvals, leftx, left_fit, left_fitx)
-        rightlane = Lane(yvals, rightx, right_fit, right_fitx)
+        leftlane = Lane(yvals, leftx, left_fit, left_fitx, None, None)
+        rightlane = Lane(yvals, rightx, right_fit, right_fitx, None, None)
         self.setdata(data, self.LeftLane, leftlane)
         self.setdata(data, self.RightLane, rightlane)
 
@@ -80,17 +80,21 @@ class LaneFinder(Operation):
         
         return latest
 
+    def __processdownstream__(self, original, latest, data, frame):
+        return latest
+    
 def findpeaks(distribution):
     peaks = []
     
 
 class Lane(object):
-    def __init__(self, yvals, xs, fit, fitx):
+    def __init__(self, yvals, xs, fit, fitx, curverad_ps, curverad_rs):
         self.yvals = yvals
         self.xs = xs
         self.fit = fit
         self.fitx = fitx
-    
+        self.curverad_ps = curverad_ps
+        self.curverad_rs = curverad_rs
 
 # Define a class to receive the characteristics of each line detection
 class Line1():
