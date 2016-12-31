@@ -40,18 +40,13 @@
 		{
 			"ToPlot": 1,
 			"Operator": "OR",
-			"Negate": 1,
+			"Negate": 0,
+			"Hough": [2,0.0174, 150, 30, 30],
 			"Operands": [
-		    	{"SobelX": { "Kernel": 3, "MinMax": [50, 200], "ToPlot": 1, "Negate": 1}},
-		    	{"SobelY": { "Kernel": 3, "MinMax": [50, 200], "ToPlot": 1, "Negate": 1}},
-		    	{"SobelTanXY": {"Kernel": 3, "MinMax": [1.0, 1.57], "ToPlot": 1, "Negate": 1}},
-		    	{"SobelXY": { "Kernel": 3, "MinMax": [50, 200], "ToPlot": 1, "Negate": 1}},
-		    	{"Color": { "Space": "HLS", "Channel": 0, "MinMax": [50,200], "ToPlot": 1, "Negate": 1}},
-		    	{"Color": { "Space": "HLS", "Channel": 1, "MinMax": [50,200], "ToPlot": 1, "Negate": 1}},
-		    	{"Color": { "Space": "HLS", "Channel": 2, "MinMax": [50,200], "ToPlot": 1, "Negate": 1}},
-		    	{"Color": { "Space": "RGB", "Channel": 0, "MinMax": [50,200], "ToPlot": 1, "Negate": 1}},
-		    	{"Color": { "Space": "RGB", "Channel": 1, "MinMax": [50,200], "ToPlot": 1, "Negate": 1}},
-		    	{"Color": { "Space": "RGB", "Channel": 2, "MinMax": [50,200], "ToPlot": 1, "Negate": 1}}
+		    	{"Color": { "Space": "HLS", "Channel": 0, "MinMax": [50,200], "Negate": 1, "Canny": [0,3], "Hough": [2,0.0174, 50,100,200], "ToPlot": 1}},
+		    	{"Color": { "Space": "HLS", "Channel": 2, "MinMax": [50,200], "Negate": 0, "Canny": [0,4], "Hough": [2,0.0174, 50,100,200], "ToPlot": 1}},
+		    	{"Color": { "Space": "RGB", "Channel": 0, "MinMax": [50,200], "Negate": 1, "Canny": [0,5], "Hough": [2,0.0174, 50,100,200], "ToPlot": 1}},
+		    	{"Color": { "Space": "RGB", "Channel": 1, "MinMax": [50,200], "Negate": 1, "Canny": [0,0], "Hough": [2,0.0174, 50,100,200], "ToPlot": 1}}
 			]
 		}
     },

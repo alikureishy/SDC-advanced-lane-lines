@@ -12,6 +12,8 @@ class Thresholder(Operation):
         _ = 'Term'
         ToPlot = 'ToPlot'
         Negate = 'Negate'
+        Canny = 'Canny'
+        Hough = 'Hough'
     class Expr(Term):
         OR = 'OR'
         AND = 'AND'
@@ -34,15 +36,6 @@ class Thresholder(Operation):
         _ = 'SobelTanXY'
         Kernel = 'Kernel'
         MinMax = 'MinMax'
-    class Canny(Term):
-        _ = 'Canny'
-        Blur = 'Blur'
-        LowHigh = 'LowHigh'
-#         Rho = 'Rho'
-#         Theta = 'Theta'
-#         Threshold = 'Threshold'
-#         MinLen = 'MinLen'
-#         MaxGap = 'MaxGap'
     class Color(Term):
         _ = 'Color'
         Space = 'Space'
@@ -68,6 +61,8 @@ class Thresholder(Operation):
             operands = term[self.Expr.Operands]
             toplot = term[self.Expr.ToPlot]
             negate = term[self.Term.Negate] if self.Term.Negate in term else 0
+            canny = term[self.Term.Canny] if self.Term.Canny in term else None
+            hough = term[self.Term.Hough] if self.Term.Hough in term else None
 
             if operator == self.Expr.SEQ:
                 binary = None
@@ -88,16 +83,26 @@ class Thresholder(Operation):
             else:
                 raise "Operator not supported: {}".format(operator)
 
-            combined_binary = combined_binary * 1
             stats = None
-            title = ">>> {}".format(operator)
-            self.__plot__(frame, combined_binary, 'gray', title, stats, toplot=toplot)
             
+            title = ">> {}".format(operator)
             if negate:
-                combined_binary = cv2.bitwise_not(combined_binary)
-                title = "{} >>> NOT".format(operator)
-                self.__plot__(frame, combined_binary, 'gray', title, stats, toplot=toplot)
+                combined_binary = np.absolute(1 - combined_binary)
+                title = "{} >> NOT".format(title)
 
+            if not canny is None:
+                combined_binary = cv2.Canny(combined_binary, canny[0], canny[1])
+                title = "{} >> CANNY ({})".format(title,canny)
+                
+            self.__plot__(frame, combined_binary, 'gray', title, stats, toplot=toplot)
+
+            if not hough is None:
+                rho, theta, threshold, min_line_len, max_line_gap = hough[0], hough[1], hough[2], hough[3], hough[4]
+                lines = cv2.HoughLinesP(combined_binary, rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
+                title = ">> HOUGH ({})".format(hough)
+                hough_image = self.drawlines(np.zeros_like(combined_binary), lines)
+                self.__plot__(frame, hough_image, 'gray', title, stats, toplot=toplot)
+                
             return combined_binary
         else:                                               # Base case
             assert len(term.keys())==1, "Term setting should have only one key, but has {}".format(len(term.keys()))
@@ -105,6 +110,8 @@ class Thresholder(Operation):
             termconfig = term[flavor]
             toplot = termconfig[self.Term.ToPlot]
             negate = termconfig[self.Term.Negate] if self.Term.Negate in termconfig else 0
+            canny = termconfig[self.Term.Canny] if self.Term.Canny in termconfig else None
+            hough = termconfig[self.Term.Hough] if self.Term.Hough in termconfig else None
             
             binary_image = None
             if flavor==self.SobelX._:
@@ -115,25 +122,40 @@ class Thresholder(Operation):
                 binary_image = self.filter_sobel_xy(image, termconfig, frame)
             elif flavor==self.SobelTanXY._:
                 binary_image = self.filter_sobel_tanxy(image, termconfig, frame)
-            elif flavor==self.Canny._:
-                binary_image = self.canny(image, termconfig, frame)
             elif flavor==self.Color._:
                 binary_image = self.filter_color(image, termconfig, frame)
             else:
                 raise "Threshold type not recognized: {}".format(flavor)
 
             stats = None
-            title = "{}-{}".format(flavor, self.removekeys(termconfig, [self.Term.ToPlot, self.Term.Negate]))
+            title = "{}-{}".format(flavor, self.removekeys(termconfig, [self.Term.ToPlot, self.Term.Negate, self.Term.Canny, self.Term.Hough]))
+            
+            if negate:
+                binary_image = np.absolute(1 - binary_image)
+                title = "NOT ({})".format(title)
+            
+            if not canny is None:
+                binary_image = cv2.Canny(binary_image, canny[0], canny[1])
+                title = "CANNY ({}) ({})".format(canny, title)
+
             self.__plot__(frame, binary_image, 'gray', title, stats, toplot=toplot)
 
-            if negate:
-                binary_image = cv2.bitwise_not(np.uint8(binary_image))
-                title = "{} >>> NOT".format(flavor)
-                self.__plot__(frame, binary_image, 'gray', title, stats, toplot=toplot)
+            if not hough is None:
+                rho, theta, threshold, min_line_len, max_line_gap = hough[0], hough[1], hough[2], hough[3], hough[4]
+                lines = cv2.HoughLinesP(binary_image, rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
+                title = "{} >> HOUGH ({})".format(flavor, hough)
+                hough_image = self.drawlines(np.zeros_like(binary_image), lines)
+                self.__plot__(frame, hough_image, 'gray', title, stats, toplot=toplot)
 
             return binary_image
 
     #######################################################################
+    def drawlines(self, image, lines):
+        for line in lines:
+            for x1,y1,x2,y2 in line:
+                cv2.line(image, (x1, y1), (x2, y2), 100, 10)
+        return image
+    
     def removekeys(self, d, keys):
         return {key: d[key] for key in d if key not in keys}
     
