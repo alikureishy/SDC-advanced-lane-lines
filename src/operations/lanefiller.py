@@ -7,6 +7,7 @@ from operations.baseoperation import Operation
 import numpy as np
 import cv2
 from operations.perspective import Perspective
+from operations.lanefinder import LaneFinder
 
 class LaneFiller(Operation):
     LeftFitX = 'LeftFitX'
@@ -19,20 +20,12 @@ class LaneFiller(Operation):
     def __processupstream__(self, original, latest, data, frame):
         warped = latest
         
-        # Generate some fake data to represent lane-line pixels
-        yvals = np.linspace(0, 100, num=101)*7.2  # to cover same y-range as image
-        leftx = np.array([200 + (elem**2)*4e-4 + np.random.randint(-50, high=51) \
-                                      for idx, elem in enumerate(yvals)])
-        leftx = leftx[::-1]  # Reverse to match top-to-bottom in y
-        rightx = np.array([900 + (elem**2)*4e-4 + np.random.randint(-50, high=51) \
-                                        for idx, elem in enumerate(yvals)])
-        rightx = rightx[::-1]  # Reverse to match top-to-bottom in y
-        
-        # Fit a second order polynomial to each fake lane line
-        left_fit = np.polyfit(yvals, leftx, 2)
-        left_fitx = left_fit[0]*yvals**2 + left_fit[1]*yvals + left_fit[2]
-        right_fit = np.polyfit(yvals, rightx, 2)
-        right_fitx = right_fit[0]*yvals**2 + right_fit[1]*yvals + right_fit[2]
+        # Obtain the data from the LaneFinder handler's output
+        leftlane = self.getdata(data, LaneFinder.LeftLane, LaneFinder)
+        rightlane = self.getdata(data, LaneFinder.RightLane, LaneFinder)
+        left_fitx = leftlane.fitx
+        right_fitx = rightlane.fitx
+        yvals = leftlane.yvals
 
         # Get the warped color image to draw the lane on:
         warp_zero = np.zeros_like(warped).astype(np.uint8)
