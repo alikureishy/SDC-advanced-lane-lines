@@ -6,6 +6,7 @@ Created on Dec 23, 2016
 from operations.baseoperation import Operation
 import numpy as np
 import cv2
+from operations.perspective import Perspective
 
 class LaneFiller(Operation):
     LeftFitX = 'LeftFitX'
@@ -33,9 +34,9 @@ class LaneFiller(Operation):
         right_fit = np.polyfit(yvals, rightx, 2)
         right_fitx = right_fit[0]*yvals**2 + right_fit[1]*yvals + right_fit[2]
 
-        # Create an image to draw the lines on
+        # Get the warped color image to draw the lane on:
         warp_zero = np.zeros_like(warped).astype(np.uint8)
-        color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+        layer_warp = np.dstack((warp_zero, warp_zero, warp_zero))
         
         # Recast the x and y points into usable format for cv2.fillPoly()
         pts_left = np.array([np.transpose(np.vstack([left_fitx, yvals]))])
@@ -43,9 +44,13 @@ class LaneFiller(Operation):
         pts = np.hstack((pts_left, pts_right))
         
         # Draw the lane onto the warped blank image
-        cv2.fillPoly(color_warp, np.int_([pts]), (0,255, 0))
-
-        self.__plot__(frame, color_warp, None, "MarkedLane", None)
+        cv2.fillPoly(layer_warp, np.int_([pts]), (0,255, 0))
         
-        return color_warp
+        if self.isplotting():
+            # Get the warped color image to draw the lane on:
+            color_warp = self.getdata(data, Perspective.WarpedColor, Perspective).copy()
+            color_warp = cv2.addWeighted(color_warp, 1, layer_warp, 0.3, 0)
+            self.__plot__(frame, color_warp, None, "MarkedLane", None)
+        
+        return layer_warp
         
