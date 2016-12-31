@@ -21,32 +21,33 @@ class CurveExtractor(Operation):
         
         leftlane = self.getdata(data, LaneFinder.LeftLane, LaneFinder)
         rightlane = self.getdata(data, LaneFinder.RightLane, LaneFinder)
-        yvals = leftlane.yvals
-        left_fit = leftlane.fit
-        leftx = leftlane.xs
-        right_fit = rightlane.fit
-        rightx = rightlane.xs
-        
-        y_eval = np.max(yvals)
-
-        # Determine the curvature in pixel-space
-        left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) \
-                             /np.absolute(2*left_fit[0])
-        right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) \
-                                        /np.absolute(2*right_fit[0])
-        print(left_curverad, right_curverad)
-
-        # Determine curvature in real space
-        left_fit_cr = np.polyfit(yvals*ym_per_pix, leftx*xm_per_pix, 2)
-        right_fit_cr = np.polyfit(yvals*ym_per_pix, rightx*xm_per_pix, 2)
-        left_curverad = ((1 + (2*left_fit_cr[0]*y_eval + left_fit_cr[1])**2)**1.5) \
-                                     /np.absolute(2*left_fit_cr[0])
-        right_curverad = ((1 + (2*right_fit_cr[0]*y_eval + right_fit_cr[1])**2)**1.5) \
-                                        /np.absolute(2*right_fit_cr[0])
-
-        # Now our radius of curvature is in meters
-        print(left_curverad, 'm', right_curverad, 'm')
-        # Example values: 3380.7 m    3189.3 m        
+        if not leftlane is None and not rightlane is None:
+            yvals = leftlane.yvals
+            left_fit = leftlane.fit
+            leftx = leftlane.xs
+            right_fit = rightlane.fit
+            rightx = rightlane.xs
+            
+            y_eval = np.max(yvals)
+    
+            # Determine the curvature in pixel-space
+            left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) \
+                                 /np.absolute(2*left_fit[0])
+            right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) \
+                                            /np.absolute(2*right_fit[0])
+            print(left_curverad, right_curverad)
+    
+            # Determine curvature in real space
+            left_fit_cr = np.polyfit(yvals*ym_per_pix, leftx*xm_per_pix, 2)
+            right_fit_cr = np.polyfit(yvals*ym_per_pix, rightx*xm_per_pix, 2)
+            left_curverad = ((1 + (2*left_fit_cr[0]*y_eval + left_fit_cr[1])**2)**1.5) \
+                                         /np.absolute(2*left_fit_cr[0])
+            right_curverad = ((1 + (2*right_fit_cr[0]*y_eval + right_fit_cr[1])**2)**1.5) \
+                                            /np.absolute(2*right_fit_cr[0])
+    
+            # Now our radius of curvature is in meters
+            print(left_curverad, 'm', right_curverad, 'm')
+            # Example values: 3380.7 m    3189.3 m        
     
         return latest
 
