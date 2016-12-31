@@ -64,6 +64,6 @@ if __name__ == '__main__':
             frame.render()
         framecount+=1
     
-    cv2.waitKey()
+#     cv2.waitKey()
     # End
     print ("Thank you. Come again!")

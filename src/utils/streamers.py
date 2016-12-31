@@ -46,9 +46,9 @@ class VideoStreamer(BaseStreamer):
         
         self.__writer__ = None
         self.__writer__ = cv2.VideoWriter(self.__outputfile__, \
-                                       -1, \
+                                       cv2.VideoWriter_fourcc('m','p','4','v'), \
                                        fps, \
-                                       (height,width))
+                                       (width,height))
         if not self.__writer__.isOpened():
             raise "Unable to open output video file: {}".format(self.__outputfile__)
         
@@ -67,8 +67,8 @@ class VideoStreamer(BaseStreamer):
         if not ((self.__outputfile__==None) | (self.__dry__==True)):
             self.__writer__.write(post_image)
             self.__frameswritten__ += 1
-            print ("\tWrote frame: {}". format(self.__framecount__))
+            print ("\tWrote frame: {}". format(self.__frameswritten__))
 
     def __del__(self):
-        if not self.__writer__ == None:
+        if not self.__writer__ is None:
             self.__writer__.release()
