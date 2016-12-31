@@ -4,6 +4,7 @@
     	"Undistorter",
     	"ColorSpacer",
     	"Thresholder",
+    	"RegionMasker",
     	"Perspective",
     	"LaneFinder",
     	"CurveExtractor",
@@ -41,12 +42,25 @@
 			"ToPlot": 1,
 			"Operator": "OR",
 			"Negate": 0,
-			"Hough": [2,0.0174, 150, 30, 30],
+			"Hough": [2,0.0174, 150, 200, 20],
 			"Operands": [
-		    	{"Color": { "Space": "HLS", "Channel": 0, "MinMax": [50,200], "Negate": 1, "Canny": [0,3], "Hough": [2,0.0174, 50,100,200], "ToPlot": 1}},
-		    	{"Color": { "Space": "HLS", "Channel": 2, "MinMax": [50,200], "Negate": 0, "Canny": [0,4], "Hough": [2,0.0174, 50,100,200], "ToPlot": 1}},
-		    	{"Color": { "Space": "RGB", "Channel": 0, "MinMax": [50,200], "Negate": 1, "Canny": [0,5], "Hough": [2,0.0174, 50,100,200], "ToPlot": 1}},
-		    	{"Color": { "Space": "RGB", "Channel": 1, "MinMax": [50,200], "Negate": 1, "Canny": [0,0], "Hough": [2,0.0174, 50,100,200], "ToPlot": 1}}
+				{
+					"ToPlot": 1,
+					"Operator": "AND",
+					"Negate": 0,
+					"Operands": [
+				    	{"Color": { "Space": "HLS", "Channel": 0, "MinMax": [50,200], "Negate": 1, "ToPlot": 1}},
+				    	{"Color": { "Space": "RGB", "Channel": 0, "MinMax": [50,200], "Negate": 1, "ToPlot": 1}}
+				    ]
+				},
+				{
+					"ToPlot": 1,
+					"Operator": "AND",
+					"Negate": 0,
+					"Operands": [
+				    	{"Color": { "Space": "RGB", "Channel": 1, "MinMax": [50,200], "Negate": 1, "ToPlot": 1}}
+				    ]
+				}
 			]
 		}
     },

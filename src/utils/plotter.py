@@ -82,7 +82,7 @@ class Frame(object):
     
     def add(self, image, cmap, title, stats):
         assert len(self.__sections__)>0, "Must invoke newsection() first before calling add()"
-        self.__sections__[-1].append((image, cmap, title, stats))
+        self.__sections__[-1].append((image.copy(), cmap, title, stats))
     
     def newsection(self, name):
         self.__sections__.append([])

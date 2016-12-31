@@ -11,6 +11,7 @@ from operations.colorspacer import ColorSpacer
 class Perspective(Operation):
     SrcPoints = 'SrcPoints'
     DestPoints = 'DestPoints'
+    WarpedColor = "WarpedColor"
 
     def __init__(self, params):
         Operation.__init__(self, params)
@@ -44,6 +45,7 @@ class Perspective(Operation):
             warped_orig = cv2.warpPerspective(orig, self.__M__, (x_dim, y_dim), flags=cv2.INTER_LINEAR)
             self.plotboundary(warped_orig, self.__destpoints__, (255, 192, 203))
             self.__plot__(frame, warped_orig, None, "Warped (Original)", None)
+            self.setdata(data, self.WarpedColor, warped_orig)
 
         # Perform perspective transform:
         bw_warped = cv2.warpPerspective(np.float32(latest), self.__M__, (x_dim, y_dim), flags=cv2.INTER_LINEAR)
@@ -54,17 +56,22 @@ class Perspective(Operation):
         return bw_warped
     
     def __processdownstream__(self, original, latest, data, frame):
-#         x_dim = latest.shape[1]
-#         y_dim = latest.shape[0]
+        x_dim = latest.shape[1]
+        y_dim = latest.shape[0]
 
-        # Perform perspective transform:
-#         bw_warped = cv2.warpPerspective(np.float32(latest), self.__Minv__, (x_dim, y_dim), flags=cv2.INTER_LINEAR)
-#         title = "Unwarped"
-#         stats = None
-#         self.__plot__(frame, bw_warped, None, title, stats)
-#         
-#         return bw_warped
-        return Operation.__processdownstream__(self, original, latest, data, frame)
+        color_warp = latest
+
+        # Warp the blank back to original image space using inverse perspective matrix (Minv)
+        newwarp = cv2.warpPerspective(color_warp, self.__Minv__, (x_dim, y_dim), flags=cv2.INTER_LINEAR)
+        # Combine the result with the original image
+        undist = self.getdata(data, ColorSpacer.Upstream, ColorSpacer)
+        result = cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
+
+        title = "Unwarped"
+        stats = None
+        self.__plot__(frame, result, None, title, stats)
+         
+        return result
     
     def plotboundary(self, orig, points, color):
         topleft = tuple(points[0])

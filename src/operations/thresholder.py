@@ -51,6 +51,7 @@ class Thresholder(Operation):
         self.__term__ = self.getparam(self.Term._)
 
     def __processupstream__(self, original, latest, data, frame):
+        latest = np.uint8(latest)
         return self.__do_threshold__(latest, self.__term__, frame)
         
     def __do_threshold__(self, image, term, frame):
@@ -90,11 +91,12 @@ class Thresholder(Operation):
                 combined_binary = np.absolute(1 - combined_binary)
                 title = "{} >> NOT".format(title)
 
+            self.__plot__(frame, combined_binary, 'gray', title, stats, toplot=toplot)
+
             if not canny is None:
                 combined_binary = cv2.Canny(combined_binary, canny[0], canny[1])
-                title = "{} >> CANNY ({})".format(title,canny)
-                
-            self.__plot__(frame, combined_binary, 'gray', title, stats, toplot=toplot)
+                title = ">> CANNY ({})".format(canny)
+                self.__plot__(frame, combined_binary, 'gray', title, stats, toplot=toplot)
 
             if not hough is None:
                 rho, theta, threshold, min_line_len, max_line_gap = hough[0], hough[1], hough[2], hough[3], hough[4]
@@ -134,11 +136,12 @@ class Thresholder(Operation):
                 binary_image = np.absolute(1 - binary_image)
                 title = "NOT ({})".format(title)
             
+            self.__plot__(frame, binary_image, 'gray', title, stats, toplot=toplot)
+            
             if not canny is None:
                 binary_image = cv2.Canny(binary_image, canny[0], canny[1])
-                title = "CANNY ({}) ({})".format(canny, title)
-
-            self.__plot__(frame, binary_image, 'gray', title, stats, toplot=toplot)
+                title = "{} >> CANNY ({})".format(flavor, canny)
+                self.__plot__(frame, binary_image, 'gray', title, stats, toplot=toplot)
 
             if not hough is None:
                 rho, theta, threshold, min_line_len, max_line_gap = hough[0], hough[1], hough[2], hough[3], hough[4]
@@ -151,9 +154,10 @@ class Thresholder(Operation):
 
     #######################################################################
     def drawlines(self, image, lines):
-        for line in lines:
-            for x1,y1,x2,y2 in line:
-                cv2.line(image, (x1, y1), (x2, y2), 100, 10)
+        if not lines is None:
+            for line in lines:
+                for x1,y1,x2,y2 in line:
+                    cv2.line(image, (x1, y1), (x2, y2), 100, 10)
         return image
     
     def removekeys(self, d, keys):
