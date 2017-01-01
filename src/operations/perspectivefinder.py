@@ -73,7 +73,7 @@ class PerspectiveFinder(Operation):
             perspective = drawlines (np.zeros_like(latest), [left, right], 255, 15)
             for i in range(len(perspective_points)):
                 perspective = cv2.circle(perspective, tuple(perspective_points[i]), 10, (255,0,0), -1)
-            title = "Perspective Found ({})".format(op)
+            title = "Perspective Points ({})".format(op)
             self.__plot__(frame, perspective, 'gray', title, None)
         
         return latest

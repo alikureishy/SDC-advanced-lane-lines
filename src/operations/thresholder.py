@@ -6,11 +6,12 @@ Created on Dec 23, 2016
 from operations.baseoperation import Operation
 import numpy as np    
 import cv2
-from utils.utilities import drawlines
+from utils.utilities import drawlines, extractlanes
 
 class Thresholder(Operation):
+    Term_ = 'Term'
+    HoughFilter = 'HoughFilter'
     class Term(object):
-        _ = 'Term'
         ToPlot = 'ToPlot'
         Negate = 'Negate'
         Canny = 'Canny'
@@ -49,7 +50,7 @@ class Thresholder(Operation):
 
     def __init__(self, params):
         Operation.__init__(self, params)
-        self.__term__ = self.getparam(self.Term._)
+        self.__term__ = self.getparam(self.Term_)
 
     def __processupstream__(self, original, latest, data, frame):
         latest = np.uint8(latest)
@@ -64,7 +65,7 @@ class Thresholder(Operation):
             toplot = term[self.Expr.ToPlot]
             negate = term[self.Term.Negate] if self.Term.Negate in term else 0
             canny = term[self.Term.Canny] if self.Term.Canny in term else None
-            hough = term[self.Term.Hough] if self.Term.Hough in term else None
+            hough = self.getparam(self.HoughFilter) if term.get(self.Term.Hough, 0) == 1 else None
 
             if operator == self.Expr.SEQ:
                 binary = None
@@ -100,10 +101,12 @@ class Thresholder(Operation):
                 self.__plot__(frame, combined_binary, 'gray', title, stats, toplot=toplot)
 
             if not hough is None:
-                rho, theta, threshold, min_line_len, max_line_gap = hough[0], hough[1], hough[2], hough[3], hough[4]
-                lines = cv2.HoughLinesP(combined_binary, rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
-                title = ">> HOUGH ({})".format(hough)
-                hough_image = drawlines(np.zeros_like(combined_binary), lines)
+                lines,left,right = extractlanes(combined_binary, hough)
+                title = ">> HOUGH".format(hough)
+                if left is None or right is None:
+                    hough_image = drawlines(np.zeros_like(combined_binary), lines)
+                else:
+                    hough_image = drawlines(np.zeros_like(combined_binary), [left,right])
                 self.__plot__(frame, hough_image, 'gray', title, stats, toplot=toplot)
                 
             return combined_binary
@@ -114,7 +117,7 @@ class Thresholder(Operation):
             toplot = termconfig[self.Term.ToPlot]
             negate = termconfig[self.Term.Negate] if self.Term.Negate in termconfig else 0
             canny = termconfig[self.Term.Canny] if self.Term.Canny in termconfig else None
-            hough = termconfig[self.Term.Hough] if self.Term.Hough in termconfig else None
+            hough = self.getparam(self.HoughFilter) if termconfig.get(self.Term.Hough, 0) == 1 else None
             
             binary_image = None
             if flavor==self.SobelX._:
@@ -145,10 +148,12 @@ class Thresholder(Operation):
                 self.__plot__(frame, binary_image, 'gray', title, stats, toplot=toplot)
 
             if not hough is None:
-                rho, theta, threshold, min_line_len, max_line_gap = hough[0], hough[1], hough[2], hough[3], hough[4]
-                lines = cv2.HoughLinesP(binary_image, rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
-                title = "{} >> HOUGH ({})".format(flavor, hough)
-                hough_image = drawlines(np.zeros_like(binary_image), lines)
+                lines,left,right = extractlanes(binary_image, hough)
+                title = "{} >> HOUGH".format(flavor)
+                if left is None or right is None:
+                    hough_image = drawlines(np.zeros_like(binary_image), lines)
+                else:
+                    hough_image = drawlines(np.zeros_like(binary_image), [left,right])
                 self.__plot__(frame, hough_image, 'gray', title, stats, toplot=toplot)
 
             return binary_image
