@@ -16,8 +16,6 @@ class HoughFilterParams(object):
     MaxLineGap = 'MaxLineGap'
     LeftSlopeRange = 'LeftSlopeRange'
     RightSlopeRange = 'RightSlopeRange'
-    LeftInterceptRange = 'LeftInterceptRange'
-    RightInterceptRange = 'RightInteceptRange'
     DepthRangeRatio = 'DepthRangeRatio'
 
 def plotboundary(orig, points, color):
