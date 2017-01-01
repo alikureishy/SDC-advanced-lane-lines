@@ -61,11 +61,15 @@ class Plotter(object):
                 for j in range(h):
                     if j >= len(sections[i]):
                         break # We've finished one section (horizontal plots). Goto next i.
+                    idx = (i*h) + j
+                    axes = self.__figure__.get_axes()[idx]
                     
                     (image, cmap, title, stats) = sections[i][j]
                     axesimage = self.__axes_images__[i][j]
 #                     axesimage.autoscale()
                     axesimage.set_data(image)
+                    font = min (max (int( 100 / (np.sqrt(len(title)) * v * h)), 7), 15)
+                    axes.set_title(title, fontsize=font)
                     # TODO:
                     # Update stats?
             plt.ion()

@@ -6,6 +6,7 @@ Created on Dec 23, 2016
 from operations.baseoperation import Operation
 import numpy as np    
 import cv2
+from utils.utilities import drawlines
 
 class Thresholder(Operation):
     class Term(object):
@@ -102,7 +103,7 @@ class Thresholder(Operation):
                 rho, theta, threshold, min_line_len, max_line_gap = hough[0], hough[1], hough[2], hough[3], hough[4]
                 lines = cv2.HoughLinesP(combined_binary, rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
                 title = ">> HOUGH ({})".format(hough)
-                hough_image = self.drawlines(np.zeros_like(combined_binary), lines)
+                hough_image = drawlines(np.zeros_like(combined_binary), lines)
                 self.__plot__(frame, hough_image, 'gray', title, stats, toplot=toplot)
                 
             return combined_binary
@@ -147,18 +148,12 @@ class Thresholder(Operation):
                 rho, theta, threshold, min_line_len, max_line_gap = hough[0], hough[1], hough[2], hough[3], hough[4]
                 lines = cv2.HoughLinesP(binary_image, rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
                 title = "{} >> HOUGH ({})".format(flavor, hough)
-                hough_image = self.drawlines(np.zeros_like(binary_image), lines)
+                hough_image = drawlines(np.zeros_like(binary_image), lines)
                 self.__plot__(frame, hough_image, 'gray', title, stats, toplot=toplot)
 
             return binary_image
 
     #######################################################################
-    def drawlines(self, image, lines):
-        if not lines is None:
-            for line in lines:
-                for x1,y1,x2,y2 in line:
-                    cv2.line(image, (x1, y1), (x2, y2), 100, 10)
-        return image
     
     def removekeys(self, d, keys):
         return {key: d[key] for key in d if key not in keys}

@@ -13,6 +13,7 @@ from operations.showoriginal import ShowOriginal
 from operations.resizer import Resizer
 from operations.colorspacer import ColorSpacer
 from operations.lanefinder import LaneFinder
+from operations.perspectivefinder import PerspectiveFinder
 
 PipelineSection = 'Pipeline'
 # from operations import *
@@ -49,6 +50,8 @@ class Pipeline(object):
             return Thresholder(config)
         elif name == RegionMasker.__name__:
             return RegionMasker(config)
+        elif name == PerspectiveFinder.__name__:
+            return PerspectiveFinder(config)
         elif name == Perspective.__name__:
             return Perspective(config)
         elif name == LaneFinder.__name__:

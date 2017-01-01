@@ -7,10 +7,14 @@ from operations.baseoperation import Operation
 import numpy as np
 import cv2
 from operations.colorspacer import ColorSpacer
+from utils.utilities import plotboundary
 
 class Perspective(Operation):
+    # Config
     SrcPoints = 'SrcPoints'
     DestPoints = 'DestPoints'
+    
+    # Outputs:
     WarpedColor = "WarpedColor"
 
     def __init__(self, params):
@@ -37,13 +41,13 @@ class Perspective(Operation):
         if self.isplotting():
             # Show perspective regions:
             orig = np.copy(self.getdata(data, self.Upstream, ColorSpacer))
-            self.plotboundary(orig, self.__srcpoints__, (127, 255, 212))
+            plotboundary(orig, self.__srcpoints__, (127, 255, 212))
             self.__plot__(frame, orig, None, "Warp Region (Source)", None)
 
             # Show warped original:
             orig = np.copy(self.getdata(data, self.Upstream, ColorSpacer))
             warped_orig = cv2.warpPerspective(orig, self.__M__, (x_dim, y_dim), flags=cv2.INTER_LINEAR)
-            self.plotboundary(warped_orig, self.__destpoints__, (255, 192, 203))
+            plotboundary(warped_orig, self.__destpoints__, (255, 192, 203))
             self.__plot__(frame, warped_orig, None, "Warped (Original)", None)
             self.setdata(data, self.WarpedColor, warped_orig)
 
@@ -73,16 +77,6 @@ class Perspective(Operation):
          
         return result
     
-    def plotboundary(self, orig, points, color):
-        topleft = tuple(points[0])
-        topright = tuple(points[1])
-        bottomleft = tuple(points[2])
-        bottomright = tuple(points[3])
-        cv2.line(orig, topleft, topright, color, 5)
-        cv2.line(orig, topright, bottomright, color, 5)
-        cv2.line(orig, bottomright, bottomleft, color, 5)
-        cv2.line(orig, bottomleft, topleft, color, 5)
-
     def gettransformations(self, srcvertices, destvertices):
         srcpoints = []
         destpoints = []

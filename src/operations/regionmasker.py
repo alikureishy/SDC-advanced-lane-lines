@@ -6,6 +6,8 @@ Created on Dec 23, 2016
 import numpy as np
 from operations.baseoperation import Operation
 import cv2
+from operations.colorspacer import ColorSpacer
+from utils.utilities import plotboundary
 
 class RegionMasker(Operation):
     RelativePoints = 'RelativePoints'
@@ -34,6 +36,15 @@ class RegionMasker(Operation):
         y_dim = latest.shape[0]
         vertices = np.array([[ (xr*x_dim, yr*y_dim) for [xr,yr] in self.__relativepoints__]],dtype=np.int32)
 
+        if self.isplotting():
+            orig = np.copy(self.getdata(data, self.Upstream, ColorSpacer))
+            plotboundary(orig, vertices[0], (127, 255, 212))
+            self.__plot__(frame, orig, None, "Region Mask (Color)", None)
+
+        # Fix ordering for the fillpoly method:
+        tmp = vertices[0][0]
+        vertices[0][0] = vertices[0][1]
+        vertices[0][1] = tmp
         mask = cv2.fillPoly(mask, vertices, ignore_mask_color) #filling pixels inside the polygon defined by "vertices" with the fill color
 
         #returning the image only where mask pixels are nonzero
