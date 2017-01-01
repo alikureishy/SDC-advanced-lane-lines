@@ -72,7 +72,6 @@
     	"HoughFilter": {
     		"Rho": 2, "Theta": 0.0174, "Threshold": 150, "MinLineLength": 200, "MaxLineGap": 15,
 	    	"LeftSlopeRange": [0.50, 0.95], "RightSlopeRange": [-0.95, -0.50],
-	    	"LeftInterceptRange": [], "RightInterceptRange": [],
 	    	"DepthRangeRatio": [0.95, 0.70]
     	},
         "DefaultPerspectiveRatios": [
