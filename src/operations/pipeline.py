@@ -6,7 +6,7 @@ Created on Dec 22, 2016
 from operations.undistorter import Undistorter
 from operations.thresholder import Thresholder
 from operations.regionmasker import RegionMasker
-from operations.perspective import Perspective
+from operations.perspectivetransformer import PerspectiveTransformer
 from operations.lanefiller import LaneFiller
 from operations.curveextractor import CurveExtractor
 from operations.showoriginal import ShowOriginal
@@ -52,8 +52,8 @@ class Pipeline(object):
             return RegionMasker(config)
         elif name == PerspectiveFinder.__name__:
             return PerspectiveFinder(config)
-        elif name == Perspective.__name__:
-            return Perspective(config)
+        elif name == PerspectiveTransformer.__name__:
+            return PerspectiveTransformer(config)
         elif name == LaneFinder.__name__:
             return LaneFinder(config)
         elif name == CurveExtractor.__name__:

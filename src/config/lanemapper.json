@@ -4,8 +4,7 @@
     	"Undistorter",
     	"ColorSpacer",
     	"Thresholder",
-    	"PerspectiveFinder",
-    	"Perspective",
+    	"PerspectiveTransformer",
     	"LaneFinder",
     	"CurveExtractor",
     	"LaneFiller"
@@ -72,7 +71,8 @@
     	"ToPlot": 1,
     	"HoughFilter": {
     		"Rho": 2, "Theta": 0.0174, "Threshold": 150, "MinLineLength": 200, "MaxLineGap": 15,
-	    	"LeftRadianRange": [0.50, 0.95], "RightRadianRange": [-0.95, -0.50],
+	    	"LeftSlopeRange": [0.50, 0.95], "RightSlopeRange": [-0.95, -0.50],
+	    	"LeftInterceptRange": [], "RightInterceptRange": [],
 	    	"DepthRangeRatio": [0.95, 0.70]
     	},
         "DefaultPerspectiveRatios": [
@@ -88,7 +88,7 @@
         	[0.25, 1.0]
         ]
     },
-    "Perspective": {
+    "PerspectiveTransformer": {
 		"ToPlot": 1,
         "SrcPoints": [
         	[590, 451], 

@@ -14,8 +14,10 @@ class HoughFilterParams(object):
     Threshold = 'Threshold'
     MinLineLength = 'MinLineLength'
     MaxLineGap = 'MaxLineGap'
-    LeftRadianRange = 'LeftRadianRange'
-    RightRadianRange = 'RightRadianRange'
+    LeftSlopeRange = 'LeftSlopeRange'
+    RightSlopeRange = 'RightSlopeRange'
+    LeftInterceptRange = 'LeftInterceptRange'
+    RightInterceptRange = 'RightInteceptRange'
     DepthRangeRatio = 'DepthRangeRatio'
 
 def plotboundary(orig, points, color):
@@ -34,7 +36,7 @@ def drawlines(image, lines, color=100, thickness=10):
             if not line is None:
                 for x1,y1,x2,y2 in line:
                     cv2.line(image, (x1, y1), (x2, y2), color, thickness)
-    return image
+    return image    
 
 def extractlanes(image, filterparams):
     rho = filterparams[HoughFilterParams.Rho]
@@ -42,8 +44,8 @@ def extractlanes(image, filterparams):
     threshold = filterparams[HoughFilterParams.Threshold]
     min_line_len = filterparams[HoughFilterParams.MinLineLength]
     max_line_gap = filterparams[HoughFilterParams.MaxLineGap]
-    left_radian_range = filterparams.get(HoughFilterParams.LeftRadianRange, None)
-    right_radian_range = filterparams.get(HoughFilterParams.RightRadianRange, None)
+    left_radian_range = filterparams.get(HoughFilterParams.LeftSlopeRange, None)
+    right_radian_range = filterparams.get(HoughFilterParams.RightSlopeRange, None)
     depth_range_ratios = filterparams.get(HoughFilterParams.DepthRangeRatio, [0.95, 0.70])
     
     lines = cv2.HoughLinesP(np.uint8(image), rho, theta, threshold, np.array([]), minLineLength=min_line_len, maxLineGap=max_line_gap)
@@ -75,8 +77,14 @@ def extractlanes(image, filterparams):
                 x_2 = line[0][2]
                 y_1 = line[0][1]
                 y_2 = line[0][3]
+                
+                # Filter points that are not within requisite vertical range:
+                if not inrange(depth_range, y_1) or not inrange(depth_range, y_2):
+                    badlines.append(line)
+                    continue
+                
                 delta_x = float(x_2 - x_1)
-                delta_y = float(y_2 - y_1) #Since the y axis is inverted
+                delta_y = float(y_2 - y_1)
                 if not delta_x == 0:
                     length = math.sqrt (delta_x**2 + delta_y**2)
                     slope = delta_y / delta_x
@@ -125,3 +133,6 @@ def extractlanes(image, filterparams):
         
             return lines, leftlane, rightlane
     return lines, None, None
+
+    def inrange(range, y):
+        return min(range) <= y <= max(range)

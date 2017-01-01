@@ -6,7 +6,7 @@ Created on Dec 23, 2016
 from operations.baseoperation import Operation
 import numpy as np
 import cv2
-from operations.perspective import Perspective
+from operations.perspectivetransformer import PerspectiveTransformer
 from operations.lanefinder import LaneFinder
 
 class LaneFiller(Operation):
@@ -46,7 +46,7 @@ class LaneFiller(Operation):
             
             if self.isplotting():
                 # Get the warped color image to draw the lane on:
-                color_warp = self.getdata(data, Perspective.WarpedColor, Perspective).copy()
+                color_warp = self.getdata(data, PerspectiveTransformer.WarpedColor, PerspectiveTransformer).copy()
                 color_warp = cv2.addWeighted(color_warp, 1, layer_warp, 0.3, 0)
                 self.__plot__(frame, color_warp, None, "MarkedLane", None)
 

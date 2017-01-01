@@ -9,7 +9,7 @@ import cv2
 from operations.colorspacer import ColorSpacer
 from utils.utilities import plotboundary
 
-class Perspective(Operation):
+class PerspectiveTransformer(Operation):
     # Config
     SrcPoints = 'SrcPoints'
     DestPoints = 'DestPoints'
@@ -36,6 +36,9 @@ class Perspective(Operation):
     def __processupstream__(self, original, latest, data, frame):
         x_dim = latest.shape[1]
         y_dim = latest.shape[0]
+
+        # Obtain the perspective and transform points:
+        
 
         # Plot the source points, for the benefit of the viewer
         if self.isplotting():
