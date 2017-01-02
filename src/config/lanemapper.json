@@ -75,7 +75,7 @@
 	    	"DepthRangeRatio": [0.95, 0.70]
     	},
         "DefaultPerspectiveRatios": [
-        	[0.46, 0.63], 
+        	[0.46, 0.63],
         	[0.54, 0.63],
         	[0.20, 0.96],
         	[0.86, 0.96]
@@ -89,12 +89,11 @@
     },
     "PerspectiveTransformer": {
 		"ToPlot": 1,
-        "PerspectiveRatios": [
-        	[0.46, 0.63], 
-        	[0.54, 0.63],
-        	[0.20, 0.96],
-        	[0.86, 0.96]
+        "DefaultHeadingRatios": [
+        	[0.20, -1.2],
+        	[0.86, 1.60]
         ],
+    	"DepthRangeRatio": [0.99, 0.63],
         "TransformRatios": [
         	[0.25, 0.0],
         	[0.75, 0.0],
