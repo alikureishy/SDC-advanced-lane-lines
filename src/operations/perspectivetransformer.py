@@ -61,19 +61,24 @@ class PerspectiveTransformer(Operation):
             self.__M__, self.__Minv__ = self.gettransformations(self.__perspective_points__, self.__transform_points__)
 
         # Plot the source points, for the benefit of the viewer
+        orig = np.copy(self.getdata(data, self.Upstream, ColorSpacer))
+        
         if self.isplotting():
             # Show perspective regions:
-            orig = np.copy(self.getdata(data, self.Upstream, ColorSpacer))
-            plotboundary(orig, self.__perspective_points__, (127, 255, 212))
-            self.__plot__(frame, orig, None, "Warp Region (Source)", None)
+            orig_temp = np.copy(orig)
+            plotboundary(orig_temp, self.__perspective_points__, (127, 255, 212))
+            self.__plot__(frame, orig_temp, None, "Warp Region (Source)", None)
 
+        # Warp the image:
+        warped_orig = cv2.warpPerspective(orig, self.__M__, (x_dim, y_dim), flags=cv2.INTER_LINEAR)
+        self.setdata(data, self.WarpedColor, warped_orig)
+        
+        if self.isplotting():
             # Show warped original:
-            orig = np.copy(self.getdata(data, self.Upstream, ColorSpacer))
-            warped_orig = cv2.warpPerspective(orig, self.__M__, (x_dim, y_dim), flags=cv2.INTER_LINEAR)
-            plotboundary(warped_orig, self.__transform_points__, (255, 192, 203))
-            self.__plot__(frame, warped_orig, None, "Warped (Original)", None)
-            self.setdata(data, self.WarpedColor, warped_orig)
-
+            orig_temp = np.copy(warped_orig)
+            plotboundary(orig_temp, self.__transform_points__, (255, 192, 203))
+            self.__plot__(frame, orig_temp, None, "Warped (Original)", None)
+            
         # Perform perspective transform:
         bw_warped = cv2.warpPerspective(np.float32(latest), self.__M__, (x_dim, y_dim), flags=cv2.INTER_LINEAR)
         title = "Warped B&W"
@@ -90,12 +95,14 @@ class PerspectiveTransformer(Operation):
 
         # Warp the blank back to original image space using inverse perspective matrix (Minv)
         newwarp = cv2.warpPerspective(color_warp, self.__Minv__, (x_dim, y_dim), flags=cv2.INTER_LINEAR)
-        # Combine the result with the original image
-        undist = self.getdata(data, ColorSpacer.Upstream, ColorSpacer)
-        result = cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
+        self.__plot__(frame, newwarp, None, "Unwarped Foreground", None)
 
-        title = "Unwarped"
+        # Combine the result with the original image
+        unwarped = self.getdata(data, ColorSpacer.Upstream, ColorSpacer)
+        
+        title = "Unwarped Full"
         stats = None
+        result = cv2.addWeighted(unwarped, 1, newwarp, 0.3, 0)
         self.__plot__(frame, result, None, title, stats)
          
         return result

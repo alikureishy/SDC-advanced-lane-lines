@@ -8,6 +8,33 @@ import numpy as np
 import cv2
 from utils.utilities import drawlines, extractlanes
 
+
+# Supported operations
+# - Color -> InRange -> 0/1
+# - Color HSV/H -> Sobel -> InRange -> 0/1 -> Shift/Negate
+# - Color HLS/S -> Sobel -> InRange -> 0/1
+# - Color HLS/S -> InRange
+# - Color -> OfRange ->
+
+# Operators:
+# - Multi-Channel / Continuous
+#    -             (OPERATOR) VStack/HStack/DStack
+#    - (Term) OfRange
+#    - (Term) Roll
+#    - (Term) Spread
+# - Single-Channel / Continuous
+#    - (Term) Sobel
+#    - (Term) InRange
+#    - (Term) Roll
+# - Multi-Channel / Binary
+#    - VStack/HStack/DStack
+#    - InRange
+#    - Roll
+# - Single-Channel / Binary
+#    - InRange
+#    - (Term) Canny
+#    - Roll
+
 class Thresholder(Operation):
     Term_ = 'Term'
     HoughFilter = 'HoughFilter'

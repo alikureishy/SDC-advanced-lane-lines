@@ -28,7 +28,7 @@ class Operation(object):
         if klass is None:
             return data[self.name()][key]
         else:
-            return data[klass.__name__][key]
+            return data.get(klass.__name__, {}).get(key, None)
 
     def hasdata(self, data, key, section=None):
         if not data is None:

@@ -5,117 +5,254 @@ Created on Dec 23, 2016
 '''
 from operations.baseoperation import Operation
 import numpy as np
-import cv2
+from _collections import deque
 
+# Constants:
+# Define conversions in x and y from pixels space to meters
+ym_per_pix = 30/720 # meters per pixel in y dimension
+xm_per_pix = 3.7/700 # meteres per pixel in x dimension
+    
+class Lane(object):
+    def __init__(self, maxsize, yvals):
+        self.maxsize = maxsize
+        self.yvals = yvals
+        self.xs = deque(maxlen=maxsize)
+        self.fit = deque(maxlen=maxsize)
+        self.fitxs = deque(maxlen=maxsize)
+        self.curverad_ps = deque(maxlen=maxsize)
+        self.curverad_rs = deque(maxlen=maxsize)
+
+    def add(self, xs, fit, fitx, curverad_ps, curverad_rs):
+        self.xs.append(xs)
+        self.fit.append(fit)
+        self.fitxs.append(fitx)
+        self.curverad_ps.append(curverad_ps)
+        self.curverad_rs.append(curverad_rs)
+        
+    def getyvals(self):
+        return self.yvals
+    
+    def getlatestx(self):
+        if len(self.xs) > 0:
+            return self.xs[-1][0]
+        return None
+
+    def getlatestfitxs(self):
+        if len(self.fitxs) > 0:
+            if not self.fitxs[-1] is None:
+                return list(self.fitxs[-1])
+        return None
+
+    def getlatestfitx(self, y):
+        if len(self.fitxs) > 0:
+            if not self.fitxs[-1] is None and len(self.fitxs[-1]) > 0:
+                return self.fitxs[-1][self.yvals.index(y)]
+        return None
+
+    def getxhistory(self):
+        return list(self.xs) # [item for sublist in self.xs for item in sublist]
+        
+class Car(object):
+    def __init__(self, cameracenter):
+        self.__position__ = None #Distance from center. Left of center = -, right of center = +
+        self.__lanecenter__ = None
+        self.__cameracenter__ = cameracenter
+
+    def set_lanecenter(self, lanecenter):
+        self.__lanecenter__ = lanecenter
+        
+    def get_lanecenter(self):
+        return self.__lanecenter__
+    
+    def get_cameracenter(self):
+        return self.__cameracenter__
+        
+    def get_drift(self):
+        return self.__cameracenter__ - self.__lanecenter
+    
 # Detects the points on each lane and fits each with a polynomial function
 # Also detects the position of the car relative to the center of the lane,
 # based on the lane positions.
 class LaneFinder(Operation):
-#     NumSlices = "NumSlices" # Should be at least 3
+    # Config:
+    SliceRatio = 'SliceRatio'
+    PeakWindowRatio = 'PeakWindowRatio'
+    PeakRangeRatios = 'PeakRangeRatios'
+    LookBackFrames = 'LookBackFrames'
+    CameraPositionRatio = 'CameraPositionRatio'
+    
+    # Outputs
     LeftLane = "LeftLane"
     RightLane = "RightLane"
+    Car = 'Car'
     
     def __init__(self, params):
         Operation.__init__(self, params)
+        self.__slice_ratio__ = params[self.SliceRatio]
+        self.__peak_window_ratio__ = params[self.PeakWindowRatio]
+        self.__peak_range_ratios__ = params[self.PeakRangeRatios]
+        self.__look_back_frames__ = params[self.LookBackFrames]
+        self.__camera_position_ratio__ = params[self.CameraPositionRatio]
+        self.__left_lane__ = None
+        self.__right_lane__ = None
 
     def __processupstream__(self, original, latest, data, frame):
-        # Generate some fake data to represent lane-line pixels
-        yvals = np.linspace(0, 100, num=101)*7.2  # to cover same y-range as image
-        leftx = np.array([200 + (elem**2)*4e-4 + np.random.randint(-50, high=51) \
-                                      for idx, elem in enumerate(yvals)])
-        leftx = leftx[::-1]  # Reverse to match top-to-bottom in y
-        rightx = np.array([900 + (elem**2)*4e-4 + np.random.randint(-50, high=51) \
-                                        for idx, elem in enumerate(yvals)])
-        rightx = rightx[::-1]  # Reverse to match top-to-bottom in y
+        x_dim, y_dim = latest.shape[1], latest.shape[0]
+        if self.__left_lane__ is None:
+            self.__slice_len__ = int(y_dim * self.__slice_ratio__)
+            self.__peak_range__ = (int(self.__peak_range_ratios__[0] * self.__slice_len__), int(self.__peak_range_ratios__[1] * self.__slice_len__))
+            self.__peak_window_size__ = int(x_dim * self.__peak_window_ratio__)
+            self.__slices__ = []
+            self.__yvals__ = []
+            for idx in range (y_dim, 0, -self.__slice_len__):
+                self.__slices__.append((idx, max(idx-self.__slice_len__, 0)))
+                self.__yvals__.append(idx)
+            if not 0 in self.__yvals__:
+                self.__yvals__.append(0)
+            self.__left_lane__ = Lane(self.__look_back_frames__, self.__yvals__)
+            self.__right_lane__ = Lane(self.__look_back_frames__, self.__yvals__)
+            self.__camera_position__ = int(x_dim * self.__camera_position_ratio__)
+            self.__car__ = Car(self.__camera_position__)
+            self.setdata(data, self.LeftLane, self.__left_lane__)
+            self.setdata(data, self.RightLane, self.__right_lane__)
+            self.setdata(data, self.Car, self.__car__)
+                
+        leftxs, rightxs = self.locate_peaks(latest, self.__slices__, self.__left_lane__, self.__right_lane__, self.__peak_window_size__, self.__peak_range__)
         
-        # Fit a second order polynomial to each fake lane line
-        left_fit = np.polyfit(yvals, leftx, 2)
-        left_fitx = left_fit[0]*yvals**2 + left_fit[1]*yvals + left_fit[2]
-        right_fit = np.polyfit(yvals, rightx, 2)
-        right_fitx = right_fit[0]*yvals**2 + right_fit[1]*yvals + right_fit[2]
+        # Combine historical points with present before doing a fit:
+        all_leftx = self.__left_lane__.getxhistory()
+        all_leftx.append(leftxs)
+        all_rightx = self.__right_lane__.getxhistory()
+        all_rightx.append(rightxs)
+        all_leftys, all_leftxs = self.merge_prune(self.__yvals__, all_leftx)
+        all_rightys, all_rightxs = self.merge_prune(self.__yvals__, all_rightx)
+        
+        # Find radius of curvature:
+        left_fit, left_fitx, right_fit, right_fitx, left_curverad_ps, right_curverad_ps, left_curverad_rs, right_curverad_rs = None, None, None, None, None, None, None, None
+        if len(all_leftys) > 0:
+            # Fit a second order polynomial to each lane line
+            left_fit, left_fitx = self.fit_polynomial(all_leftys, all_leftxs, np.array(self.__yvals__))
+            y_left_eval = np.max(all_leftys)
+            # Determine the curvature in pixel-space
+            left_curverad_ps = ((1 + (2*left_fit[0]*y_left_eval + left_fit[1])**2)**1.5) \
+                                 /np.absolute(2*left_fit[0])
+            # Determine curvature in real space
+            left_fit_cr = np.polyfit(all_leftys*ym_per_pix, all_leftxs*xm_per_pix, 2)
+            left_curverad_rs = ((1 + (2*left_fit_cr[0]*y_left_eval + left_fit_cr[1])**2)**1.5) \
+                                         /np.absolute(2*left_fit_cr[0])
 
-        # Prepare the lanes for subsequent processing upstream:
-        leftlane = Lane(yvals, leftx, left_fit, left_fitx, None, None)
-        rightlane = Lane(yvals, rightx, right_fit, right_fitx, None, None)
-        self.setdata(data, self.LeftLane, leftlane)
-        self.setdata(data, self.RightLane, rightlane)
+        if len(all_rightys)>0:                                         
+            # Fit a second order polynomial to each lane line
+            right_fit, right_fitx = self.fit_polynomial(all_rightys, all_rightxs, np.array(self.__yvals__))
+            y_right_eval = np.max(all_rightys)
+    
+            right_curverad_ps = ((1 + (2*right_fit[0]*y_right_eval + right_fit[1])**2)**1.5) \
+                                            /np.absolute(2*right_fit[0])
+    
+            right_fit_cr = np.polyfit(all_rightys*ym_per_pix, all_rightxs*xm_per_pix, 2)
+            right_curverad_rs = ((1 + (2*right_fit_cr[0]*y_right_eval + right_fit_cr[1])**2)**1.5) \
+                                            /np.absolute(2*right_fit_cr[0])
 
+        # Save values:
+        self.__left_lane__.add(leftxs, left_fit, left_fitx, left_curverad_ps, left_curverad_rs)
+        self.__right_lane__.add(rightxs, right_fit, right_fitx, right_curverad_ps, right_curverad_rs)
+        lpos = self.__left_lane__.getlatestfitx(y_dim)
+        rpos = self.__right_lane__.getlatestfitx(y_dim)
+        if not lpos is None and not rpos is None:
+            lanecenter = (lpos + rpos) / 2
+            self.__car__.set_lanecenter(lanecenter)
+            
         return latest
     
-    def blah(self):
-        
-        x_dim, y_dim = latest.shape[1], latest.shape[0]
-        
-        numslices = self.getparam(self.NumSlices)
-        slicesize = int(y_dim / numslices)
-        
-        # Get a histogram of each horizontal slice and find peaks
-        # Assumption is that the center of the center of the camera
-        # is always soewhere between the left and right lanes.
-        binary = np.array(latest).astype(bool)
-        histimage = np.zeros_like(latest)
-        leftbucket = []
-        rightbucket = []
-        for i in range(numslices):
-            start, end = i*slicesize, min((i*slicesize)+slicesize, len(latest))
-            histogram = np.sum(binary[start:end,:], axis=0)
-
-            # Determine the position of the two lanes:
-            center = int(x_dim / 2)
-            leftpeaks = self.findpeaks(histogram[0:center]).reverse() # [(x, strength)]
-            rightpeaks = self.findpeaks(histogram[center:]) # [(x, strength)]
-            leftbucket.append(leftpeaks)
-            rightbucket.append(rightpeaks)
+    def merge_prune(self, ys, xss):
+        _yss = deque()
+        _xss = deque()
+        for xs in xss:
+            _ys, _xs = self.prune_nulls(ys, xs)
+            _yss.extend(_ys)
+            _xss.extend(_xs)
             
-            if self.isplotting():
-                points = np.int32(list(zip(list(range(0, x_dim)), y_dim - histogram)))
-                cv2.polylines(histimage, [points], False, 255, 5)
+        return np.array(_yss), np.array(_xss)
+    
+    def prune_nulls(self, ys, xs):
+        _ys = []
+        _xs = []
+        for (y,x) in zip (ys, xs):
+            if not x is None:
+                _ys.append(y)
+                _xs.append(x)
+                
+        return _ys, _xs
 
-
-        # Calculate lines:
         
+    def locate_peaks(self, latest, slices, leftlane, rightlane, windowsize, peakrange):
+        leftxs = []
+        rightxs = []
+        leftx, rightx = None, None
+        for yrange in slices:
+            leftx, rightx = self.locate_peaks_in_slice(latest, yrange, leftlane, rightlane, leftx, rightx, windowsize, peakrange)
+#             print ("Peaks in slice {} => {} ..... {} ".format(yrange, leftx, rightx))
+            leftxs.append(leftx)
+            rightxs.append(rightx)
+            
+        return leftxs, rightxs
 
-        if self.isplotting():
-            self.__plot__(frame, histimage, 'gray', "Histogram", None)
+    def locate_peaks_in_slice(self, latest, yrange, leftlane, rightlane, leftxbelow, rightxbelow, windowsize, peakrange):
+        (y1, y2) = yrange
+        midx = int(latest.shape[1] / 2)
+        y_slice = latest[y1:y2:-1, : ]
+        histogram = np.sum(y_slice, axis=0)
+
+        # Adjust the previous points so that each half of the histogram can be calculated independently:
+        leftpeakbefore = int(midx - leftlane.getlatestfitx(y1)) if not leftlane.getlatestfitx(y1) is None else None
+        rightpeakbefore = int(rightlane.getlatestfitx(y1) - midx) if not rightlane.getlatestfitx(y1) is None else None
+        leftpeakbelow = int(midx - leftxbelow) if not leftxbelow is None else None
+        rightpeakbelow = int(rightxbelow - midx) if not rightxbelow is None else None
         
-        return latest
+        leftx = self.find_peak(histogram[midx:0:-1], leftpeakbefore, leftpeakbelow, windowsize, peakrange)
+        rightx = self.find_peak(histogram[midx:], rightpeakbefore, rightpeakbelow, windowsize, peakrange)
+
+        # Revert actual points based on split:
+        leftx = midx - leftx if not leftx is None else None
+        rightx = midx + rightx if not rightx is None else None
+        
+        return leftx, rightx
+
+    def find_peak(self, histogram, peakbefore, peakbelow, windowsize, peakrange):
+        timewindow = [0, len(histogram)]
+        if not peakbefore is None:
+            timewindow = [max(0, peakbefore-windowsize), min(peakbefore+windowsize, len(histogram))]
+        motionwindow = [0, len(histogram)]
+        if not peakbelow is None:
+            motionwindow = [max(0, peakbelow-windowsize), min(peakbelow+windowsize, len(histogram))]
+        window = range(max(timewindow[0], motionwindow[0]), min(timewindow[1], motionwindow[1]))
+#         window = range(min(timewindow[0], motionwindow[0]), max(timewindow[1], motionwindow[1])) # This might be too lenient
+
+        # Iterate from left to right, looking for a peak that lies within a given range
+        (low, high) = peakrange
+        peak = None
+        for i in window:
+            assert i < len(histogram), "Info: TimeWindow {}, MotionWindow {}, Window {}, PeakRange {}, i {}".format(timewindow, motionwindow, window, peakrange, i)
+            if histogram[i] >= high:
+                peak = i    # Found!
+                break
+            elif low <= histogram[i] <= high:
+                if peak is None:
+                    peak = i
+                else:
+                    peak = i if histogram[i] > histogram[peak] else peak # Look for max
+            else: # histogram[i] < low:
+                continue    # Discard
+                    
+        return peak
+    
+    def fit_polynomial(self, ys, xs, ystofit):
+        assert len(ys) == len(xs), "Xs {} and Ys {} were not the same length.".format(len(xs), len(ys))
+        fit, fitx = None, None
+        if len(ys) > 0:
+            fit = np.polyfit(ys, xs, 2)
+            fitx = fit[0] * ystofit ** 2 + fit[1] * ystofit + fit[2]
+        return fit, fitx
 
     def __processdownstream__(self, original, latest, data, frame):
         return latest
-    
-def findpeaks(distribution):
-    peaks = []
-    
-
-class Lane(object):
-    def __init__(self, yvals, xs, fit, fitx, curverad_ps, curverad_rs):
-        self.yvals = yvals
-        self.xs = xs
-        self.fit = fit
-        self.fitx = fitx
-        self.curverad_ps = curverad_ps
-        self.curverad_rs = curverad_rs
-
-# Define a class to receive the characteristics of each line detection
-class Line1():
-    def __init__(self):
-        # was the line detected in the last iteration?
-        self.detected = False  
-        # x values of the last n fits of the line
-        self.recent_xfitted = [] 
-        #average x values of the fitted line over the last n iterations
-        self.bestx = None     
-        #polynomial coefficients averaged over the last n iterations
-        self.best_fit = None  
-        #polynomial coefficients for the most recent fit
-        self.current_fit = [np.array([False])]  
-        #radius of curvature of the line in some units
-        self.radius_of_curvature = None 
-        #distance in meters of vehicle center from the line
-        self.line_base_pos = None 
-        #difference in fit coefficients between last and new fits
-        self.diffs = np.array([0,0,0], dtype='float') 
-        #x values for detected line pixels
-        self.allx = None  
-        #y values for detected line pixels
-        self.ally = None

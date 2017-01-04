@@ -34,8 +34,8 @@ class CurveExtractor(Operation):
                                  /np.absolute(2*left_fit[0])
             right_curverad_ps = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) \
                                             /np.absolute(2*right_fit[0])
-            leftlane.curverad_ps = left_curverad_ps
-            rightlane.curverad_ps = right_curverad_ps
+            leftlane.curverad_ps.append(left_curverad_ps)
+            rightlane.curverad_ps.append(right_curverad_ps)
     
             # Determine curvature in real space
             left_fit_cr = np.polyfit(yvals*ym_per_pix, leftx*xm_per_pix, 2)
@@ -44,7 +44,7 @@ class CurveExtractor(Operation):
                                          /np.absolute(2*left_fit_cr[0])
             right_curverad_rs = ((1 + (2*right_fit_cr[0]*y_eval + right_fit_cr[1])**2)**1.5) \
                                             /np.absolute(2*right_fit_cr[0])
-            leftlane.curverad_rs = left_curverad_rs
-            rightlane.curverad_rs = right_curverad_rs
+            leftlane.curverad_rs.append(left_curverad_rs)
+            rightlane.curverad_rs.append(right_curverad_rs)
     
         return latest
