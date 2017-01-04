@@ -30,14 +30,25 @@ class ColorSpacer(Operation):
         Operation.__init__(self, params)
         self.__original__ = self.getparam(self.Original)
         self.__target__ = self.getparam(self.Target)
-        concat = "{}2{}".format(self.__original__, self.__target__)
-        if not concat in self.Transforms:
-            raise "Transformation {} -> {} is not supported. Please try another.".format(self.__original__,self.__target__)
-        self.__transform__ = self.Transforms[concat]
+        forward = "{}2{}".format(self.__original__, self.__target__)
+        if not forward in self.Transforms:
+            raise "Forward transformation {} -> {} is not supported. Please try another.".format(self.__original__,self.__target__)
+        self.__forward__ = self.Transforms[forward]
+        backward = forward[::-1]
+        if not backward in self.Transforms:
+            raise "Reverse transformation {} -> {} is not supported. Please try another.".format(self.__target__, self.__original__)
+        self.__backward__ = self.Transforms[backward]
 
     def __processupstream__(self, original, latest, data, frame):
-        latest = cv2.cvtColor(latest, self.__transform__)
+        latest = cv2.cvtColor(latest, self.__forward__)
         title = "ColorSpace {}->{}".format(self.__original__,self.__target__)
+        stats = None
+        self.__plot__(frame, latest, None, title, stats)
+        return latest
+
+    def __processdownstream__(self, original, latest, data, frame):
+        latest = cv2.cvtColor(latest, self.__backward__)
+        title = "ColorSpace {}->{}".format(self.__target__, self.__original__)
         stats = None
         self.__plot__(frame, latest, None, title, stats)
         return latest

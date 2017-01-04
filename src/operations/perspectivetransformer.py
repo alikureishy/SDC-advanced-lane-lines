@@ -99,6 +99,7 @@ class PerspectiveTransformer(Operation):
 
         # Combine the result with the original image
         unwarped = self.getdata(data, ColorSpacer.Upstream, ColorSpacer)
+        self.__plot__(frame, unwarped, None, "Original Color", None)
         
         title = "Unwarped Full"
         stats = None

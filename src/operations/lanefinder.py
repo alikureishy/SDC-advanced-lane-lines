@@ -53,22 +53,27 @@ class Lane(object):
         return list(self.xs) # [item for sublist in self.xs for item in sublist]
         
 class Car(object):
-    def __init__(self, cameracenter):
+    def __init__(self, cameracenter_ps, cameracenter_rs):
         self.__position__ = None #Distance from center. Left of center = -, right of center = +
-        self.__lanecenter__ = None
-        self.__cameracenter__ = cameracenter
+        self.__lanecenter_ps__ = None
+        self.__lanecenter_rs__ = None
+        self.__cameracenter_ps__ = cameracenter_ps
+        self.__cameracenter_rs__ = cameracenter_rs
 
-    def set_lanecenter(self, lanecenter):
-        self.__lanecenter__ = lanecenter
+    def set_lanecenter(self, lanecenter_ps, lanecenter_rs):
+        self.__lanecenter_ps__ = lanecenter_ps
+        self.__lanecenter_rs__ = lanecenter_rs
         
     def get_lanecenter(self):
-        return self.__lanecenter__
-    
-    def get_cameracenter(self):
-        return self.__cameracenter__
+        return self.__lanecenter_ps__, self.__lanecenter_rs__
+
+#     def get_cameracenter(self):
+#         return self.__cameracenter__
         
     def get_drift(self):
-        return self.__cameracenter__ - self.__lanecenter
+        if not self.__lanecenter_ps__ is None:
+            return self.__cameracenter_ps__ - self.__lanecenter_ps__, self.__cameracenter_rs__ - self.__lanecenter_rs__
+        return None, None
     
 # Detects the points on each lane and fits each with a polynomial function
 # Also detects the position of the car relative to the center of the lane,
@@ -111,8 +116,9 @@ class LaneFinder(Operation):
                 self.__yvals__.append(0)
             self.__left_lane__ = Lane(self.__look_back_frames__, self.__yvals__)
             self.__right_lane__ = Lane(self.__look_back_frames__, self.__yvals__)
-            self.__camera_position__ = int(x_dim * self.__camera_position_ratio__)
-            self.__car__ = Car(self.__camera_position__)
+            self.__camera_position_ps__ = int(x_dim * self.__camera_position_ratio__)
+            self.__camera_position_rs__ = int(x_dim * self.__camera_position_ratio__ * xm_per_pix)
+            self.__car__ = Car(self.__camera_position_ps__, self.__camera_position_rs__)
             self.setdata(data, self.LeftLane, self.__left_lane__)
             self.setdata(data, self.RightLane, self.__right_lane__)
             self.setdata(data, self.Car, self.__car__)
@@ -159,8 +165,9 @@ class LaneFinder(Operation):
         lpos = self.__left_lane__.getlatestfitx(y_dim)
         rpos = self.__right_lane__.getlatestfitx(y_dim)
         if not lpos is None and not rpos is None:
-            lanecenter = (lpos + rpos) / 2
-            self.__car__.set_lanecenter(lanecenter)
+            lanecenter_ps = (lpos + rpos) / 2
+            lanecenter_rs = lanecenter_ps * xm_per_pix
+            self.__car__.set_lanecenter(lanecenter_ps, lanecenter_rs)
             
         return latest
     

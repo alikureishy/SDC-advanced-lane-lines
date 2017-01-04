@@ -113,7 +113,8 @@
     },
     "LaneFiller": {
 		"ToPlot": 1,
-		"DriftToleranceRatio": 0.10,
-    	"FillColor": [2,5,5]
+		"DriftToleranceRatio": 0.05,
+		"SafeColor": [152, 251, 152],
+    	"DangerColor": [255,0,0]
     }
 }
