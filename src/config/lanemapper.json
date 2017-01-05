@@ -11,7 +11,7 @@
 		"ToPlot": 0
 	},
 	"StatsWriter": {
-		"ToPlot": 1
+		"ToPlot": 0
 	},
     "Undistorter": {
 		"ToPlot": 0,
@@ -85,16 +85,16 @@
         ]
     },
     "LaneFinder": {
-		"ToPlot": 1,
-		"SliceRatio": 0.10,
-    	"PeakWindowRatio": 0.05,
+		"ToPlot": 0,
+		"SliceRatio": 0.05,
+    	"PeakWindowRatio": 0.03,
     	"PeakRangeRatios": [0.10, 0.50],
     	"LookBackFrames": 4,
     	"CameraPositionRatio": 0.50
     },
     "LaneFiller": {
-		"ToPlot": 1,
-		"LaneConfidenceThreshold": 0.00,
+		"ToPlot": 0,
+		"LaneConfidenceThreshold": 0.40,
 		"DriftToleranceRatio": 0.05,
 		"SafeColor": [152, 251, 152],
     	"DangerColor": [255,0,0]

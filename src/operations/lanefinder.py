@@ -242,7 +242,7 @@ class LaneFinder(Operation):
 
         leftconfidence = (len(slices) - n_left_absent) / len(slices)
         rightconfidence = (len(slices) - n_right_absent) / len(slices)
-        print ("Confidence: {0:.2f}, {1:.2f}".format(leftconfidence, rightconfidence))
+#         print ("Confidence: {0:.2f}, {1:.2f}".format(leftconfidence, rightconfidence))
 
         return leftxs, rightxs, leftconfidence, rightconfidence
 
