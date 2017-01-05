@@ -6,7 +6,6 @@ Created on Dec 23, 2016
 import numpy as np
 from operations.baseoperation import Operation
 import cv2
-from operations.colorspacer import ColorSpacer
 from utils.utilities import plotboundary
 
 class RegionMasker(Operation):
@@ -37,7 +36,7 @@ class RegionMasker(Operation):
         vertices = np.array([[ (xr*x_dim, yr*y_dim) for [xr,yr] in self.__relativepoints__]],dtype=np.int32)
 
         if self.isplotting():
-            orig = np.copy(self.getdata(data, self.Upstream, ColorSpacer))
+            orig = np.copy(original)
             plotboundary(orig, vertices[0], (127, 255, 212))
             self.__plot__(frame, orig, None, "Region Mask (Color)", None)
 

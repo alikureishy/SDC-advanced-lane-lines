@@ -4,7 +4,6 @@ Created on Dec 21, 2016
 @author: safdar
 '''
 import matplotlib
-import cv2
 matplotlib.use('TkAgg')
 import argparse
 import os
@@ -66,4 +65,4 @@ if __name__ == '__main__':
     
 #     cv2.waitKey()
     # End
-    print ("Thank you. Come again!")
+    print ("\nThank you. Come again!")

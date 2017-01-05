@@ -29,6 +29,11 @@ class Lane(object):
         self.curverad_ps.append(curverad_ps)
         self.curverad_rs.append(curverad_rs)
         
+    def get_curverad(self):
+        if len(self.curverad_ps) > 0:
+            return self.curverad_ps[-1], self.curverad_rs[-1]
+        return None, None
+        
     def getyvals(self):
         return self.yvals
     
@@ -66,6 +71,9 @@ class Car(object):
         
     def get_lanecenter(self):
         return self.__lanecenter_ps__, self.__lanecenter_rs__
+
+    def get_cameracenter(self):
+        return self.__cameracenter_ps__, self.__cameracenter_rs__
 
 #     def get_cameracenter(self):
 #         return self.__cameracenter__

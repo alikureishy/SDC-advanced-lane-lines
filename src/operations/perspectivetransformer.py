@@ -6,7 +6,6 @@ Created on Dec 21, 2016
 from operations.baseoperation import Operation
 import numpy as np
 import cv2
-from operations.colorspacer import ColorSpacer
 from utils.utilities import plotboundary
 
 # Default:
@@ -61,7 +60,7 @@ class PerspectiveTransformer(Operation):
             self.__M__, self.__Minv__ = self.gettransformations(self.__perspective_points__, self.__transform_points__)
 
         # Plot the source points, for the benefit of the viewer
-        orig = np.copy(self.getdata(data, self.Upstream, ColorSpacer))
+        orig = np.copy(original)
         
         if self.isplotting():
             # Show perspective regions:
@@ -98,7 +97,7 @@ class PerspectiveTransformer(Operation):
         self.__plot__(frame, newwarp, None, "Unwarped Foreground", None)
 
         # Combine the result with the original image
-        unwarped = self.getdata(data, ColorSpacer.Upstream, ColorSpacer)
+        unwarped = np.copy(original)
         self.__plot__(frame, unwarped, None, "Original Color", None)
         
         title = "Unwarped Full"

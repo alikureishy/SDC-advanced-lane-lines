@@ -17,9 +17,11 @@ class ImageStreamer(BaseStreamer):
 
     def iterator(self):
         pre_image = cv2.imread(self.__inputfile__)
+        pre_image = cv2.cvtColor(pre_image, cv2.COLOR_BGR2RGB)
         return [pre_image]
 
     def write (self, post_image):
+        post_image = cv2.cvtColor(post_image, cv2.COLOR_RGB2BGR)
         if not ((self.__outputfile__==None) | (self.__dry__==True)):
             cv2.imwrite(self.__outputfile__, post_image)
 
@@ -60,14 +62,16 @@ class VideoStreamer(BaseStreamer):
             ret, image = self.__reader__.read()
             if not ret:
                 break
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             self.__framesread__ += 1
             yield image
 
     def write (self, post_image):
         if not ((self.__outputfile__==None) | (self.__dry__==True)):
+            post_image = cv2.cvtColor(post_image, cv2.COLOR_RGB2BGR)
             self.__writer__.write(post_image)
             self.__frameswritten__ += 1
-            print ("\tWrote frame: {}". format(self.__frameswritten__))
+#             print ("\tWrote frame: {}". format(self.__frameswritten__))
 
     def __del__(self):
         if not self.__writer__ is None:

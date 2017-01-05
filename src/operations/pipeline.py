@@ -14,6 +14,7 @@ from operations.resizer import Resizer
 from operations.colorspacer import ColorSpacer
 from operations.lanefinder import LaneFinder
 from operations.perspectivefinder import PerspectiveFinder
+from operations.statswriter import StatsWriter
 
 PipelineSection = 'Pipeline'
 # from operations import *
@@ -42,6 +43,8 @@ class Pipeline(object):
             return ShowOriginal(config)
         elif name == ColorSpacer.__name__:
             return ColorSpacer(config)
+        elif name == StatsWriter.__name__:
+            return StatsWriter(config)
         elif name == Resizer.__name__:
             return Resizer(config)
         elif name == Undistorter.__name__:

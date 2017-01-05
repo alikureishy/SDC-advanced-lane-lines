@@ -1,8 +1,7 @@
 {
     "Pipeline": [
-    	"ShowOriginal",
     	"Undistorter",
-    	"ColorSpacer",
+    	"StatsWriter",
     	"Thresholder",
     	"PerspectiveTransformer",
     	"LaneFinder",
@@ -11,28 +10,13 @@
     "ShowOriginal": {
 		"ToPlot": 0
 	},
+	"StatsWriter": {
+		"ToPlot": 1
+	},
     "Undistorter": {
 		"ToPlot": 0,
         "CalibrationFile": "config/calibration.pickle"
 	},
-    "ColorSpacer": {
-		"ToPlot": 1,
-		"Original": "BGR",
-		"Target": "RGB"
-	},
-    "Resizer": {
-		"ToPlot": 1,
-		"TargetShape": [216, 384]
-	},
-    "RegionMasker": {
-		"ToPlot": 1,
-        "RelativePoints": [
-        	[0.45, 0.55],
-        	[0.55, 0.55],
-        	[0.05, 0.95], 
-        	[0.95, 0.95]
-        ]
-    },
     "Thresholder": {
 		"ToPlot": 0,
     	"HoughFilter": {
@@ -67,7 +51,7 @@
 		}
     },
     "PerspectiveFinder": {
-    	"ToPlot": 1,
+    	"ToPlot": 0,
     	"HoughFilter": {
     		"Rho": 2, "Theta": 0.0174, "Threshold": 150, "MinLineLength": 200, "MaxLineGap": 15,
 	    	"LeftSlopeRange": [0.50, 0.95], "RightSlopeRange": [-0.95, -0.50],
@@ -87,7 +71,7 @@
         ]
     },
     "PerspectiveTransformer": {
-		"ToPlot": 1,
+		"ToPlot": 0,
         "DefaultHeadingRatios": [
         	[0.20, -1.2],
         	[0.86, 1.60]
@@ -101,18 +85,15 @@
         ]
     },
     "LaneFinder": {
-		"ToPlot": 1,
+		"ToPlot": 0,
 		"SliceRatio": 0.10,
     	"PeakWindowRatio": 0.05,
     	"PeakRangeRatios": [0.10, 0.50],
     	"LookBackFrames": 3,
     	"CameraPositionRatio": 0.50
     },
-    "CurveExtractor": {
-		"ToPlot": 1
-    },
     "LaneFiller": {
-		"ToPlot": 1,
+		"ToPlot": 0,
 		"DriftToleranceRatio": 0.05,
 		"SafeColor": [152, 251, 152],
     	"DangerColor": [255,0,0]

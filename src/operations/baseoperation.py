@@ -58,7 +58,7 @@ class Operation(object):
         self.__successor__ = successor
 
     def __processupstream__(self,original, latest, data, frame):
-        raise "Not implemented"
+        return latest
 
     def __processdownstream__(self, original, latest, data, frame):
         return latest
