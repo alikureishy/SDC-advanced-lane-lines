@@ -21,14 +21,29 @@ class Lane(object):
         self.fitxs = deque(maxlen=maxsize)
         self.curverad_ps = deque(maxlen=maxsize)
         self.curverad_rs = deque(maxlen=maxsize)
+        self.confidences = deque(maxlen=maxsize)
 
-    def add(self, xs, fit, fitx, curverad_ps, curverad_rs):
+    def add(self, xs, fit, fitx, curverad_ps, curverad_rs, confidence):
+        assert confidence is not None or not (0 <= confidence <= 1.0), "Confidence value must always be between 0 and 1"
         self.xs.append(xs)
         self.fit.append(fit)
         self.fitxs.append(fitx)
         self.curverad_ps.append(curverad_ps)
         self.curverad_rs.append(curverad_rs)
+        self.confidences.append(confidence)
+
+    def get_relativeconfidence(self):
+        if len(self.confidences) > 0:
+            return self.confidences[-1]
+        return None
         
+    def get_totalconfidence(self):
+        # This is relative to the scenario where all 'maxlen' points are known
+        p = sum(self.confidences)
+        pnorm = p / self.maxsize
+            
+        return pnorm
+    
     def get_curverad(self):
         if len(self.curverad_ps) > 0:
             return self.curverad_ps[-1], self.curverad_rs[-1]
@@ -131,7 +146,7 @@ class LaneFinder(Operation):
             self.setdata(data, self.RightLane, self.__right_lane__)
             self.setdata(data, self.Car, self.__car__)
                 
-        leftxs, rightxs = self.locate_peaks(latest, self.__slices__, self.__left_lane__, self.__right_lane__, self.__peak_window_size__, self.__peak_range__)
+        leftxs, rightxs, leftconfidence, rightconfidence = self.locate_peaks(latest, self.__slices__, self.__left_lane__, self.__right_lane__, self.__peak_window_size__, self.__peak_range__)
         
         # Combine historical points with present before doing a fit:
         all_leftx = self.__left_lane__.getxhistory()
@@ -168,8 +183,8 @@ class LaneFinder(Operation):
                                             /np.absolute(2*right_fit_cr[0])
 
         # Save values:
-        self.__left_lane__.add(leftxs, left_fit, left_fitx, left_curverad_ps, left_curverad_rs)
-        self.__right_lane__.add(rightxs, right_fit, right_fitx, right_curverad_ps, right_curverad_rs)
+        self.__left_lane__.add(leftxs, left_fit, left_fitx, left_curverad_ps, left_curverad_rs, leftconfidence)
+        self.__right_lane__.add(rightxs, right_fit, right_fitx, right_curverad_ps, right_curverad_rs, rightconfidence)
         lpos = self.__left_lane__.getlatestfitx(y_dim)
         rpos = self.__right_lane__.getlatestfitx(y_dim)
         if not lpos is None and not rpos is None:
@@ -204,13 +219,32 @@ class LaneFinder(Operation):
         leftxs = []
         rightxs = []
         leftx, rightx = None, None
+        n_left_absent = 0
+        n_right_absent = 0
         for yrange in slices:
+            # The leftx and rightx points from the lower slice will be used to limit the search area
+            # for discovering new peaks. If they were not found, the fitted x-values from the previous
+            # frame's *next* slice will be used to limit the search area.
+            leftx = leftx if not leftx is None else leftlane.getlatestfitx(yrange[1])
+            rightx = rightx if not rightx is None else rightlane.getlatestfitx(yrange[1])
+            
+            # Look for the new points
             leftx, rightx = self.locate_peaks_in_slice(latest, yrange, leftlane, rightlane, leftx, rightx, windowsize, peakrange)
+            if leftx is None:
+                n_left_absent += 1
+            if rightx is None:
+                n_right_absent += 1
 #             print ("Peaks in slice {} => {} ..... {} ".format(yrange, leftx, rightx))
+
+            # Save the peaks -- they're precious
             leftxs.append(leftx)
             rightxs.append(rightx)
-            
-        return leftxs, rightxs
+
+        leftconfidence = (len(slices) - n_left_absent) / len(slices)
+        rightconfidence = (len(slices) - n_right_absent) / len(slices)
+        print ("Confidence: {0:.2f}, {1:.2f}".format(leftconfidence, rightconfidence))
+
+        return leftxs, rightxs, leftconfidence, rightconfidence
 
     def locate_peaks_in_slice(self, latest, yrange, leftlane, rightlane, leftxbelow, rightxbelow, windowsize, peakrange):
         (y1, y2) = yrange

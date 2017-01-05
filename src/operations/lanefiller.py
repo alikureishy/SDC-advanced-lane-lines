@@ -13,6 +13,7 @@ class LaneFiller(Operation):
     DriftToleranceRatio = 'DriftToleranceRatio'
     SafeColor = 'SafeColor'
     DangerColor = 'DangerColor'
+    LaneConfidenceThreshold = 'LaneConfidenceThreshold'
     
     def __init__(self, params):
         Operation.__init__(self, params)
@@ -25,6 +26,7 @@ class LaneFiller(Operation):
         self.__drift_meters__ = None
         self.__safe_color__ = tuple(params[self.SafeColor])
         self.__danger_color__ = tuple(params[self.DangerColor])
+        self.__lane_confidence_threshold__ = params[self.LaneConfidenceThreshold]
 
     def is_drift_safe(self, drift_ps, drift_tolerance_ps):
         return abs(drift_ps) < drift_tolerance_ps
@@ -39,14 +41,15 @@ class LaneFiller(Operation):
             self.__drift_tolerance_pixels__ = self.__drift_tolerance_ratio__ * latest.shape[1]
         
         if not leftlane is None and not rightlane is None and not car is None:
-            if not leftlane.getlatestfitxs() is None:
+            if not leftlane.getlatestfitxs() is None and leftlane.get_totalconfidence() >= self.__lane_confidence_threshold__:
                 self.__left_fitx__ = leftlane.getlatestfitxs()
-            if not rightlane.getlatestfitxs() is None:
+            if not rightlane.getlatestfitxs() is None and rightlane.get_totalconfidence() >= self.__lane_confidence_threshold__:
                 self.__right_fitx__ = rightlane.getlatestfitxs()
             self.__yvals__ = leftlane.getyvals()
             if not car.get_drift() == (None, None):
                 self.__drift_pixels__, self.__drift_meters__ = car.get_drift()
 
+        # Prepare the foreground that will be superimposed onto the main color image:
         zeros1d = np.zeros_like(latest).astype(np.uint8)
         foreground = np.dstack((zeros1d, zeros1d, zeros1d))
         if not self.__left_fitx__ is None and not self.__right_fitx__ is None and not self.__drift_pixels__ is None:
@@ -58,7 +61,7 @@ class LaneFiller(Operation):
             # Draw the lane onto the image
             shade = self.__safe_color__ if self.is_drift_safe(self.__drift_pixels__, self.__drift_tolerance_pixels__) else self.__danger_color__
             cv2.fillPoly(foreground, np.int_([pts]), shade)
-            self.__plot__(frame, foreground, 'gray', "Foreground", None)
+        self.__plot__(frame, foreground, 'gray', "Foreground", None)
             
         if self.isplotting():
             # Get the color image to draw the lane on, just for illustration

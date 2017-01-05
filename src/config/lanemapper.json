@@ -85,15 +85,16 @@
         ]
     },
     "LaneFinder": {
-		"ToPlot": 0,
+		"ToPlot": 1,
 		"SliceRatio": 0.10,
     	"PeakWindowRatio": 0.05,
     	"PeakRangeRatios": [0.10, 0.50],
-    	"LookBackFrames": 3,
+    	"LookBackFrames": 4,
     	"CameraPositionRatio": 0.50
     },
     "LaneFiller": {
-		"ToPlot": 0,
+		"ToPlot": 1,
+		"LaneConfidenceThreshold": 0.00,
 		"DriftToleranceRatio": 0.05,
 		"SafeColor": [152, 251, 152],
     	"DangerColor": [255,0,0]

@@ -30,6 +30,7 @@ class PyPlotter(object):
         self.__axes__ = None
         self.__axes_images__ = None
         self.__counter__ = 0
+        self.__figure_text__ = None
         
     def redraw(self, sections):
         # If there's only one section, split it into rows/cols:
@@ -53,6 +54,8 @@ class PyPlotter(object):
         if not v is None and not h is None:
             if self.__figure__ == None:
                 self.__figure__, _  = plt.subplots (v, h)
+                if self.__figure_text__ is None:
+                    self.__figure_text__ = self.__figure__.suptitle("", fontsize=14, fontweight='bold')
                 self.__axes_images__ = []
                 for i in range(v):
                     self.__axes_images__.append([])
@@ -92,6 +95,7 @@ class PyPlotter(object):
                 plt.ion()
                 self.__figure__.canvas.draw()
                 plt.pause(0.00001)
+        self.__figure_text__.set_text("Frame: {}".format(self.__counter__))
         self.__counter__ += 1
         print("{}".format(self.__counter__), sep=' ', end=' ', flush=True)
         if self.__counter__ % 100 == 0:

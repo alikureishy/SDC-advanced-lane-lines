@@ -9,7 +9,7 @@ import cv2
     
 # Writes statistics to the output image    
 class StatsWriter(Operation):
-    OrigXRatio = 0.050
+    OrigXRatio = 0.20
     OrigYRatio = 0.98
     Font = cv2.FONT_HERSHEY_COMPLEX
     FontScale = 0.10
@@ -29,6 +29,7 @@ class StatsWriter(Operation):
             leftcurverad_ps, leftcurverad_rs = leftlane.get_curverad()
             rightcurverad_ps, rightcurverad_rs = rightlane.get_curverad()
             drift_ps, drift_rs = car.get_drift()
+            leftconfidence, rightconfidence = leftlane.get_totalconfidence()*100.0, rightlane.get_totalconfidence()*100.0
 #             cameracenter_ps, cameracenter_rs = car.get_cameracenter()
             leftcurverad_ps = "~~~~" if leftcurverad_ps is None else '{0:.2f}'.format(leftcurverad_ps)
             rightcurverad_ps = "~~~~" if rightcurverad_ps is None else '{0:.2f}'.format(rightcurverad_ps)
@@ -36,7 +37,9 @@ class StatsWriter(Operation):
             rightcurverad_rs = "~~~~" if rightcurverad_rs is None else '{0:.2f}'.format(rightcurverad_rs)
             drift_ps = "~~~~" if drift_ps is None else '{0:.2f}'.format(drift_ps)
             drift_rs = "~~~~" if drift_rs is None else '{0:.2f}'.format(drift_rs)
-            caption = "{} m ({} px) <<<< [{} m ({} px)] >>>> {} m ({} px)".format(leftcurverad_rs, leftcurverad_ps, drift_rs, drift_ps, rightcurverad_rs, rightcurverad_ps)
+            leftconfidence = '{0:.0f}'.format(leftconfidence)
+            rightconfidence = '{0:.0f}'.format(rightconfidence)
+            caption = "{} m << {}% << [{} m]  >> {}% >> {} m".format(leftcurverad_rs, leftconfidence, drift_rs, rightconfidence, rightcurverad_rs)
             cv2.putText(latest, caption, (x, y), self.Font, 0.8, self.CaptionColor, self.CaptionThickness)
             self.__plot__(frame, latest, None, "Captioned", None)
             
