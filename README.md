@@ -69,7 +69,7 @@ This utility is in the file lanemapper.py. It is also a command line utility, in
 ```
 /Users/safdar/git/advanced-lane-detection/src> python3.5 lanemapper.py -i ../project_video.mp4 -o ../sample_out.mp4 -c config/lanemapper.json -x 1 -p
 ```
-Note: To silence the illustrations on pyplot, remove the '-p' flag. This flag turns on the illustration of image transformations that each frame goes through. The illustrations can also be individually toggled in the config file (src/config/lanemapper.json). Removing the -p flag will also cause the utility to run a lot faster. To enable additional details of the image transformations, go to the lanemapper.json file and search for the 'ToPlot' flags. Each component has that flag, and a value of '1' indicates that it is enabled, and '0' indicates it is disabled. Toggle the value for the components that you want to visualize, for example, the 'PerspectiveTransformer' or the 'Thresholder' etc. At present, only the 'StatsWriter' and 'Thresholder' are enabled. Thresholder illustrations are enabled at a high level only -- that is, only the final output is shown. Individual threshold transformations can also be enabled using the finer grained 'ToPlot' settings on each such threshold operation.
+Note: To silence the illustrations on pyplot, remove the '-p' flag. Removing the -p flag will also cause the utility to run a lot faster. Otherwise, this flag turns on the illustration of image transformations that each frame goes through, which slows down processing, but also provides insight into the working of the utility. The illustrations can also be individually toggled in the config file (src/config/lanemapper.json). To enable additional details of the image transformations, go to the lanemapper.json file and search for the 'ToPlot' flags. Each component has that flag, and a value of '1' indicates that it is enabled, and '0' indicates it is disabled. Toggle the value for the components that you want to visualize, for example, the 'PerspectiveTransformer' or the 'Thresholder' etc. At present, only the 'StatsWriter' and 'Thresholder' are enabled. Thresholder illustrations are enabled at a high level only -- that is, only the final output is shown. Individual threshold transformations can also be enabled using the finer grained 'ToPlot' settings on each such threshold operation.
 
 Here's the help menu:
 ```
@@ -88,8 +88,8 @@ optional arguments:
                         input type)
   -c [CONFIGS [CONFIGS ...]]
                         Configuration files.
-  -s SELECTOR           Short circuit the pipeline to perform only specified #
-                        of operations.
+  -s SELECTOR           Limit the pipeline to perform only specified # of
+                        operations.
   -x SPEED              Speed (1 ,2, 3 etc) interpreted as 1x, 2x, 3x etc)
   -d                    Dry run. Will not save anything to disk (default:
                         false).
