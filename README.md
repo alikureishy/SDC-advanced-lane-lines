@@ -212,8 +212,8 @@ This upstream processor locates the lane lines in the frame. It is where all the
 "LaneFinder": {
 	"ToPlot": 0,
 	"SliceRatio": 0.10,
-    	"PeakWindowRatio": 0.05,
     	"PeakRangeRatios": [0.10, 0.50],
+    	"PeakWindowRatio": 0.05,
     	"LookBackFrames": 4,
     	"CameraPositionRatio": 0.50
 },
@@ -221,7 +221,7 @@ This upstream processor locates the lane lines in the frame. It is where all the
 
 ##### Algorithm Details
 
-The lane detection procedure can be broken down into the following parts, each tweakable through the configuration settings illustrated above. In fact, there is almost a 1-1 correspondence between the sections listed here, and the configuration settings above.
+The lane detection procedure can be broken down into the following parts, each tweakable through the configuration settings illustrated above. In fact, there is almost a 1-1 correspondence between the configuration settings above, and the sections below.
 
 ###### Horizontal slicing
 This is controlled by the 'SliceRatio' parameter, that specifies the fraction of the vertical dimension (y dimension) that each horizontal slice should cover. The smaller the fraction, the more the slices, and higher the sensitivity of the lane detection. The larger the slices, the coarser the peaks, and lesser the sensitivity. It appeared that a fraction of 0.05 - 0.10 was rather effective for the first video. This may not be the case for the challenge videos, where the curvature of the lane lines is smaller, and changes more rapidly.
@@ -230,13 +230,19 @@ This is controlled by the 'SliceRatio' parameter, that specifies the fraction of
 
 This refers to the directional scan of the histogram calculated for each horizontal slice above, looking for the point with the highest magnitude of aggregated pixels. The 'SliceRatio' parameter essentially limits the magnitude of all such points along the histogram to within a [0-SliceSize] range, assuming binary pixel values.
 
-However, a more restrictive heuristic can be defined by the 'PeakRangeRatio' parameter which is, as with other parameters, expressed as a tuple of fractions, representing the necessary, and the sufficient, magnitude (as a fraction of the SliceSize) thresholds for any given point on the histogram, in the direction of search, to either be dropped from consideration, or to be selected as the peak, respectively. Upon encountering such points, the decision regarding that point is final -- either it is the peak, or it isn't. Points that fall between these two numbers -- i.e, above the necessary threshold and below the sufficient magnitude -- are considered candidates, put to test by being compared against subsequent point values, until either the sufficient threshold is crossed, or scan ends, at which point the highest valued point is labeled as the peak. If no point is found through a scan, the algorithm registers a non-existent peak for that scan.
+However, a more restrictive heuristic can be defined by the 'PeakRangeRatios' parameter which is, as with other parameters, expressed as a tuple of fractions, representing the necessary, and the sufficient, magnitude (as a fraction of the SliceSize) thresholds for any given point on the histogram, in the direction of search, to either be dropped from consideration, or to be selected as the peak, respectively. Upon encountering such points, the decision regarding that point is final -- either it is the peak, or it isn't. Points that fall between these two numbers -- i.e, above the necessary threshold and below the sufficient magnitude -- are considered candidates, put to test by being compared against subsequent point values, until either the sufficient threshold is crossed, or scan ends, at which point the highest valued point is labeled as the peak. If no point is found through a scan, the algorithm registers a non-existent peak for that scan.
 
-The search progresses outward from the center of the X-dimension, comprising of one scan from mid -> left extreme, and another scan from mid -> right extreme. The decision of this 'mid point' for the adjacent scans is configurable via the 'CameraPositionRatio' setting. This has been set to 50 % of the X dimension at present, but allows alteration to accommodate the scenario wherein the camera is *not* at the center of the car.
+The search progresses outward from the center of the X-dimension, comprising of one scan from mid -> left extreme, and another scan from mid -> right extreme. The decision of this 'mid point' for the adjacent scans is configurable via the 'CameraPositionRatio' setting. This has been set to 50 % of the X dimension at present, assuming the camera is at the center of the car, but can accommodate the scenario wherein it is not. This setting is necessary so as to determine the position of the car relative to the center of the lane, i.e, the 'drift'. If the camera is not at the center of the car, then that needs to be factored into the calculation of the 'drift'.
 
 ###### Search bounding
+In addition to the 'PeakRangeRatios' heuristic, the scan of either side of a histogram can be further optimized by looking for the peak within a narrower horizontal range, centered around:
+- the position of the peak on the same side of the *earlier* slice (for the same frame), or
+- the position of the peak for the same side of the *subsequent* slice (in the previous frame).
+If the first option is known, it is used. If not, the second is used. If that too is not known, then the search is expanded to the entire length of the relevant side of the histogram. This narrowing of the search space also decreases the impact of noise. And it is adaptive enough such that if either of the above centers was detected erroneously, it would impact the confidence of the lane detected in that frame, increasing the probability of a valid detection in a subsequent frame.
 
-
+There is a risk of getting caught detecting points that are not along either of the lanes. This can be solved by:
+- using an improved heuristic based on the expected width (in pixels) of the lane (discussed in the limitations section), or
+- improving the thresholding expression to eliminate or minimize this noise.
 
 ###### Peak detection
 
@@ -254,9 +260,8 @@ This downstream processor takes the lane and car data generated by the 'LaneFind
 	"SafeColor": [152, 251, 152],
     	"DangerColor": [255,0,0]
 }
-}
 ```
-This component is also responsible for selecting which lanes to draw, based on the confidence level associated with each lane from the current frame. A threshold is utilized, called 'LaneConfidenceThreshold', that determines the minimum confidence level associated with the lane in order for it to be accepted and drawn by this component. The behavior obtained from this logic is that no lane will be drawn until *both* the left and right lanes satisfy this minimum threshold. Once that threshold is met, the component will continue using the corresponding polynomial fit of each side of the lane to paint the lane's body, until such time as the new data for either or both of the lanes satisfies the threshold, at which point it paints using the updated lane fit(s). This makes the algorithm able to adapt to situations when no new information of sufficient confidence is obtained from the LaneFinder, because in such cases, it continues to use the last high-confidence lane information. This applies to each side of the lane. So, it's possible that one side gets updated, while the other remains the same. Either way, once it starts painting the lane, there is never a period where the lane can vanish.
+This component is also responsible for selecting which lanes to draw, based on the confidence level associated with each lane from the current frame. A threshold is utilized, called 'LaneConfidenceThreshold', that determines the minimum confidence level associated with the lane in order for it to be accepted and drawn by this component. The behavior obtained from this logic is that no lane will be drawn until *both* the left and right lanes satisfy this minimum threshold. Once that threshold is met, the component will continue using the corresponding polynomial fit of each side of the lane to paint the lane's interior, until such time as the new data for either or both of the lanes satisfies the threshold, at which point it paints the lane interior using the updated lane fit(s). This makes the algorithm able to adapt to situations when no new information of sufficient confidence is obtained from the LaneFinder, because in such cases, it continues to use the last high-confidence lane information. This applies to each side of the lane. So, it's possible that one side gets updated, while the other remains the same. Either way, once it starts painting the lane, there is never a period where the lane can vanish.
 
 ### Areas for Improvement & Potential Failure Scenarios:
 
