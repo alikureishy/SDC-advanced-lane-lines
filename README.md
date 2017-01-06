@@ -234,11 +234,11 @@ However, a more restrictive heuristic can be defined by the 'PeakRangeRatios' pa
 
 The search progresses outward from the center of the X-dimension, comprising of one scan from mid -> left extreme, and another scan from mid -> right extreme. The decision of this 'mid point' for the adjacent scans is configurable via the 'CameraPositionRatio' setting. This has been set to 50 % of the X dimension at present, assuming the camera is at the center of the car, but can accommodate the scenario wherein it is not. This setting is necessary so as to determine the position of the car relative to the center of the lane, i.e, the 'drift'. If the camera is not at the center of the car, then that needs to be factored into the calculation of the 'drift'.
 
-###### Search bounding
-In addition to the 'PeakRangeRatios' heuristic, the scan of either side of a histogram can be further optimized by looking for the peak within a narrower horizontal range (dictated by the 'PeakWindowRatio' config param), and centered around:
-- the position of the peak on the same side of the *earlier* slice (for the same frame), or
+###### Aggressive peark search bounding
+In addition to the 'PeakRangeRatios' heuristic, the scan of either side of a histogram can be further optimized by looking for the peak within a narrower horizontal range (dictated by the 'PeakWindowRatio' config param), and centered around a combination of:
+- the position of the peak on the same side of the *earlier* slice (for the same frame), and
 - the position of the peak for the same side of the *subsequent* slice (predicted by the polynomial of the lane from the previous frame).
-If the first option is known, it is used. If not, the second is used. If that too is not known, then the search is expanded to the entire length of the relevant side of the histogram. This narrowing of the search space also decreases the impact of noise. And it is adaptive enough such that if either of the above centers was detected erroneously, it would impact the confidence of the lane detected in that frame, increasing the probability of a valid detection in a subsequent frame.
+More specifically, the smallest window discernible from these positions is utilized. This may seem rather limiting, but happens to achieve good results on the test video. And if neither of these are available, then the search is expanded to the entire span of the relevant side of the histogram. This aggressive narrowing of the search space also decreases the impact of noise. And it is adaptive enough such that if either of the above centers was detected erroneously, it would impact the confidence of the lane detected in that frame, decreasing the probability of an erroneous detection in the subsequent frame.
 
 There is a risk of getting caught detecting points that are not along either of the lanes. This can be solved by:
 - using an improved heuristic based on the expected width (in pixels) of the lane (discussed in the limitations section), or
@@ -254,10 +254,7 @@ The extent of this influence is determined by the 'LookbackPeriod' config settin
 ###### Peak detection & Confidence
 Each slice is ideally expected to generate 2 peaks -- one on the left and the other on the right. This is not always the case, however. Nevertheless, even with a few such peaks discerned from the slices across a given frame, it is possible to fit a polynomial function to then determine the expected lane line. Once the functions have been fitted, it can be used to 'fill-in' unknown X-values that can facilitate the detection of subsequent peaks in the following frames (as discussed above), as well as paint between the disambiguated lane lines.
 
-However, each polynomial fit is only as reliable as the points feeding it. This reliability is difficult to ascertain immediately, but generally becomes apparent over subsequent frames. This is because, assuming the thresholding function minimizes noise, any erroneous lane detection will narrow the search window for seeking out subsequent peaks to the erroneous area, eventually converging toward fewer and fewer peaks being detected. The fewer the number of peaks, the lower the threshold f
-
-
-###### Lookback period
+However, each polynomial fit is only as reliable as the points feeding it. This reliability is difficult to ascertain immediately, but generally becomes apparent over subsequent frames. This is because, assuming the thresholding function minimizes noise, any erroneous lane detection will narrow the search window for seeking out subsequent peaks to within that erroneous area, yielding fewer and fewer peaks in subsequent frames. The fewer the number of peaks in a given lane detection, the lower its contribution toward detecting new lanes.
 
 
 #### Lane Filler
