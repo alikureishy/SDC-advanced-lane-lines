@@ -15,6 +15,22 @@ The goals / steps of this project were the following:
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
+### Installation
+
+This is a python utility requiring the following libraries to be installed prior to use:
+* python (>= 3)
+* numpy
+* scikit-learn
+* OpenCV3
+* matplotlib
+
+### Execution
+
+#### Image Calibration
+
+
+#### 
+
 ### Implementation
 
 The following sections discuss the implemented components/algorithms of this project.
@@ -25,6 +41,131 @@ A look at the configuration file should serve as a convenient starting point to 
 
 Here is the configuration that I've defined for this utility. The goal was to separate the user-configurable parts from the actual code, though basic familiarity with JSON files would still be expected of the user.
 
+'''
+{
+#
+# This lays out the processor pipeline that each frame is put through
+# prior to being returned to the user for lane visualization.
+# Each processor supports a 'ToPlot' setting that dictates whether
+# the illustrations produced by the processor are to be displayed
+# to the user, or whether they are to be kept silent. In essence, it
+# serves as a sort of 'silencing' flag ('0' indicating silence).
+#
+"Pipeline": [
+    	"StatsWriter",
+    	"Undistorter",
+    	"Thresholder",
+    	"PerspectiveTransformer",
+    	"LaneFinder",
+    	"LaneFiller"
+    ],
+
+#
+# This is a downstream processor that writes various pipeline stats to the
+# final processed image. It is placed first, but actually kicks in last
+# on the unwind of pipeline stack.
+#
+"StatsWriter": {
+		"ToPlot": 0
+},
+
+#
+# This is an upstream and downstream processor that respectively undistorts/redistorts
+# the image based on calibration data generated through a different utility, and saved
+# in the 'CalibrationFile' below. The image is UNdistorted on the upstream path, and
+# re-distorted on the downstream path before being written out to disk.
+#
+"Undistorter": {
+		"ToPlot": 0,
+        "CalibrationFile": "config/calibration.pickle"
+},
+
+#
+# This is an upstream processor that is one of the most configuration-heavy
+# components in the pipeline. It is still a WIP but at present supports
+# expressions combining Color- and Sobel- based transformations of the images
+# in any number of desired ways (including multi-level nesting).
+# The image that is output by this processor at present is necessarily a binary 
+# image.
+#
+"Thresholder": {
+		"ToPlot": 0,
+    	"HoughFilter": {
+    		"Rho": 2, "Theta": 0.0174, "Threshold": 100, "MinLineLength": 75, "MaxLineGap": 30,
+	    	"LeftRadianRange": [-0.95, -0.50], "RightRadianRange": [0.50, 0.95], "DepthRangeRatio": [0.95, 0.70]
+    	},
+		"Term":
+		{
+			"ToPlot": 1,
+			"Operator": "OR",
+			"Negate": 0,
+			"Operands": [
+				{
+					"ToPlot": 1,
+					"Operator": "AND",
+					"Negate": 0,
+					"Operands": [
+				    	{"Color": { "Space": "HLS", "Channel": 0, "MinMax": [50,200], "Negate": 1, "ToPlot": 1}},
+				    	{"Color": { "Space": "RGB", "Channel": 0, "MinMax": [50,200], "Negate": 1, "ToPlot": 1}}
+				    ]
+				},
+				{
+					"ToPlot": 1,
+					"Operator": "AND",
+					"Negate": 0,
+					"Operands": [
+				    	{"Color": { "Space": "HLS", "Channel": 2, "MinMax": [50,200], "Negate": 0, "ToPlot": 1}},
+				    	{"Color": { "Space": "RGB", "Channel": 1, "MinMax": [50,200], "Negate": 1, "ToPlot": 1}}
+				    ]
+				}
+			]
+		}
+},
+
+#
+# This component, as is obvious, performs a perspective transformation of the input
+# image. The 'DefaultHeadingRatios' setting is of the form '[X-Origin-Ratio, Orientation]'
+# and in conjunction with the 'DepthRangeRatio', specifies the source points for
+# transformation. The 'TransformRatios' setting is of the form '[XRatio, YRatio]' is used to
+# specify the transformed points desired. The order is [UpperLeft, UpperRight, LowerLeft,
+# LowerRight]. All points are expressed as ratios of the length of the corresponding dimension.
+#
+"PerspectiveTransformer": {
+		"ToPlot": 0,
+      "DefaultHeadingRatios": [
+        	[0.20, -1.2],
+        	[0.86, 1.60]
+      ],
+    	"DepthRangeRatio": [0.99, 0.63],
+      "TransformRatios": [
+        	[0.25, 0.0],
+        	[0.75, 0.0],
+        	[0.25, 1.0],
+        	[0.75, 1.0]
+      ]
+},
+
+#
+# This lays out the pipeline that each frame is put through
+#
+"LaneFinder": {
+		"ToPlot": 0,
+		"SliceRatio": 0.10,
+    	"PeakWindowRatio": 0.05,
+    	"PeakRangeRatios": [0.10, 0.50],
+    	"LookBackFrames": 4,
+    	"CameraPositionRatio": 0.50
+    },
+    "LaneFiller": {
+		"ToPlot": 0,
+		"LaneConfidenceThreshold": 0.40,
+		"DriftToleranceRatio": 0.05,
+		"SafeColor": [152, 251, 152],
+    	"DangerColor": [255,0,0]
+    }
+}
+
+'''
 
 
 #### 
@@ -59,3 +200,9 @@ Another alternative, instead of shortening the perpspective, is to use a higher 
 #### Adaptive window for limiting peak searches
 
 Presently, a static window is used to determine the bounds of the points used to detect a histogram peak, relative to the location of the peak in the slice right below the present slice, or the peak in the subsequent slice of the previous frame. Though these approaches allow a more efficient scan, it is possible to get stuck looking for a lane close to an erroneous lane or peak that was previously detected. To avoid this, it might be beneficial to increase the window size proportional to the confidence of the previously detected lane, or the confidence of the peaks obtained in the slices below. The lower the confidence, the larger the window becomes, upto a maximum size of the search region itself. The higher the confidence, the smaller the window gets, upto a minimum of the configured window size.
+
+### Open Defects
+
+* Performance of this utility is below par at the moment. Output from performance profiling suggests the culprit is the extensive use of matplotlib to illustrate the transformations/processing steps for each frame in the video. Switching off illustration speeds up performance significantly, but not sufficiently enough to ensure real-time detection during actual use on the road.
+
+* Insufficient error checking. Since this is not a commercial use utility, emphasis was not given to ensuring producing descriptive error messages. If you choose to run this utility, but face issues, please feel free to create an 'Issue' for this project.
