@@ -285,7 +285,7 @@ A more robust solution, especially to avoid miscategorizing peaks further down o
 
 #### Erroneous lane noise elimination using pixel-to-standard-lane-width translation
 
-
+Lane detection at present does not utilize the expected lane width, established by US road standards. This information, when combined with the confidence metric discussed earlier, could greatly improve the accuracy of the detection by allowing the system to choose the best option (or drop the unlikely option) in case of ambiguity.
 
 #### Dynamic identification of perspective points
 
