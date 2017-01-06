@@ -219,9 +219,9 @@ This upstream processor locates the lane lines in the frame. It is where all the
 },
 ```
 
-##### Algorithm Details
+##### Algorithms / Heuristics
 
-The lane detection procedure can be broken down into the following parts, each tweakable through the configuration settings illustrated above. In fact, there is almost a 1-1 correspondence between the configuration settings above, and the sections below.
+The lane detection procedure can be broken down into the following components, each using a different heuristic, and each tweakable through the configuration settings illustrated above. In fact, there is almost a 1-1 correspondence between the configuration settings above, and the heuristics below.
 
 ###### Horizontal slicing
 This is controlled by the 'SliceRatio' parameter, that specifies the fraction of the vertical dimension (y dimension) that each horizontal slice should cover. The smaller the fraction, the more the slices, and higher the sensitivity of the lane detection. The larger the slices, the coarser the peaks, and lesser the sensitivity. It appeared that a fraction of 0.05 - 0.10 was rather effective for the first video. This may not be the case for the challenge videos, where the curvature of the lane lines is smaller, and changes more rapidly.
@@ -245,6 +245,7 @@ There is a risk of getting caught detecting points that are not along either of 
 - improving the thresholding expression to eliminate or minimize this noise.
 
 ###### Peak detection
+
 
 ###### Lookback period
 
