@@ -235,16 +235,26 @@ However, a more restrictive heuristic can be defined by the 'PeakRangeRatios' pa
 The search progresses outward from the center of the X-dimension, comprising of one scan from mid -> left extreme, and another scan from mid -> right extreme. The decision of this 'mid point' for the adjacent scans is configurable via the 'CameraPositionRatio' setting. This has been set to 50 % of the X dimension at present, assuming the camera is at the center of the car, but can accommodate the scenario wherein it is not. This setting is necessary so as to determine the position of the car relative to the center of the lane, i.e, the 'drift'. If the camera is not at the center of the car, then that needs to be factored into the calculation of the 'drift'.
 
 ###### Search bounding
-In addition to the 'PeakRangeRatios' heuristic, the scan of either side of a histogram can be further optimized by looking for the peak within a narrower horizontal range, centered around:
+In addition to the 'PeakRangeRatios' heuristic, the scan of either side of a histogram can be further optimized by looking for the peak within a narrower horizontal range (dictated by the 'PeakWindowRatio' config param), and centered around:
 - the position of the peak on the same side of the *earlier* slice (for the same frame), or
-- the position of the peak for the same side of the *subsequent* slice (in the previous frame).
+- the position of the peak for the same side of the *subsequent* slice (predicted by the polynomial of the lane from the previous frame).
 If the first option is known, it is used. If not, the second is used. If that too is not known, then the search is expanded to the entire length of the relevant side of the histogram. This narrowing of the search space also decreases the impact of noise. And it is adaptive enough such that if either of the above centers was detected erroneously, it would impact the confidence of the lane detected in that frame, increasing the probability of a valid detection in a subsequent frame.
 
 There is a risk of getting caught detecting points that are not along either of the lanes. This can be solved by:
 - using an improved heuristic based on the expected width (in pixels) of the lane (discussed in the limitations section), or
 - improving the thresholding expression to eliminate or minimize this noise.
 
-###### Peak detection
+###### Lookback period and lane smoothing
+Since detection is not perfect, every new frame may bring with it some surprises. It is essential to smooth out the detection of lanes to be robust to these surprises. A convenient approach to smoothing is to utilize the discovered peaks from previous frames in addition to those discovered from the latest frame, when trying to fit a polynomial to the lane. This avoids any sudden jerky projections of the lane lines, bringing out a smoother progression of the lane mapping. Note that only the previous *discovered* peaks are used, not the peaks fitted by the corresponding polynomial function.
+
+The approach of using previously discovered peaks has another advantage, which is that it renders a natural weighting of discovered peaks toward lane mapping. Frames/lanes with fewer discovered peaks will contribute fewer points toward fitting a polynomial for not just their own lanes, but also the lanes of subsequent frames (upto a limit specified by the 'LookbackPeriod' parameter). Consequently, frames with a larger number of peaks will carry higher weightage, as they should.
+
+The extent of this influence is determined by the 'LookbackPeriod' config setting. The higher this number, the further back the algorithm looks when mapping lane lines, and the smoother the progression of the lanes with each subsequent frame. However, the disadvantage from this inertia is that the algorithm will adapt slower to lane changes, and worse, to correcting erroneous detections. I have used a lookback period of about 4 frames, which I found achieves a balance between too much inertia and smoothness.
+
+###### Peak detection & Confidence
+Each slice is ideally expected to generate 2 peaks -- one on the left and the other on the right. This is not always the case, however. Nevertheless, even with a few such peaks discerned from the slices across a given frame, it is possible to fit a polynomial function to then determine the expected lane line. Once the functions have been fitted, it can be used to 'fill-in' unknown X-values that can facilitate the detection of subsequent peaks in the following frames (as discussed above), as well as paint between the disambiguated lane lines.
+
+However, each polynomial fit is only as reliable as the points feeding it. This reliability is difficult to ascertain immediately, but generally becomes apparent over subsequent frames. This is because, assuming the thresholding function minimizes noise, any erroneous lane detection will narrow the search window for seeking out subsequent peaks to the erroneous area, eventually converging toward fewer and fewer peaks being detected. The fewer the number of peaks, the lower the threshold f
 
 
 ###### Lookback period
