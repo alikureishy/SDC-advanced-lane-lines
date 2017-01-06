@@ -67,16 +67,17 @@ Note the '-o' parameter because the parameter used here will need to be provided
 This utility is in the file lanemapper.py. It is also a command line utility, invoked as in the following example:
 
 ```
-/Users/safdar/git/advanced-lane-detection/src> python3.5 lanemapper.py -i ../project_video.mp4 -o ../sample_out.mp4 -c config/lanemapper.json -x 1
+/Users/safdar/git/advanced-lane-detection/src> python3.5 lanemapper.py -i ../project_video.mp4 -o ../sample_out.mp4 -c config/lanemapper.json -x 1 -p
 ```
+Note: To silence the illustrations on pyplot, remove the '-p' flag. This flag turns on the illustration of image transformations that each frame goes through. The illustrations can also be individually toggled in the config file (src/config/lanemapper.json). Removing the -p flag will also cause the utility to run a lot faster. To enable additional details of the image transformations, go to the lanemapper.json file and search for the 'ToPlot' flags. Each component has that flag, and a value of '1' indicates that it is enabled, and '0' indicates it is disabled. Toggle the value for the components that you want to visualize, for example, the 'PerspectiveTransformer' or the 'Thresholder' etc. At present, only the 'StatsWriter' and 'Thresholder' are enabled. Thresholder illustrations are enabled at a high level only -- that is, only the final output is shown. Individual threshold transformations can also be enabled using the finer grained 'ToPlot' settings on each such threshold operation.
 
 Here's the help menu:
 ```
 ###############################################
-#                 LANE FINDER                 #
+#                 LANE MAPPER                 #
 ###############################################
 usage: lanemapper.py [-h] -i INPUT [-o OUTPUT] -c [CONFIGS [CONFIGS ...]]
-                     [-s SELECTOR] [-x SPEED] [-d]
+                     [-s SELECTOR] [-x SPEED] [-d] [-p]
 
 Lane Finder
 
@@ -92,6 +93,8 @@ optional arguments:
   -x SPEED              Speed (1 ,2, 3 etc) interpreted as 1x, 2x, 3x etc)
   -d                    Dry run. Will not save anything to disk (default:
                         false).
+  -p                    Plot all illustrations marked as 'ToPlot' in the
+                        config. (default: false).
 ```
 
 
