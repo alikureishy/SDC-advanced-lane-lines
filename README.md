@@ -26,15 +26,48 @@ This is a python utility requiring the following libraries to be installed prior
 * OpenCV3
 * matplotlib
 
+Here is a [sample output](https://www.google.com "advanced lane detection project output") produced by this utility on the project video.
+
 ### Execution
+
+There are two utilities in this project. One is the calibrator (calibrator.py) that is to be run as a preparatory step prior to running the second, which is the lane mapper (lanemapper.py).
+
+#### Image Calibration
+
+The output of this utility run against a folder of images is stored in a file that is then used to undistort/redistort images during advanced lane detection. The utility is in the file calibrator.py. It is a command line utility, with a sample invocation as follows:
+
+```
+/Users/safdar/git/advanced-lane-detection/src> python3.5 calibrator.py -i ../camera_cal -o config/calibration.pickle
+```
+
+Here's the help menu:
+```
+###############################################
+#                 CALIBRATOR                  #
+###############################################
+usage: calibrator.py [-h] -i INPUT -o OUTPUT [-s SIZE] [-t TEST] [-p] [-d]
+
+Camera Calibrator
+
+optional arguments:
+  -h, --help  show this help message and exit
+  -i INPUT    Path to folder containing calibration images.
+  -o OUTPUT   Location of output (Will be treated as the same as input type)
+  -s SIZE     Size of the checkboard : (horizontal, vertical)
+  -t TEST     Test file to undistort for visual verification.
+  -p          Plot the chessboard with dots drawn (default: false).
+  -d          Dry run. Will not save anything to disk (default: false).
+  ```
+
+Note the '-o' parameter because the parameter used here will need to be provided in the configuration settings for the 'Lane Mapper' utility above. Please see the 'Implementation' section below for details.
+
 
 #### Lane Mapper Utility
 
-This is reflected in the file lanemapper.py. It is a command line utility, invoked as follows:
+This utility is in the file lanemapper.py. It is also a command line utility, invoked as in the following example:
 
 ```
-/Users/safdar/advanced-lane-detection/src> python3.5 lanemapper.py [-h] -i INPUT [-o OUTPUT] -c [CONFIGS [CONFIGS ...]]
-                     [-s SELECTOR] [-x SPEED] [-d]
+/Users/safdar/git/advanced-lane-detection/src> python3.5 lanemapper.py -i ../project_video.mp4 -o ../sample_out.mp4 -c config/lanemapper.json -x 1
 ```
 
 Here's the help menu:
@@ -60,36 +93,6 @@ optional arguments:
   -d                    Dry run. Will not save anything to disk (default:
                         false).
 ```
-
-
-#### Image Calibration
-
-This is reflected in the file calibrator.py. It is a command line utility, invoked as follows:
-
-```
-/Users/safdar/advanced-lane-detection/src> python3.5 calibrator.py [-h] -i INPUT -o OUTPUT [-s SIZE] [-t TEST] [-p] [-d]
-```
-
-Here's the help menu:
-```
-###############################################
-#                 CALIBRATOR                  #
-###############################################
-usage: calibrator.py [-h] -i INPUT -o OUTPUT [-s SIZE] [-t TEST] [-p] [-d]
-
-Camera Calibrator
-
-optional arguments:
-  -h, --help  show this help message and exit
-  -i INPUT    Path to folder containing calibration images.
-  -o OUTPUT   Location of output (Will be treated as the same as input type)
-  -s SIZE     Size of the checkboard : (horizontal, vertical)
-  -t TEST     Test file to undistort for visual verification.
-  -p          Plot the chessboard with dots drawn (default: false).
-  -d          Dry run. Will not save anything to disk (default: false).
-  ```
-
-Note the '-o' flag because the parameter used here will need to be provided in the configuration settings for the 'Lane Mapper' utility above. Please see the 'Implementation' section below for details.
 
 
 ### Design
@@ -137,7 +140,7 @@ This is an upstream and downstream processor that respectively undistorts/redist
 
 ```
 "Undistorter": {
-		"ToPlot": 0,
+	"ToPlot": 0,
         "CalibrationFile": "config/calibration.pickle"
 },
 ```
@@ -147,12 +150,12 @@ This is an upstream processor that is one of the most configuration-heavy compon
 
 ```
 "Thresholder": {
-		"ToPlot": 0,
+	"ToPlot": 0,
     	"HoughFilter": {
     		"Rho": 2, "Theta": 0.0174, "Threshold": 100, "MinLineLength": 75, "MaxLineGap": 30,
 	    	"LeftRadianRange": [-0.95, -0.50], "RightRadianRange": [0.50, 0.95], "DepthRangeRatio": [0.95, 0.70]
     	},
-		"Term":
+	"Term":
 		{
 			"ToPlot": 1,
 			"Operator": "OR",
