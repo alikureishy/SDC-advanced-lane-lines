@@ -24,11 +24,12 @@ if __name__ == '__main__':
     parser.add_argument('-s', dest='selector', type=int, help='Short circuit the pipeline to perform only specified # of operations.')
     parser.add_argument('-x', dest='speed', type=int, default=1, help='Speed (1 ,2, 3 etc) interpreted as 1x, 2x, 3x etc)')
     parser.add_argument('-d', dest='dry', action='store_true', help='Dry run. Will not save anything to disk (default: false).')
+    parser.add_argument('-p', dest='plot', action='store_true', help='Plot all illustrations marked as \'ToPlot\' in the config. (default: false).')
     args = parser.parse_args()
 
     # Create the pipelines
     pipelines = []
-    plotter = Plotter()
+    plotter = Plotter(args.plot)
     for file in args.configs:
         config = json.load(open(file))
         pipeline = Pipeline(config, args.selector)

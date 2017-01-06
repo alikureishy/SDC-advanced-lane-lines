@@ -148,6 +148,18 @@ class LaneFinder(Operation):
                 
         leftxs, rightxs, leftconfidence, rightconfidence = self.locate_peaks(latest, self.__slices__, self.__left_lane__, self.__right_lane__, self.__peak_window_size__, self.__peak_range__)
         
+        # Prepare an illustration of the points:
+#         if self.isplotting():
+#             zeros1d = np.zeros_like(latest).astype(np.uint8)
+#             foreground = np.dstack((zeros1d, zeros1d, zeros1d))
+            
+            # Things to plot:
+            # - History of X values with size proportional to confidence level
+            # - Last frame's fitted x
+            # - This frame's X values
+            # - Windows used to limit peak search
+            # - Lines for the slices
+        
         # Combine historical points with present before doing a fit:
         all_leftx = self.__left_lane__.getxhistory()
         all_leftx.append(leftxs)

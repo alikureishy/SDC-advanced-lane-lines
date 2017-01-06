@@ -7,8 +7,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class Plotter(object):
-    def __init__(self):
-        self.__drawer__ = ImageDrawer()
+    def __init__(self, plot):
+        if plot:
+            self.__drawer__ = PyPlotter()
+        else:
+            self.__drawer__ = ImageDrawer()
         
     def nextframe(self):
         return Frame(self.__drawer__)
@@ -95,7 +98,7 @@ class PyPlotter(object):
                 plt.ion()
                 self.__figure__.canvas.draw()
                 plt.pause(0.00001)
-        self.__figure_text__.set_text("Frame: {}".format(self.__counter__))
+            self.__figure_text__.set_text("Frame: {}".format(self.__counter__))
         self.__counter__ += 1
         print(".", end='', flush=True)
         if self.__counter__ % 100 == 0:

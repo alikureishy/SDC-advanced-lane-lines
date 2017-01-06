@@ -53,7 +53,9 @@ class VideoStreamer(BaseStreamer):
                                        (width,height))
         if not self.__writer__.isOpened():
             raise "Unable to open output video file: {}".format(self.__outputfile__)
-        
+
+#         self.__targetshape__ = None
+#         self.__originalshape__ = None        
         self.__framesread__ = 0
         self.__frameswritten__ = 0
 
@@ -62,6 +64,10 @@ class VideoStreamer(BaseStreamer):
             ret, image = self.__reader__.read()
             if not ret:
                 break
+#             if self.__targetshape__ is None:
+#                 self.__targetshape__ = (int(0.25 * image.shape[1]), int(0.25 * image.shape[0])) 
+#                 self.__originalshape__ = (image.shape[1], image.shape[0])
+#             image = cv2.resize(image, self.__targetshape__, interpolation = cv2.INTER_AREA)
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             self.__framesread__ += 1
             yield image
@@ -69,6 +75,7 @@ class VideoStreamer(BaseStreamer):
     def write (self, post_image):
         if not ((self.__outputfile__==None) | (self.__dry__==True)):
             post_image = cv2.cvtColor(post_image, cv2.COLOR_RGB2BGR)
+#             post_image = cv2.resize(post_image, self.__originalshape__, interpolation = cv2.INTER_AREA)
             self.__writer__.write(post_image)
             self.__frameswritten__ += 1
 #             print ("\tWrote frame: {}". format(self.__frameswritten__))

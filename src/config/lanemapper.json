@@ -1,7 +1,7 @@
 {
     "Pipeline": [
-    	"Undistorter",
     	"StatsWriter",
+    	"Undistorter",
     	"Thresholder",
     	"PerspectiveTransformer",
     	"LaneFinder",
@@ -11,14 +11,14 @@
 		"ToPlot": 0
 	},
 	"StatsWriter": {
-		"ToPlot": 0
+		"ToPlot": 1
 	},
     "Undistorter": {
 		"ToPlot": 0,
         "CalibrationFile": "config/calibration.pickle"
 	},
     "Thresholder": {
-		"ToPlot": 0,
+		"ToPlot": 1,
     	"HoughFilter": {
     		"Rho": 2, "Theta": 0.0174, "Threshold": 100, "MinLineLength": 75, "MaxLineGap": 30,
 	    	"LeftRadianRange": [-0.95, -0.50], "RightRadianRange": [0.50, 0.95], "DepthRangeRatio": [0.95, 0.70]
@@ -30,45 +30,25 @@
 			"Negate": 0,
 			"Operands": [
 				{
-					"ToPlot": 1,
+					"ToPlot": 0,
 					"Operator": "AND",
 					"Negate": 0,
 					"Operands": [
-				    	{"Color": { "Space": "HLS", "Channel": 0, "MinMax": [50,200], "Negate": 1, "ToPlot": 1}},
-				    	{"Color": { "Space": "RGB", "Channel": 0, "MinMax": [50,200], "Negate": 1, "ToPlot": 1}}
+				    	{"Color": { "Space": "HLS", "Channel": 0, "MinMax": [50,200], "Negate": 1, "ToPlot": 0}},
+				    	{"Color": { "Space": "RGB", "Channel": 0, "MinMax": [50,200], "Negate": 1, "ToPlot": 0}}
 				    ]
 				},
 				{
-					"ToPlot": 1,
+					"ToPlot": 0,
 					"Operator": "AND",
 					"Negate": 0,
 					"Operands": [
-				    	{"Color": { "Space": "HLS", "Channel": 2, "MinMax": [50,200], "Negate": 0, "ToPlot": 1}},
-				    	{"Color": { "Space": "RGB", "Channel": 1, "MinMax": [50,200], "Negate": 1, "ToPlot": 1}}
+				    	{"Color": { "Space": "HLS", "Channel": 2, "MinMax": [50,200], "Negate": 0, "ToPlot": 0}},
+				    	{"Color": { "Space": "RGB", "Channel": 1, "MinMax": [50,200], "Negate": 1, "ToPlot": 0}}
 				    ]
 				}
 			]
 		}
-    },
-    "PerspectiveFinder": {
-    	"ToPlot": 0,
-    	"HoughFilter": {
-    		"Rho": 2, "Theta": 0.0174, "Threshold": 150, "MinLineLength": 200, "MaxLineGap": 15,
-	    	"LeftSlopeRange": [0.50, 0.95], "RightSlopeRange": [-0.95, -0.50],
-	    	"DepthRangeRatio": [0.95, 0.70]
-    	},
-        "DefaultPerspectiveRatios": [
-        	[0.46, 0.63],
-        	[0.54, 0.63],
-        	[0.20, 0.96],
-        	[0.86, 0.96]
-        ],
-        "TransformRatios": [
-        	[0.25, 0.0],
-        	[0.25, 0.0],
-        	[0.25, 1.0],
-        	[0.25, 1.0]
-        ]
     },
     "PerspectiveTransformer": {
 		"ToPlot": 0,
@@ -86,8 +66,8 @@
     },
     "LaneFinder": {
 		"ToPlot": 0,
-		"SliceRatio": 0.05,
-    	"PeakWindowRatio": 0.03,
+		"SliceRatio": 0.10,
+    	"PeakWindowRatio": 0.05,
     	"PeakRangeRatios": [0.10, 0.50],
     	"LookBackFrames": 4,
     	"CameraPositionRatio": 0.50

@@ -1,36 +1,8 @@
-{
-    "Pipeline": [
-    	"Undistorter",
-    	"Thresholder",
-    	"PerspectiveTransformer",
-    	"LaneFinder",
-    	"LaneFiller"
-    ],
-    "ShowOriginal": {
-		"ToPlot": 0
-	},
-    "Undistorter": {
-		"ToPlot": 0,
-        "CalibrationFile": "config/calibration.pickle"
-	},
-    "ColorSpacer": {
-		"ToPlot": 0,
-		"Original": "BGR",
-		"Target": "RGB"
-	},
-    "Resizer": {
-		"ToPlot": 0,
-		"TargetShape": [216, 384]
-	},
-    "RegionMasker": {
-		"ToPlot": 0,
-        "RelativePoints": [
-        	[0.45, 0.55],
-        	[0.55, 0.55],
-        	[0.05, 0.95], 
-        	[0.95, 0.95]
-        ]
-    },
+# This tresholder configuraion works for the most part, except near the white sections, after which there's some persistent diversion.
+# HOWEVER, note that that persistent diversion is because of the PeakWindowRangeRatio setting, and the way it is strictly adhered to.
+# Adjusting the peak window range ratio based on the confidence level of the previous frame, so that the range is extended when the
+# confidence is lower than 1.0, *might* fix this issue. Another solution might be to increase the window altogether. But that will
+# capture noise elsewhere. Another option is to tweak the parameters for lane finder.
     "Thresholder": {
 		"ToPlot": 0,
     	"HoughFilter": {
@@ -60,10 +32,39 @@
 				    	{"Color": { "Space": "HLS", "Channel": 2, "MinMax": [50,200], "Negate": 0, "ToPlot": 1}},
 				    	{"Color": { "Space": "RGB", "Channel": 1, "MinMax": [50,200], "Negate": 1, "ToPlot": 1}}
 				    ]
+				},
+				{
+					"ToPlot": 1,
+					"Operator": "AND",
+					"Negate": 0,
+					"Operands": [
+				    	{"SobelY": { "Kernel": 3, "MinMax": [12,33], "Negate": 0, "ToPlot": 1}},				
+						{
+							"ToPlot": 1,
+							"Operator": "OR",
+							"Negate": 0,
+							"Operands": [
+						    	{"SobelX": { "Kernel": 3, "MinMax": [4,33], "Negate": 0, "ToPlot": 1}},
+						    	{"SobelXY": { "Kernel": 3, "MinMax": [12,33], "Negate": 0, "ToPlot": 1}}
+						    ]
+						}
+					]
+				},
+				{
+					"ToPlot": 1,
+					"Operator": "AND",
+					"Negate": 0,
+					"Operands": [
+				    	{"SobelXY": { "Kernel": 3, "MinMax": [0,3], "Negate": 1, "ToPlot": 1}},
+				    	{"SobelXY": { "Kernel": 3, "MinMax": [4,7], "Negate": 0, "ToPlot": 1}}
+				    ]
 				}
 			]
 		}
     },
+    
+    
+,
     "PerspectiveFinder": {
     	"ToPlot": 0,
     	"HoughFilter": {
@@ -83,87 +84,15 @@
         	[0.25, 1.0],
         	[0.25, 1.0]
         ]
-    },
-    "PerspectiveTransformer": {
-		"ToPlot": 0,
-        "DefaultHeadingRatios": [
-        	[0.20, -1.2],
-        	[0.86, 1.60]
-        ],
-    	"DepthRangeRatio": [0.99, 0.63],
-        "TransformRatios": [
-        	[0.25, 0.0],
-        	[0.75, 0.0],
-        	[0.25, 1.0],
-        	[0.75, 1.0]
-        ]
-    },
-    "LaneFinder": {
-		"ToPlot": 0,
-		"SliceRatio": 0.10,
-    	"PeakWindowRatio": 0.05,
-    	"PeakRangeRatios": [0.10, 0.50],
-    	"LookBackFrames": 3,
-    	"CameraPositionRatio": 0.50
-    },
-    "CurveExtractor": {
-		"ToPlot": 1
-    },
-    "LaneFiller": {
-		"ToPlot": 0,
-		"DriftToleranceRatio": 0.05,
-		"SafeColor": [152, 251, 152],
-    	"DangerColor": [255,0,0]
     }
-}
+    
+    
+	"Resizer": {
+		"ToPlot": 0,
+		"TargetShapeRatio": [0.25, 0.25]
+	},
+
 ##########################################
-
-
-    "ThresholderExample": {
-		"ToPlot": 1,
-		"Term":
-		{
-			"ToPlot": 0,
-			"Operator": "OR",
-			"Operands": [
-				{
-					"ToPlot": 0,
-					"Operator": "AND",
-					"Operands": [
-				    	{"SobelX": { "Kernel": 3, "MinMax": [0, 255], "ToPlot": 1}},
-				    	{"SobelY": { "Kernel": 3, "MinMax": [0, 255], "ToPlot": 1}}
-					]
-				},
-				{
-					"ToPlot": 0,
-					"Operator": "AND",
-					"Operands": [
-				    	{"SobelTanXY": {"Kernel": 3, "MinMax": [0, 1.57], "ToPlot": 1}},
-				    	{"SobelXY": { "Kernel": 3, "MinMax": [0, 255], "ToPlot": 1}}
-					]
-				},
-		    	{"Color": { "Space": "HLS", "Channel": 0, "MinMax": [0,255], "ToPlot": 1}}
-			]
-		}
-    },
-    
-    
-    "Thresholder": {
-		"ToPlot": 1,
-		"Term":
-		{
-			"ToPlot": 1,
-			"Operator": "OR",
-			"Operands": [
-		    	{"SobelX": { "Kernel": 3, "MinMax": [20, 120], "ToPlot": 1}},
-		    	{"SobelY": { "Kernel": 3, "MinMax": [20, 120], "ToPlot": 1}},
-		    	{"SobelXY": { "Kernel": 3, "MinMax": [20, 120], "ToPlot": 1}},
-		    	{"SobelTanXY": { "Kernel": 3, "MinMax": [0.0, 1.0], "ToPlot": 1}},
-		    	{"Color": { "Space": "HLS", "Channel": 2, "MinMax": [20,120], "ToPlot": 1}}
-			]
-		}
-    },
-    
     
 # This below worked for the transform of the image in /test_images/solidWhiteRight.jpg
     "Perspective": {
