@@ -158,7 +158,7 @@ This is a downstream processor that writes various pipeline stats to the final p
 The output produced by this processor is depicted in the image below. It appears at the bottom of the video outputted by the utility:
 ![Statistics][StatsWriter]
 
-The sequence of stats is as follows:
+The format/meaning of the stats printed above is:
 
 ```
 {Curvature-Of-Left-Lane} m << {Confidence-In-Detected-Left-Lane}% << [{Drift-From-Center} m]  >> {Confidence-In-Detected-Right-Lane}% >> {Curvature-Of-Right-Lane} m
