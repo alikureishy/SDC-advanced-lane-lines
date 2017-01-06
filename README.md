@@ -31,7 +31,8 @@ This is a python utility requiring the following libraries to be installed prior
 This is reflected in the file lanemapper.py. It is a command line utility, invoked as follows:
 
 ```
-/Users/safdar/advanced-lane-detection/src> python3.5 lanemapper.py 
+/Users/safdar/advanced-lane-detection/src> python3.5 lanemapper.py [-h] -i INPUT [-o OUTPUT] -c [CONFIGS [CONFIGS ...]]
+                     [-s SELECTOR] [-x SPEED] [-d]
 ```
 
 Here's the help menu:
@@ -61,7 +62,32 @@ optional arguments:
 
 #### Image Calibration
 
+This is reflected in the file calibrator.py. It is a command line utility, invoked as follows:
 
+```
+/Users/safdar/advanced-lane-detection/src> python3.5 calibrator.py [-h] -i INPUT -o OUTPUT [-s SIZE] [-t TEST] [-p] [-d]
+```
+
+Here's the help menu:
+```
+###############################################
+#                 CALIBRATOR                  #
+###############################################
+usage: calibrator.py [-h] -i INPUT -o OUTPUT [-s SIZE] [-t TEST] [-p] [-d]
+
+Camera Calibrator
+
+optional arguments:
+  -h, --help  show this help message and exit
+  -i INPUT    Path to folder containing calibration images.
+  -o OUTPUT   Location of output (Will be treated as the same as input type)
+  -s SIZE     Size of the checkboard : (horizontal, vertical)
+  -t TEST     Test file to undistort for visual verification.
+  -p          Plot the chessboard with dots drawn (default: false).
+  -d          Dry run. Will not save anything to disk (default: false).
+  ```
+
+Note the '-o' flag because the parameter used here will need to be provided in the configuration settings for the 'Lane Mapper' utility above. Please see the 'Implementation' section below for details.
 
 
 ### Implementation
@@ -249,6 +275,8 @@ Another alternative, instead of shortening the perpspective, is to use a higher 
 Presently, a static window is used to determine the bounds of the points used to detect a histogram peak, relative to the location of the peak in the slice right below the present slice, or the peak in the subsequent slice of the previous frame. Though these approaches allow a more efficient scan, it is possible to get stuck looking for a lane close to an erroneous lane or peak that was previously detected. To avoid this, it might be beneficial to increase the window size proportional to the confidence of the previously detected lane, or the confidence of the peaks obtained in the slices below. The lower the confidence, the larger the window becomes, upto a maximum size of the search region itself. The higher the confidence, the smaller the window gets, upto a minimum of the configured window size.
 
 ### Open Defects
+
+I will get to these when time permits. Until then, am calling them out here. Please see the 'Issues' section of this github repository for further details.
 
 * Performance of this utility is below par at the moment. Output from performance profiling suggests the culprit is the extensive use of matplotlib to illustrate the transformations/processing steps for each frame in the video. Switching off illustration speeds up performance significantly, but not sufficiently enough to ensure real-time detection during actual use on the road.
 
