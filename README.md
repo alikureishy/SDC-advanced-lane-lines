@@ -43,14 +43,14 @@ Here is the configuration that I've defined for this utility. The goal was to se
 
 '''
 {
-#
-# This lays out the processor pipeline that each frame is put through
-# prior to being returned to the user for lane visualization.
-# Each processor supports a 'ToPlot' setting that dictates whether
-# the illustrations produced by the processor are to be displayed
-# to the user, or whether they are to be kept silent. In essence, it
-# serves as a sort of 'silencing' flag ('0' indicating silence).
-#
+-
+- This lays out the processor pipeline that each frame is put through
+- prior to being returned to the user for lane visualization.
+- Each processor supports a 'ToPlot' setting that dictates whether
+- the illustrations produced by the processor are to be displayed
+- to the user, or whether they are to be kept silent. In essence, it
+- serves as a sort of 'silencing' flag ('0' indicating silence).
+-
 "Pipeline": [
     	"StatsWriter",
     	"Undistorter",
