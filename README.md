@@ -26,10 +26,43 @@ This is a python utility requiring the following libraries to be installed prior
 
 ### Execution
 
+#### Lane Mapper Utility
+
+This is reflected in the file lanemapper.py. It is a command line utility, invoked as follows:
+
+```
+/Users/safdar/advanced-lane-detection/src> python3.5 lanemapper.py 
+```
+
+Here's the help menu:
+```
+###############################################
+#                 LANE FINDER                 #
+###############################################
+usage: lanemapper.py [-h] -i INPUT [-o OUTPUT] -c [CONFIGS [CONFIGS ...]]
+                     [-s SELECTOR] [-x SPEED] [-d]
+
+Lane Finder
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INPUT              Path to image file, image folder, or video file.
+  -o OUTPUT             Location of output (Will be treated as the same as
+                        input type)
+  -c [CONFIGS [CONFIGS ...]]
+                        Configuration files.
+  -s SELECTOR           Short circuit the pipeline to perform only specified #
+                        of operations.
+  -x SPEED              Speed (1 ,2, 3 etc) interpreted as 1x, 2x, 3x etc)
+  -d                    Dry run. Will not save anything to disk (default:
+                        false).
+```
+
+
 #### Image Calibration
 
 
-#### 
+
 
 ### Implementation
 
@@ -57,7 +90,7 @@ In essence, for the configuration above, the following pipeline is generated:
 ```
 StatsWriter --> Undistorter --> Thresholder --> PerspectiveTransformer --> LaneFinder --> LaneFiller
                                                                                               V
-											      V
+                                                                                              V
 StatsWriter <-- Undistorter <-- Thresholder <-- PerspectiveTransformer <-- LaneFinder <-- LaneFiller 
 ```
 The first line is the 'upstream' pipeline, and the lower line is the 'downstream' pipeline, which is always a reversal of the upstream, based on the Chain Of Responsibility design pattern.
@@ -155,6 +188,8 @@ This upstream processor locates the lane lines in the frame. It is where all the
 ```
 
 ##### Algorithm Details
+
+
 
 ###### Horizontal slicing
 
