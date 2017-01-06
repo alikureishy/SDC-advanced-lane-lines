@@ -4,6 +4,8 @@
 
 This was project # 4 of the Self Driving Car curriculum at Udacity. It was aimed at advanced lane detection for a front-facing camera on the car. No additional sensor inputs were utilized for this project.
 
+An overarching theme of this project was to make it extensible and highly configurable, though the time provided for this implementation has left some ground to still cover. Nevertheless, I have placed a heavy emphasis -- and will continue to be the emphasis -- for this utility to require minimal configuration changes when the input video settings change (eg., the frame size, frame rate, etc). A significant amount of time was spent building a framework of sorts, to allow for such configurability. In as much as the parameters for this project were known to me, the implementation so far does a pretty good job. However, a *lot* still remains to be cleaned up and refactored. Please bear this in mind during any inspection of the code base.
+
 The goals / steps of this project were the following:
 
 * Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
@@ -219,11 +221,14 @@ This upstream processor locates the lane lines in the frame. It is where all the
 
 ##### Algorithm Details
 
-
+The lane detection procedure can be broken down into the following parts, each tweakable through the configuration settings illustrated above. In fact, there is almost a 1-1 correspondence between the sections listed here, and the configuration settings above.
 
 ###### Horizontal slicing
+This is controlled by the 'SliceRatio' parameter, that specifies the fraction of the vertical dimension (y dimension) that each horizontal slice should cover. The smaller the fraction, the more the slices, and higher the sensitivity of the lane detection. The larger the slices, the coarser the peaks, and lesser the sensitivity. It appeared that a fraction of 0.05 - 0.10 was rather effective for the first video. This may not be the case for the challenge videos, where the curvature of the lane lines is smaller, and changes more rapidly.
 
 ###### Horizontal search
+
+This is controlled by the 'PeakRangeRatio' parameter which is, as with other parameters, expressed as a tuple of fractions -- [min, max].
 
 ###### Search bounding
 
