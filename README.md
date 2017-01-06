@@ -228,9 +228,15 @@ This is controlled by the 'SliceRatio' parameter, that specifies the fraction of
 
 ###### Horizontal search
 
-This is controlled by the 'PeakRangeRatio' parameter which is, as with other parameters, expressed as a tuple of fractions -- [min, max].
+This refers to the directional scan of the histogram calculated for each horizontal slice above, looking for the point with the highest magnitude of aggregated pixels. The 'SliceRatio' parameter essentially limits the magnitude of all such points along the histogram to within a [0-SliceSize] range, assuming binary pixel values.
+
+However, a more restrictive heuristic can be defined by the 'PeakRangeRatio' parameter which is, as with other parameters, expressed as a tuple of fractions, representing the necessary, and the sufficient, magnitude (as a fraction of the SliceSize) thresholds for any given point on the histogram, in the direction of search, to either be dropped from consideration, or to be selected as the peak, respectively. Upon encountering such points, the decision regarding that point is final -- either it is the peak, or it isn't. Points that fall between these two numbers -- i.e, above the necessary threshold and below the sufficient magnitude -- are considered candidates, put to test by being compared against subsequent point values, until either the sufficient threshold is crossed, or scan ends, at which point the highest valued point is labeled as the peak. If no point is found through a scan, the algorithm registers a non-existent peak for that scan.
+
+The search progresses outward from the center of the X-dimension, comprising of one scan from mid -> left extreme, and another scan from mid -> right extreme. The decision of this 'mid point' for the adjacent scans is configurable via the 'CameraPositionRatio' setting. This has been set to 50 % of the X dimension at present, but allows alteration to accommodate the scenario wherein the camera is *not* at the center of the car.
 
 ###### Search bounding
+
+
 
 ###### Peak detection
 
