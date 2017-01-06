@@ -253,7 +253,9 @@ Sobel thresholding, though potentially a useful tool, proved largely unnecessary
 
 
 #### Perspective Transformer
-This component, as is obvious, performs a perspective transformation of the input image. The 'DefaultHeadingRatios' setting is of the form '[X-Origin-Ratio, Orientation]' and in conjunction with the 'DepthRangeRatio', specifies the source points for transformation. The 'TransformRatios' setting is of the form '[XRatio, YRatio]' is used to specify the transformed points desired. The order is [UpperLeft, UpperRight, LowerLeft, LowerRight]. All points are expressed as ratios of the length of the corresponding dimension. It transforms the persective from source to destination during upstream processing, and destination back to source during the downstream pipeline.
+This component, as is obvious, performs a perspective transformation of the input image. The 'DefaultHeadingRatios' setting is of the form '[X-Origin-Ratio, Orientation]' and in conjunction with the 'DepthRangeRatio', specifies the source points for transformation. The 'TransformRatios' setting is of the form '[XRatio, YRatio]' and is used to specify the transformed points desired. The order is [UpperLeft, UpperRight, LowerLeft, LowerRight]. All points are expressed as ratios of the length of the corresponding dimension. It transforms the persective from source to destination during upstream processing, and destination back to source during the downstream pipeline.
+
+This configuration makes it easy to modify the perspective without needing to know the image size etc, since every point is expressed as a fraction of the corresponding dimension.
 
 ```
 "PerspectiveTransformer": {
@@ -301,7 +303,7 @@ However, a more restrictive heuristic can be defined by the 'PeakRangeRatios' pa
 
 The search progresses outward from the center of the X-dimension, comprising of one scan from mid -> left extreme, and another scan from mid -> right extreme. The decision of this 'mid point' for the adjacent scans is configurable via the 'CameraPositionRatio' setting. This has been set to 50 % of the X dimension at present, assuming the camera is at the center of the car, but can accommodate the scenario wherein it is not. This setting is necessary so as to determine the position of the car relative to the center of the lane, i.e, the 'drift'. If the camera is not at the center of the car, then that needs to be factored into the calculation of the 'drift'.
 
-###### Aggressive peark search bounding
+###### Aggressive peak search bounding
 In addition to the 'PeakRangeRatios' heuristic, the scan of either side of a histogram can be further optimized by looking for the peak within a narrower horizontal range (dictated by the 'PeakWindowRatio' config param), and centered around a combination of:
 - the position of the peak on the same side of the *earlier* slice (for the same frame), and
 - the position of the peak for the same side of the *subsequent* slice (predicted by the polynomial of the lane from the previous frame).
