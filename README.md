@@ -4,7 +4,7 @@
 [HighLevel-Green]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration3.png "High Level - Green"
 [HighLevel-Red]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration4.png "High Level - Red"
 [MappedLane]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration5.png "Mapped Lane"
-[StatsWriter]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration5.png "Caption showing lane statistics"
+[StatsWriter]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration6.png "Caption showing lane statistics"
 
 
 ![Mapped Lane][MappedLane]
