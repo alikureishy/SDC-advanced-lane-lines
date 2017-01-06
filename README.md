@@ -59,7 +59,7 @@ optional arguments:
   -d          Dry run. Will not save anything to disk (default: false).
   ```
 
-Note the '-o' parameter because the parameter used here will need to be provided in the configuration settings for the 'Lane Mapper' utility above. Please see the 'Implementation' section below for details.
+Note the '-o' parameter because the parameter used here will need to be provided in the configuration settings for the 'Lane Mapper' utility below. Please see the 'Implementation' section below for details.
 
 
 #### Lane Mapper Utility
