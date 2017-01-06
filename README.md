@@ -15,9 +15,23 @@ The goals / steps of this project were the following:
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
-### Areas for Improvement:
+### Implementation
 
-Areas where this project could improve are discussed below. I could not implement these options due to time considerations, but I might revisit them 'further down the road', pun intended.
+The following sections discuss the implemented components/algorithms of this project.
+
+#### Configuration
+
+A look at the configuration file should serve as a convenient starting point to segue into the implementation details.
+
+Here is the configuration that I've defined for this utility. The goal was to separate the user-configurable parts from the actual code, though basic familiarity with JSON files would still be expected of the user.
+
+
+
+#### 
+
+### Areas for Improvement & Potential Failure Scenarios:
+
+Areas where this project could improve are discussed below, outlining scenarios where the algorithm would likel fail. I could not implement these options due to time considerations, but I might revisit them further "down the road' (pun intended).
 
 #### Mid-Line for Left/Rigth Peak Categorization
 
