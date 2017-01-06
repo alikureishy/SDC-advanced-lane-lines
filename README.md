@@ -29,6 +29,8 @@ A more robust solution, especially to avoid miscategorizing peaks further down o
 
 #### Dynamic identification of perspective points
 
+Depending on the camera height relative to the road, and 
+
 One option that was mentioned previously is to dynamically adjust the perspective used for the perspective transform, the goal being to advance the perspective only as far as not to include more than one curve in the transformation. The disadvange of this approach, as mentioned, would be that the car would have to slow down (since its 'vision' is now very short), or risk 
 
 
