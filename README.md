@@ -90,7 +90,7 @@ optional arguments:
 Note the '-o' flag because the parameter used here will need to be provided in the configuration settings for the 'Lane Mapper' utility above. Please see the 'Implementation' section below for details.
 
 
-### Implementation
+### Design
 
 The following sections discuss the implemented components/algorithms of this project. Each component's configuration is illustrated for further clarity. The goal of the configuration sections below was to separate the user-configurable parts from the actual code, though basic familiarity with JSON files would still be expected of any user. A look at the configuration should serve as a convenient segue into the implementation details.
 
@@ -178,6 +178,10 @@ This is an upstream processor that is one of the most configuration-heavy compon
 		}
 },
 ```
+In the case of the project test video, color thresholding seemed sufficient to detect the lane lines. Most of the ambiguity was with the right lane, rather than the left yellow lane. Though the right lane was sufficiently detected in most cases, it is two regions of the highway that posed a slight problem that I could not fully resolve at present. The hope has always been, as should be evident from the configurability of this system, that I spend some more time to tweak and tune the parameters to find a more robust thresholding. However, as shall be obvious in the 'LaneFinder' section, a large part of this ambiguity was usually addressed by the lane finding algorithm, at least for the project test video. The challenge videos require further changes and enhancements not just to the thresholding expression but to some of the algorithmic nuances that I have highlighted in more detail in the 'Areas for improvement' section further down in this document.
+
+Sobel thresholding, though potentially a useful tool, proved largely unnecessary for the test video. I see it being more useful in the challenge videos. The intention around the configurability, as mentioned, was precisely to be able to play around with various settings. It is my goal to polish up this configurability and come up with an expression that will work for different types of videos.
+
 
 #### Perspective Transformer
 This component, as is obvious, performs a perspective transformation of the input image. The 'DefaultHeadingRatios' setting is of the form '[X-Origin-Ratio, Orientation]' and in conjunction with the 'DepthRangeRatio', specifies the source points for transformation. The 'TransformRatios' setting is of the form '[XRatio, YRatio]' is used to specify the transformed points desired. The order is [UpperLeft, UpperRight, LowerLeft, LowerRight]. All points are expressed as ratios of the length of the corresponding dimension. It transforms the persective from source to destination during upstream processing, and destination back to source during the downstream pipeline.
