@@ -15,7 +15,7 @@
 
 This was project # 4 of the Self Driving Car curriculum at Udacity. It was aimed at advanced lane detection for a front-facing camera on the car. No additional sensor inputs were utilized for this project.
 
-An overarching theme of this project was to make it extensible and highly configurable, though the time provided for this implementation has left some ground to still cover. Nevertheless, I have placed a heavy emphasis -- and will continue to be the emphasis -- for this utility to require minimal configuration changes when the input video settings change (eg., the frame size, frame rate, etc). A significant amount of time was spent building a framework of sorts, to allow for such configurability. In as much as the parameters for this project were known to me, the implementation so far does a pretty good job. However, a *lot* still remains to be cleaned up and refactored. Please bear this in mind during any inspection of the code base.
+I've tried to make the utility extensible and configurable. Any configuration involving locations of points on the image has been expressed as a fraction of the 2 dimenions. So, for such configurations, no change is necessary when changing the input video settings change (eg., the frame size, frame rate, etc). A significant amount of time was spent building a framework of sorts, to allow for such configurability. In as much as the parameters for this project were known to me, the implementation does a reasonably good job. However, a *lot* still remains to be cleaned up and refactored. Please bear this in mind during any inspection of the code base.
 
 The goals / steps of this project were the following:
 
