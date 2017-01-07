@@ -15,8 +15,6 @@
 
 This was project # 4 of the Self Driving Car curriculum at Udacity. It was aimed at advanced lane detection for a front-facing camera on the car. No additional sensor inputs were utilized for this project.
 
-I've tried to make the utility extensible and configurable. Any configuration involving locations of points on the image has been expressed as a fraction of the 2 dimenions. So, for such configurations, no change is necessary when changing the input video settings change (eg., the frame size, frame rate, etc). A significant amount of time was spent building a framework of sorts, to allow for such configurability. In as much as the parameters for this project were known to me, the implementation does a reasonably good job. However, a *lot* still remains to be cleaned up and refactored. Please bear this in mind during any inspection of the code base.
-
 The goals / steps of this project were the following:
 
 * Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
@@ -27,6 +25,8 @@ The goals / steps of this project were the following:
 * Determine curvature of the lane and vehicle position with respect to center.
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
+
+I've tried to make the utility extensible and configurable. All configuration settings involving locations of points on images have been expressed as a fraction of the 2 dimenions. So, for such configurations, no changes ar necessary when changing the input video frame size. A significant amount of time was spent building a 'framework' which could support the needs of the project, and to allow for such configurability. In as much as the parameters for this project were known to me, the implementation does a reasonably good job. However, a *lot* still remains to be cleaned up and refactored. Please bear this in mind during any inspection of the code base.
 
 ### Installation
 
