@@ -289,7 +289,7 @@ This upstream processor locates the lane lines in the frame. It is where all the
 },
 ```
 
-Here is an illustration of the way the lane search algorithm presently works. The illustration was created by superposing various lane search metrics on top of a birds-eye view of the original lane. The reddish dots correspond to the peaks discovered, and their position relative to the slice represents the histogram value. The overlapping green boxes are the 2 types of search windows -- one based on the previous frame's peaks and the other based on the earlier slice's peak -- that are used to narrow down the search for individual peaks. There is a vertical separator identifying the left and right sections that the image is split into.
+Here is an illustration of the way the lane search algorithm presently works. To see this illustration while running the utility, as already mentioned, flip the 'ToPlot' setting above to '1', and use the '-p' flag of the command line utility (lanemapper.py). This illustration was created by superposing various lane search metrics on top of a birds-eye view of the original lane. The reddish dots correspond to the peaks discovered, and their position relative to the slice represents the histogram value. The overlapping green boxes are the 2 types of search windows -- one based on the previous frame's peaks and the other based on the earlier slice's peak -- that are used to narrow down the search for individual peaks. There is a vertical separator identifying the left and right sections that the image is split into.
 
 ![Illustration of lane searching][LaneFinder]
 
