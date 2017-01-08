@@ -6,6 +6,8 @@ Created on Dec 23, 2016
 from operations.baseoperation import Operation
 import numpy as np
 from _collections import deque
+import cv2
+from operations.perspectivetransformer import PerspectiveTransformer
 
 # Constants:
 # Define conversions in x and y from pixels space to meters
@@ -66,7 +68,7 @@ class Lane(object):
     def getlatestfitx(self, y):
         if len(self.fitxs) > 0:
             if not self.fitxs[-1] is None and len(self.fitxs[-1]) > 0:
-                return self.fitxs[-1][self.yvals.index(y)]
+                return int(self.fitxs[-1][self.yvals.index(y)])
         return None
 
     def getxhistory(self):
@@ -98,6 +100,18 @@ class Car(object):
             return self.__cameracenter_ps__ - self.__lanecenter_ps__, self.__cameracenter_rs__ - self.__lanecenter_rs__
         return None, None
     
+class PeakInfo(object):
+    def __init__(self, peakrange, windowsize, timewindowctr, trackwindowctr, peak, value):
+        self.windowsize = windowsize
+        self.timewindowctr = timewindowctr
+        self.trackwindowctr = trackwindowctr
+        self.peakrange = peakrange
+        self.peak = peak
+        self.value = value
+
+    def found(self):
+        return self.peak is not None
+
 # Detects the points on each lane and fits each with a polynomial function
 # Also detects the position of the car relative to the center of the lane,
 # based on the lane positions.
@@ -108,6 +122,18 @@ class LaneFinder(Operation):
     PeakRangeRatios = 'PeakRangeRatios'
     LookBackFrames = 'LookBackFrames'
     CameraPositionRatio = 'CameraPositionRatio'
+
+    # Constants:
+    CurrentPointRadius = 30
+    CurrentPointColor = [255,0,0] #[50,205,50]
+    PreviousPointRadius = 2
+    PreviousPointColor = [0,0,0] #[152,251,152]
+    HitWindowColor = [152, 251, 152]
+    MissWindowColor = [255,160,122]
+    SliceMarkerColor = [139,139,131]
+    SliceMarkerThickness = 5
+    VerticalCenterColor = [255,255,224]
+    VerticalCenterThickness = 5
     
     # Outputs
     LeftLane = "LeftLane"
@@ -126,6 +152,7 @@ class LaneFinder(Operation):
 
     def __processupstream__(self, original, latest, data, frame):
         x_dim, y_dim = latest.shape[1], latest.shape[0]
+        midx = int (x_dim / 2)
         if self.__left_lane__ is None:
             self.__slice_len__ = int(y_dim * self.__slice_ratio__)
             self.__peak_range__ = (int(self.__peak_range_ratios__[0] * self.__slice_len__), int(self.__peak_range_ratios__[1] * self.__slice_len__))
@@ -146,7 +173,7 @@ class LaneFinder(Operation):
             self.setdata(data, self.RightLane, self.__right_lane__)
             self.setdata(data, self.Car, self.__car__)
                 
-        leftxs, rightxs, leftconfidence, rightconfidence = self.locate_peaks(latest, self.__slices__, self.__left_lane__, self.__right_lane__, self.__peak_window_size__, self.__peak_range__)
+        leftxs, rightxs, leftconfidence, rightconfidence, leftinfos, rightinfos = self.locate_peaks(latest, self.__slices__, self.__left_lane__, self.__right_lane__, self.__peak_window_size__, self.__peak_range__)
         
         # Prepare an illustration of the points:
 #         if self.isplotting():
@@ -159,11 +186,107 @@ class LaneFinder(Operation):
             # - This frame's X values
             # - Windows used to limit peak search
             # - Lines for the slices
-        
-        # Combine historical points with present before doing a fit:
+
+        # Get previous points
         all_leftx = self.__left_lane__.getxhistory()
-        all_leftx.append(leftxs)
         all_rightx = self.__right_lane__.getxhistory()
+        
+        # Plot illustration of peak search:
+        if self.isplotting():
+            black1d = np.zeros_like(latest, dtype=np.uint8)
+            foreground = np.dstack((black1d, black1d, black1d))
+            background = self.getdata(data, PerspectiveTransformer.WarpedColor, PerspectiveTransformer).copy()
+            
+#             self.__plot__(frame, background, None, "Background", None)
+            
+            # Draw the vertical center:
+            verticalcenter = np.copy(foreground)
+            cv2.line(verticalcenter, (midx, y_dim), (midx, 0), self.VerticalCenterColor, self.VerticalCenterThickness)
+#             self.__plot__(frame, verticalcenter, None, "VerticalCenter", None)
+            
+            # Draw the slices:
+            slices = np.copy(foreground)
+            for cut in self.__slices__:
+                cv2.line(slices, (0, cut[0]), (x_dim, cut[0]), self.SliceMarkerColor, self.SliceMarkerThickness)
+#             self.__plot__(frame, slices, None, "Slices", None)
+            
+            # Draw all the previous points found:
+            previouspoints = np.copy(foreground)
+            for j in range (len (all_leftx)):
+                for i in range (len (self.__slices__)):
+                    y = self.__slices__[i][0]
+                    leftx = all_leftx[j][i]
+                    rightx = all_rightx[j][i]
+                    if leftx is not None:
+                        cv2.circle(previouspoints, (leftx, y), self.PreviousPointRadius, self.PreviousPointColor, -1)
+                    if rightx is not None:
+                        cv2.circle(previouspoints, (rightx, y), self.PreviousPointRadius, self.PreviousPointColor, -1)
+#             self.__plot__(frame, previouspoints, None, "PreviousPoints", None)
+                
+            # Draw the windows:
+            timewindows = np.copy(foreground)
+            for i in range (len (self.__slices__)):
+                leftinfo, rightinfo = leftinfos[i], rightinfos[i]
+                cut = self.__slices__[i]
+                if leftinfo.timewindowctr is not None:
+                    start = (max(leftinfo.timewindowctr-leftinfo.windowsize, 0), cut[0])
+                    end = (min(leftinfo.timewindowctr+leftinfo.windowsize, midx), cut[1])
+                    if leftinfo.found():
+                        cv2.rectangle(timewindows, start, end, self.HitWindowColor, cv2.FILLED)
+                    else:
+                        cv2.rectangle(timewindows, start, end, self.MissWindowColor, cv2.FILLED)
+                if rightinfo.timewindowctr is not None:
+                    start = (max(rightinfo.timewindowctr-rightinfo.windowsize, midx), cut[0])
+                    end = (min(rightinfo.timewindowctr+rightinfo.windowsize, x_dim), cut[1])
+                    if rightinfo.found():
+                        cv2.rectangle(timewindows, start, end, self.HitWindowColor, cv2.FILLED)
+                    else:
+                        cv2.rectangle(timewindows, start, end, self.MissWindowColor, cv2.FILLED)
+#             self.__plot__(frame, timewindows, None, "Time Windows", None)
+            
+            trackwindows = np.copy(foreground)
+            for i in range (len (self.__slices__)):
+                leftinfo, rightinfo = leftinfos[i], rightinfos[i]
+                cut = self.__slices__[i]
+                if leftinfo.trackwindowctr is not None:
+                    start = (max(leftinfo.trackwindowctr-leftinfo.windowsize, 0), cut[0])
+                    end = (min(leftinfo.trackwindowctr+leftinfo.windowsize, midx), cut[1])
+                    if leftinfo.found():
+                        cv2.rectangle(trackwindows, start, end, self.HitWindowColor, cv2.FILLED)
+                    else:
+                        cv2.rectangle(trackwindows, start, end, self.MissWindowColor, cv2.FILLED)
+                if rightinfo.trackwindowctr is not None:
+                    start = (max(rightinfo.trackwindowctr-rightinfo.windowsize, midx), cut[0])
+                    end = (min(rightinfo.trackwindowctr+rightinfo.windowsize, x_dim), cut[1])
+                    if rightinfo.found():
+                        cv2.rectangle(trackwindows, start, end, self.HitWindowColor, cv2.FILLED)
+                    else:
+                        cv2.rectangle(trackwindows, start, end, self.MissWindowColor, cv2.FILLED)
+#             self.__plot__(frame, trackwindows, None, "Track Windows", None)
+                        
+            # Draw the found points
+            foundpoints = np.copy(foreground)
+            for i in range (len (self.__slices__)):
+                leftinfo, rightinfo = leftinfos[i], rightinfos[i]
+                cut = self.__slices__[i]
+                if leftinfo.found():
+                    cv2.circle(foundpoints, (leftinfo.peak, cut[0]-leftinfo.value), self.CurrentPointRadius, self.CurrentPointColor, -1)
+                if rightinfo.found():
+                    cv2.circle(foundpoints, (rightinfo.peak, cut[0]-rightinfo.value), self.CurrentPointRadius, self.CurrentPointColor, -1)
+#             self.__plot__(frame, foundpoints, None, "FoundPoints", None)
+
+            # Add all layers to the bw lane image:
+            background = cv2.addWeighted(background, 1, verticalcenter, 0.3, 0)
+            background = cv2.addWeighted(background, 1, slices, 0.3, 0)
+            background = cv2.addWeighted(background, 1, previouspoints, 0.5, 0)
+            background = cv2.addWeighted(background, 1, trackwindows, 0.3, 0)
+            background = cv2.addWeighted(background, 1, timewindows, 0.3, 0)
+            background = cv2.addWeighted(background, 1, foundpoints, 0.7, 0)
+            
+            self.__plot__(frame, background, None, "Peak Search Algorithm", None)
+
+        # Combine historical points with present before doing a fit:
+        all_leftx.append(leftxs)
         all_rightx.append(rightxs)
         all_leftys, all_leftxs = self.merge_prune(self.__yvals__, all_leftx)
         all_rightys, all_rightxs = self.merge_prune(self.__yvals__, all_rightx)
@@ -230,33 +353,40 @@ class LaneFinder(Operation):
     def locate_peaks(self, latest, slices, leftlane, rightlane, windowsize, peakrange):
         leftxs = []
         rightxs = []
-        leftx, rightx = None, None
+        leftinfos = []
+        rightinfos = []
+#         leftx, rightx = None, None
+        leftxinfo, rightxinfo = None, None
         n_left_absent = 0
         n_right_absent = 0
         for yrange in slices:
             # The leftx and rightx points from the lower slice will be used to limit the search area
             # for discovering new peaks. If they were not found, the fitted x-values from the previous
             # frame's *next* slice will be used to limit the search area.
-            leftx = leftx if not leftx is None else leftlane.getlatestfitx(yrange[1])
-            rightx = rightx if not rightx is None else rightlane.getlatestfitx(yrange[1])
+#             leftx = leftx if not leftx is None else leftlane.getlatestfitx(yrange[1])
+#             rightx = rightx if not rightx is None else rightlane.getlatestfitx(yrange[1])
+            leftxbelow = leftxinfo.peak if leftxinfo is not None else None
+            rightxbelow = rightxinfo.peak if rightxinfo is not None else None
             
             # Look for the new points
-            leftx, rightx = self.locate_peaks_in_slice(latest, yrange, leftlane, rightlane, leftx, rightx, windowsize, peakrange)
-            if leftx is None:
+            leftxinfo, rightxinfo = self.locate_peaks_in_slice(latest, yrange, leftlane, rightlane, leftxbelow, rightxbelow, windowsize, peakrange)
+            if not leftxinfo.found():
                 n_left_absent += 1
-            if rightx is None:
+            if not rightxinfo.found():
                 n_right_absent += 1
 #             print ("Peaks in slice {} => {} ..... {} ".format(yrange, leftx, rightx))
 
             # Save the peaks -- they're precious
-            leftxs.append(leftx)
-            rightxs.append(rightx)
+            leftxs.append(leftxinfo.peak)
+            rightxs.append(rightxinfo.peak)
+            leftinfos.append(leftxinfo)
+            rightinfos.append(rightxinfo)
 
         leftconfidence = (len(slices) - n_left_absent) / len(slices)
         rightconfidence = (len(slices) - n_right_absent) / len(slices)
 #         print ("Confidence: {0:.2f}, {1:.2f}".format(leftconfidence, rightconfidence))
 
-        return leftxs, rightxs, leftconfidence, rightconfidence
+        return leftxs, rightxs, leftconfidence, rightconfidence, leftinfos, rightinfos
 
     def locate_peaks_in_slice(self, latest, yrange, leftlane, rightlane, leftxbelow, rightxbelow, windowsize, peakrange):
         (y1, y2) = yrange
@@ -265,19 +395,23 @@ class LaneFinder(Operation):
         histogram = np.sum(y_slice, axis=0)
 
         # Adjust the previous points so that each half of the histogram can be calculated independently:
-        leftpeakbefore = int(midx - leftlane.getlatestfitx(y1)) if not leftlane.getlatestfitx(y1) is None else None
-        rightpeakbefore = int(rightlane.getlatestfitx(y1) - midx) if not rightlane.getlatestfitx(y1) is None else None
+        leftpeakbefore = midx - leftlane.getlatestfitx(y1) if not leftlane.getlatestfitx(y1) is None else None
+        rightpeakbefore = rightlane.getlatestfitx(y1) - midx if not rightlane.getlatestfitx(y1) is None else None
         leftpeakbelow = int(midx - leftxbelow) if not leftxbelow is None else None
         rightpeakbelow = int(rightxbelow - midx) if not rightxbelow is None else None
-        
-        leftx = self.find_peak(histogram[midx:0:-1], leftpeakbefore, leftpeakbelow, windowsize, peakrange)
-        rightx = self.find_peak(histogram[midx:], rightpeakbefore, rightpeakbelow, windowsize, peakrange)
+
+        leftx, leftval = self.find_peak(histogram[midx:0:-1], leftpeakbefore, leftpeakbelow, windowsize, peakrange)
+        rightx, rightval = self.find_peak(histogram[midx:], rightpeakbefore, rightpeakbelow, windowsize, peakrange)
 
         # Revert actual points based on split:
         leftx = midx - leftx if not leftx is None else None
         rightx = midx + rightx if not rightx is None else None
         
-        return leftx, rightx
+        # Create search result:
+        leftpeakinfo = PeakInfo(peakrange, windowsize, leftlane.getlatestfitx(y1), leftxbelow, leftx, leftval)
+        rightpeakinfo = PeakInfo(peakrange, windowsize, rightlane.getlatestfitx(y1), rightxbelow, rightx, rightval)
+        
+        return leftpeakinfo, rightpeakinfo
 
     def find_peak(self, histogram, peakbefore, peakbelow, windowsize, peakrange):
         timewindow = [0, len(histogram)]
@@ -305,7 +439,7 @@ class LaneFinder(Operation):
             else: # histogram[i] < low:
                 continue    # Discard
                     
-        return peak
+        return peak, int(histogram[peak]) if peak is not None else None
     
     def fit_polynomial(self, ys, xs, ystofit):
         assert len(ys) == len(xs), "Xs {} and Ys {} were not the same length.".format(len(xs), len(ys))
