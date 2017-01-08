@@ -61,7 +61,7 @@ class LaneFiller(Operation):
             # Draw the lane onto the image
             shade = self.__safe_color__ if self.is_drift_safe(self.__drift_pixels__, self.__drift_tolerance_pixels__) else self.__danger_color__
             cv2.fillPoly(foreground, np.int_([pts]), shade)
-        self.__plot__(frame, foreground, 'gray', "Foreground", None)
+#         self.__plot__(frame, foreground, 'gray', "Foreground", None)
             
         if self.isplotting():
             # Get the color image to draw the lane on, just for illustration

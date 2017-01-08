@@ -80,9 +80,9 @@ class PerspectiveTransformer(Operation):
             
         # Perform perspective transform:
         bw_warped = cv2.warpPerspective(np.float32(latest), self.__M__, (x_dim, y_dim), flags=cv2.INTER_LINEAR)
-        title = "Warped B&W"
-        stats = None
-        self.__plot__(frame, bw_warped, 'gray', title, stats)
+#         title = "Warped B&W"
+#         stats = None
+#         self.__plot__(frame, bw_warped, 'gray', title, stats)
         
         return bw_warped
     
@@ -98,7 +98,7 @@ class PerspectiveTransformer(Operation):
 
         # Combine the result with the original image
         unwarped = np.copy(original)
-        self.__plot__(frame, unwarped, None, "Original Color", None)
+#         self.__plot__(frame, unwarped, None, "Original Color", None)
         
         title = "Unwarped Full"
         stats = None

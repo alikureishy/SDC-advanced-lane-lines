@@ -278,7 +278,7 @@ class LaneFinder(Operation):
             # Add all layers to the bw lane image:
             background = cv2.addWeighted(background, 1, verticalcenter, 0.3, 0)
             background = cv2.addWeighted(background, 1, slices, 0.3, 0)
-            background = cv2.addWeighted(background, 1, previouspoints, 0.5, 0)
+            background = cv2.addWeighted(background, 0.5, previouspoints, 1, 0)
             background = cv2.addWeighted(background, 1, trackwindows, 0.3, 0)
             background = cv2.addWeighted(background, 1, timewindows, 0.3, 0)
             background = cv2.addWeighted(background, 1, foundpoints, 0.7, 0)
