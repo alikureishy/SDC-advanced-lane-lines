@@ -6,7 +6,7 @@
 [MappedLane]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration5.png "Mapped Lane"
 [StatsWriter]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration6.png "Caption showing lane statistics"
 [Thresholding2]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration7.png "Thresholding"
-
+[LaneFinder]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration8.png "Lane Finder Illustration"
 
 ![Mapped Lane][MappedLane]
 ## Advanced Lane Finding
@@ -288,9 +288,13 @@ This upstream processor locates the lane lines in the frame. It is where all the
 },
 ```
 
+Here is an illustration of the way the lane search algorithm presently works. The illustration was created by superposing various lane search metrics on top of a birds-eye view of the original lane. The reddish dots correspond to the peaks discovered, and their position relative to the slice represents the histogram value. The overlapping green boxes are the 2 types of search windows -- one based on the previous frame's peaks and the other based on the earlier slice's peak -- that are used to narrow down the search for individual peaks. There is a vertical separator identifying the left and right sections that the image is split into. If for a given slice and side, the search window is green, it means that a peak was found within that window. If it is red, it means that no peak was found within that window.
+
+![Illustration of lane searching][LaneFinder]
+
 ##### Algorithms / Heuristics
 
-The lane detection procedure can be broken down into the following components, each using a different heuristic, and each tweakable through the configuration settings illustrated above. In fact, there is almost a 1-1 correspondence between the configuration settings above, and the heuristics below.
+The lane detection process (and illustration) above can be broken down into the following components, each using a different heuristic, and each tweakable through the 'LaneFinder' configuration settings listed above. In fact, there is almost a 1-1 correspondence between the configuration settings above, and the heuristics discussed below.
 
 ###### Horizontal slicing
 This is controlled by the 'SliceRatio' parameter, that specifies the fraction of the vertical dimension (y dimension) that each horizontal slice should cover. The smaller the fraction, the more the slices, and higher the sensitivity of the lane detection. The larger the slices, the coarser the peaks, and lesser the sensitivity. It appeared that a fraction of 0.05 - 0.10 was rather effective for the first video. This may not be the case for the challenge videos, where the curvature of the lane lines is smaller, and changes more rapidly.
