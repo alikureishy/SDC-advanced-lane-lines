@@ -324,7 +324,9 @@ There is a risk of getting caught detecting points that are not along either of 
 - improving the thresholding expression to eliminate or minimize this noise.
 
 ###### Lookback period and lane smoothing
-Since detection is not perfect, every new frame may bring with it some surprises. It is essential to smooth out the detection of lanes to be robust to these surprises. A convenient approach to smoothing is to utilize the discovered peaks from previous frames in addition to those discovered from the latest frame, when trying to fit a polynomial to the lane. This avoids any sudden jerky projections of the lane lines, bringing out a smoother progression of the lane mapping. Note that only the previous *discovered* peaks are used, not the peaks fitted by the corresponding polynomial function.
+Since detection is not perfect, every new frame may bring with it some surprises -- either missing peaks, or inaccurate peaks that deviate from the expectation. The 2nd illustration above with the missing peaks on the right lane is an example of this. Notice that despite the missing peaks, the lane is still discernable. It is also essential to smooth out the detection of lanes to be robust to such surprises.
+
+A convenient heuristic for filling in these missing peaks, and for smoothing, is to utilize the discovered peaks from previous frames in addition to those discovered from the latest frame, when trying to fit a polynomial to the lane. This avoids any sudden jerky projections of the lane lines, bringing out a smoother progression of the lane mapping. Note that only the previous *discovered* peaks are used, not the peaks fitted by the corresponding polynomial function.
 
 The approach of using previously discovered peaks has another advantage, which is that it renders a natural weighting of discovered peaks toward lane mapping. Frames/lanes with fewer discovered peaks will contribute fewer points toward fitting a polynomial for not just their own lanes, but also the lanes of subsequent frames (upto a limit specified by the 'LookbackPeriod' parameter). Consequently, frames with a larger number of peaks will carry higher weightage, as they should.
 
