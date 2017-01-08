@@ -7,6 +7,7 @@
 [StatsWriter]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration6.png "Caption showing lane statistics"
 [Thresholding2]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration7.png "Thresholding"
 [LaneFinder]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration8.png "Lane Finder Illustration"
+[LaneFinder2]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration9.png "Lane Finder Illustration"
 
 ![Mapped Lane][MappedLane]
 ## Advanced Lane Finding
@@ -288,13 +289,18 @@ This upstream processor locates the lane lines in the frame. It is where all the
 },
 ```
 
-Here is an illustration of the way the lane search algorithm presently works. The illustration was created by superposing various lane search metrics on top of a birds-eye view of the original lane. The reddish dots correspond to the peaks discovered, and their position relative to the slice represents the histogram value. The overlapping green boxes are the 2 types of search windows -- one based on the previous frame's peaks and the other based on the earlier slice's peak -- that are used to narrow down the search for individual peaks. There is a vertical separator identifying the left and right sections that the image is split into. If for a given slice and side, the search window is green, it means that a peak was found within that window. If it is red, it means that no peak was found within that window.
+Here is an illustration of the way the lane search algorithm presently works. The illustration was created by superposing various lane search metrics on top of a birds-eye view of the original lane. The reddish dots correspond to the peaks discovered, and their position relative to the slice represents the histogram value. The overlapping green boxes are the 2 types of search windows -- one based on the previous frame's peaks and the other based on the earlier slice's peak -- that are used to narrow down the search for individual peaks. There is a vertical separator identifying the left and right sections that the image is split into.
 
 ![Illustration of lane searching][LaneFinder]
 
+In this other illustration, the 'SliceRatio' setting has been reduced to 0.05. This results in each slice having a width that is 5% of the vertical dimension, which means there are double the slices as compared to when the setting was 0.10 for the above illustration. Furthermore, note the windows that are shaded red. If for a given slice and side, the search window is green (as was the case for all windows in the previous illustration), it means that a peak was found within that window. If it is red, as is the case with several windows in this illustration below, it means that no peak was found within that window.
+
+![Illustration of lane searching][LaneFinder2]
+
+
 ##### Algorithms / Heuristics
 
-The lane detection process (and illustration) above can be broken down into the following components, each using a different heuristic, and each tweakable through the 'LaneFinder' configuration settings listed above. In fact, there is almost a 1-1 correspondence between the configuration settings above, and the heuristics discussed below.
+The lane detection process (and illustrations) above can be broken down into the following components, each using a different heuristic, and each tweakable through the 'LaneFinder' configuration settings listed above. In fact, there is almost a 1-1 correspondence between the configuration settings above, and the heuristics discussed below.
 
 ###### Horizontal slicing
 This is controlled by the 'SliceRatio' parameter, that specifies the fraction of the vertical dimension (y dimension) that each horizontal slice should cover. The smaller the fraction, the more the slices, and higher the sensitivity of the lane detection. The larger the slices, the coarser the peaks, and lesser the sensitivity. It appeared that a fraction of 0.05 - 0.10 was rather effective for the first video. This may not be the case for the challenge videos, where the curvature of the lane lines is smaller, and changes more rapidly.
