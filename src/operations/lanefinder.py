@@ -8,6 +8,7 @@ import numpy as np
 from _collections import deque
 import cv2
 from operations.perspectivetransformer import PerspectiveTransformer
+import math
 
 # Constants:
 # Define conversions in x and y from pixels space to meters
@@ -40,10 +41,9 @@ class Lane(object):
         return None
         
     def get_totalconfidence(self):
-        # This is relative to the scenario where all 'maxlen' points are known
+        # This is relative to the scenario where all 'maxlen' frames' lanes are known
         p = sum(self.confidences)
         pnorm = p / self.maxsize
-            
         return pnorm
     
     def get_curverad(self):
@@ -122,6 +122,7 @@ class LaneFinder(Operation):
     PeakRangeRatios = 'PeakRangeRatios'
     LookBackFrames = 'LookBackFrames'
     CameraPositionRatio = 'CameraPositionRatio'
+    DynamicVerticalSplit = 'DynamicVerticalSplit'
 
     # Constants:
     CurrentPointRadius = 30
@@ -147,12 +148,12 @@ class LaneFinder(Operation):
         self.__peak_range_ratios__ = params[self.PeakRangeRatios]
         self.__look_back_frames__ = params[self.LookBackFrames]
         self.__camera_position_ratio__ = params[self.CameraPositionRatio]
+        self.__use_dynamic_vertical_split__ = params[self.DynamicVerticalSplit]
         self.__left_lane__ = None
         self.__right_lane__ = None
 
     def __processupstream__(self, original, latest, data, frame):
         x_dim, y_dim = latest.shape[1], latest.shape[0]
-        midx = int (x_dim / 2)
         if self.__left_lane__ is None:
             self.__slice_len__ = int(y_dim * self.__slice_ratio__)
             self.__peak_range__ = (int(self.__peak_range_ratios__[0] * self.__slice_len__), int(self.__peak_range_ratios__[1] * self.__slice_len__))
@@ -172,8 +173,12 @@ class LaneFinder(Operation):
             self.setdata(data, self.LeftLane, self.__left_lane__)
             self.setdata(data, self.RightLane, self.__right_lane__)
             self.setdata(data, self.Car, self.__car__)
-                
-        leftxs, rightxs, leftconfidence, rightconfidence, leftinfos, rightinfos = self.locate_peaks(latest, self.__slices__, self.__left_lane__, self.__right_lane__, self.__peak_window_size__, self.__peak_range__)
+
+        if self.__use_dynamic_vertical_split__:
+            midx = self.find_midx(x_dim, self.__left_lane__, self.__right_lane__)
+        else:
+            midx = int(x_dim/2)
+        leftxs, rightxs, leftconfidence, rightconfidence, leftinfos, rightinfos = self.locate_peaks(latest, midx, self.__slices__, self.__left_lane__, self.__right_lane__, self.__peak_window_size__, self.__peak_range__)
         
         # Prepare an illustration of the points:
 #         if self.isplotting():
@@ -195,7 +200,7 @@ class LaneFinder(Operation):
         if self.isplotting():
             black1d = np.zeros_like(latest, dtype=np.uint8)
             foreground = np.dstack((black1d, black1d, black1d))
-            background = self.getdata(data, PerspectiveTransformer.WarpedColor, PerspectiveTransformer).copy()
+            background = np.copy(self.getdata(data, PerspectiveTransformer.WarpedColor, PerspectiveTransformer))
             
 #             self.__plot__(frame, background, None, "Background", None)
             
@@ -329,6 +334,14 @@ class LaneFinder(Operation):
             
         return latest
     
+    def find_midx(self, xdim, leftlane, rightlane):
+        if leftlane is not None and rightlane is not None:
+            leftfitxs, rightfitxs = leftlane.getlatestfitxs(), rightlane.getlatestfitxs()
+            if leftfitxs is not None and rightfitxs is not None:
+                ranges = [leftfitxs[-1], leftfitxs[0], rightfitxs[-1], rightfitxs[0]]
+                return int(np.mean(ranges))
+        return int(xdim/2)
+        
     def merge_prune(self, ys, xss):
         _yss = deque()
         _xss = deque()
@@ -350,7 +363,7 @@ class LaneFinder(Operation):
         return _ys, _xs
 
         
-    def locate_peaks(self, latest, slices, leftlane, rightlane, windowsize, peakrange):
+    def locate_peaks(self, latest, midx, slices, leftlane, rightlane, windowsize, peakrange):
         leftxs = []
         rightxs = []
         leftinfos = []
@@ -369,7 +382,7 @@ class LaneFinder(Operation):
             rightxbelow = rightxinfo.peak if rightxinfo is not None else None
             
             # Look for the new points
-            leftxinfo, rightxinfo = self.locate_peaks_in_slice(latest, yrange, leftlane, rightlane, leftxbelow, rightxbelow, windowsize, peakrange)
+            leftxinfo, rightxinfo = self.locate_peaks_in_slice(latest, midx, yrange, leftlane, rightlane, leftxbelow, rightxbelow, windowsize, peakrange)
             if not leftxinfo.found():
                 n_left_absent += 1
             if not rightxinfo.found():
@@ -388,9 +401,8 @@ class LaneFinder(Operation):
 
         return leftxs, rightxs, leftconfidence, rightconfidence, leftinfos, rightinfos
 
-    def locate_peaks_in_slice(self, latest, yrange, leftlane, rightlane, leftxbelow, rightxbelow, windowsize, peakrange):
+    def locate_peaks_in_slice(self, latest, midx, yrange, leftlane, rightlane, leftxbelow, rightxbelow, windowsize, peakrange):
         (y1, y2) = yrange
-        midx = int(latest.shape[1] / 2)
         y_slice = latest[y1:y2:-1, : ]
         histogram = np.sum(y_slice, axis=0)
 
