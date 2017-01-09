@@ -7,6 +7,7 @@
 [StatsWriter]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration6.png "Caption showing lane statistics"
 [Thresholding2]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration7.png "Thresholding"
 [LaneFinder]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration8.png "Lane Finder Illustration"
+[LaneFinder2]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration9.png "Lane Finder Illustration"
 
 ![Mapped Lane][MappedLane]
 ## Advanced Lane Finding
@@ -288,13 +289,18 @@ This upstream processor locates the lane lines in the frame. It is where all the
 },
 ```
 
-Here is an illustration of the way the lane search algorithm presently works. The illustration was created by superposing various lane search metrics on top of a birds-eye view of the original lane. The reddish dots correspond to the peaks discovered, and their position relative to the slice represents the histogram value. The overlapping green boxes are the 2 types of search windows -- one based on the previous frame's peaks and the other based on the earlier slice's peak -- that are used to narrow down the search for individual peaks. There is a vertical separator identifying the left and right sections that the image is split into. If for a given slice and side, the search window is green, it means that a peak was found within that window. If it is red, it means that no peak was found within that window.
+Here is an illustration of the way the lane search algorithm presently works. To see this illustration while running the utility, as already mentioned, flip the 'ToPlot' setting above to '1', and use the '-p' flag of the command line utility (lanemapper.py). This illustration was created by superposing various lane search metrics on top of a birds-eye view of the original lane. The reddish dots correspond to the peaks discovered, and their position relative to the slice represents the histogram value. The overlapping green boxes are the 2 types of search windows -- one based on the previous frame's peaks and the other based on the earlier slice's peak -- that are used to narrow down the search for individual peaks. There is a vertical separator identifying the left and right sections that the image is split into.
 
 ![Illustration of lane searching][LaneFinder]
 
+In this other illustration (below), the 'SliceRatio' setting has been reduced to 0.05. This results in each slice having a width that is 5% of the vertical dimension, which means there are double the slices as compared to when the setting was 0.10 for the above illustration. Furthermore, note the windows that are shaded red. If for a given slice and side, the search window is green (as was the case for all windows in the previous illustration), it means that a peak was found within that window. If it is red, as is the case with several windows in this illustration below, it means that no peak was found within that window. Given the visual of the lane for this project, is not surprising that the left lane has a continuous sequence of peaks whereas the right lane does not. Despite the absence of right peaks however, as you can see, the algorithm is still able to discern the polynomial for the right lane. This and various other mechanisms used here are discussed in detail in the 'Algorithm / Heuristics' section below.
+
+![Illustration of lane searching][LaneFinder2]
+
+
 ##### Algorithms / Heuristics
 
-The lane detection process (and illustration) above can be broken down into the following components, each using a different heuristic, and each tweakable through the 'LaneFinder' configuration settings listed above. In fact, there is almost a 1-1 correspondence between the configuration settings above, and the heuristics discussed below.
+The lane detection process (and illustrations) above can be broken down into the following components, each using a different heuristic, and each tweakable through the 'LaneFinder' configuration settings listed above. In fact, there is almost a 1-1 correspondence between the configuration settings above, and the heuristics discussed below.
 
 ###### Horizontal slicing
 This is controlled by the 'SliceRatio' parameter, that specifies the fraction of the vertical dimension (y dimension) that each horizontal slice should cover. The smaller the fraction, the more the slices, and higher the sensitivity of the lane detection. The larger the slices, the coarser the peaks, and lesser the sensitivity. It appeared that a fraction of 0.05 - 0.10 was rather effective for the first video. This may not be the case for the challenge videos, where the curvature of the lane lines is smaller, and changes more rapidly.
@@ -305,7 +311,10 @@ This refers to the directional scan of the histogram calculated for each horizon
 
 However, a more restrictive heuristic can be defined by the 'PeakRangeRatios' parameter which is, as with other parameters, expressed as a tuple of fractions, representing the necessary, and the sufficient, magnitude (as a fraction of the SliceSize) thresholds for any given point on the histogram, in the direction of search, to either be dropped from consideration, or to be selected as the peak, respectively. Upon encountering such points, the decision regarding that point is final -- either it is the peak, or it isn't. Points that fall between these two numbers -- i.e, above the necessary threshold and below the sufficient magnitude -- are considered candidates, put to test by being compared against subsequent point values, until either the sufficient threshold is crossed, or scan ends, at which point the highest valued point is labeled as the peak. If no point is found through a scan, the algorithm registers a non-existent peak for that scan.
 
-The search progresses outward from the center of the X-dimension, comprising of one scan from mid -> left extreme, and another scan from mid -> right extreme. The decision of this 'mid point' for the adjacent scans is configurable via the 'CameraPositionRatio' setting. This has been set to 50 % of the X dimension at present, assuming the camera is at the center of the car, but can accommodate the scenario wherein it is not. This setting is necessary so as to determine the position of the car relative to the center of the lane, i.e, the 'drift'. If the camera is not at the center of the car, then that needs to be factored into the calculation of the 'drift'.
+The search progresses outward from the center of the lane, comprising of one scan from mid -> left extreme, and another scan from mid -> right extreme. The decision of this 'mid point' for the adjacent scans is configurable via the 'CameraPositionRatio' setting. This has been set to 50 % of the X dimension at present, assuming the camera is at the center of the car, but can accommodate the scenario wherein it is not. This setting is necessary so as to determine the position of the car relative to the center of the lane, i.e, the 'drift'. If the camera is not at the center of the car, then that needs to be factored into the calculation of the 'drift'.
+
+It's worth noting here that the center of the lane moves from frame to frame. So, using a fixed value for the midpoint of the horizontal slice is not optimal. On each frame, when partitioning the image into the left and right regions for searching for lane peaks, I calculate the mean center based on the fitted x values of both the first slice and the last slice of the previous frame - i.e, I calculate the mean of 4 points. This is so that, as far as possible, the lanes don't bleed over to the other side further down the road.
+
 
 ###### Aggressive peak search bounding
 In addition to the 'PeakRangeRatios' heuristic, the scan of either side of a histogram can be further optimized by looking for the peak within a narrower horizontal range (dictated by the 'PeakWindowRatio' config param), and centered around a combination of:
@@ -318,7 +327,9 @@ There is a risk of getting caught detecting points that are not along either of 
 - improving the thresholding expression to eliminate or minimize this noise.
 
 ###### Lookback period and lane smoothing
-Since detection is not perfect, every new frame may bring with it some surprises. It is essential to smooth out the detection of lanes to be robust to these surprises. A convenient approach to smoothing is to utilize the discovered peaks from previous frames in addition to those discovered from the latest frame, when trying to fit a polynomial to the lane. This avoids any sudden jerky projections of the lane lines, bringing out a smoother progression of the lane mapping. Note that only the previous *discovered* peaks are used, not the peaks fitted by the corresponding polynomial function.
+Since detection is not perfect, every new frame may bring with it some surprises -- either missing peaks, or inaccurate peaks that deviate from the expectation. The 2nd illustration above with the missing peaks on the right lane is an example of this. Notice that despite the missing peaks, the lane is still discernable. It is also essential to smooth out the detection of lanes to be robust to such surprises.
+
+A convenient heuristic for filling in these missing peaks, and for smoothing, is to utilize the discovered peaks from previous frames in addition to those discovered from the latest frame, when trying to fit a polynomial to the lane. This avoids any sudden jerky projections of the lane lines, bringing out a smoother progression of the lane mapping. Note that only the previous *discovered* peaks are used, not the peaks fitted by the corresponding polynomial function.
 
 The approach of using previously discovered peaks has another advantage, which is that it renders a natural weighting of discovered peaks toward lane mapping. Frames/lanes with fewer discovered peaks will contribute fewer points toward fitting a polynomial for not just their own lanes, but also the lanes of subsequent frames (upto a limit specified by the 'LookbackPeriod' parameter). Consequently, frames with a larger number of peaks will carry higher weightage, as they should.
 
@@ -353,11 +364,9 @@ Areas where this project could improve are discussed below, outlining scenarios 
 
 #### Mid-Line for Left/Rigth Peak Categorization
 
-Presently, the algorithm for searching for histogram peaks searches on each side of a vertical 'center' line that is calculated to be the midpoint of the X-dimension. There is a naive assumption here that the center of the lane is always more or less at the center of the camera. Clearly, this is a limiting assumption since the car is almost never right at the center of the screen. Furthermore, even if the car were at the center, the lanes could at times have such a short radius of curvature that the histogram peaks further down on each lane could spill over to the adjacent lane's search region causing the lane peaks to be inaccurately categorized by the search algorithm.
+Presently, the algorithm for searching for histogram peaks searches on each side of a straight vertical 'center' line that is calculated based on the fitted X-values of the first and last slice of the previous frame. However, the lanes could at times have such a short radius of curvature that the histogram peaks further down on each lane could spill over to the adjacent lane's search region causing the lane peaks to be inaccurately categorized by the search algorithm. This would most certainly be the case if the turns are very sharp.
 
-A simple, yet suboptimal solution, is to use the center of the lane from the previous frame instead of using the midpoint of the X-dimension, when partitioning the image into the left and right regions for searching for lane peaks. This is easiliy obtained by performing a mean of the positions of the two lanes at the bottom of the image.
-
-A more robust solution, especially to avoid miscategorizing peaks further down on each lane, would be to calculate a polynomial fit of the midpoint of the 2 lanes (using a 2nd order polynomial in the same way as was used to fit each lane). The points for this mid-line polynomial would be obtained by averaging the peaks obtained from each slice of the frame. A confidence could be associated to this mid-line based on the lower of the confidence levels of the two lanes for that frame. Using this fitted center line would be the most accurate approach for this problem, in my view, particularly for meandering or curvy roads.
+A more robust solution for this situation would be to not use a straight line separator for left/right lanes, but rather, to use another 2nd order polynomial fit for the midpoints of the 2 lanes as well (in the same way as was used to fit each lane). Alternatively, the points for this mid-line polynomial could be obtained by averaging the fitted X-values from the previous frame. Using this fitted center line would be a far more accurate approach for meandering or curvy roads.
 
 #### Erroneous lane noise elimination using pixel-to-standard-lane-width translation
 
