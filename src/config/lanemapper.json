@@ -25,7 +25,7 @@
     	},
 		"Term":
 		{
-			"ToPlot": 0,
+			"ToPlot": 1,
 			"Operator": "OR",
 			"Negate": 0,
 			"Operands": [
@@ -70,6 +70,7 @@
     	"PeakWindowRatio": 0.05,
     	"PeakRangeRatios": [0.10, 0.50],
     	"LookBackFrames": 4,
+    	"DynamicVerticalSplit": 0,
     	"CameraPositionRatio": 0.50
     },
     "LaneFiller": {
