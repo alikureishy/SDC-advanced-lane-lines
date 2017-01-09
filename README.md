@@ -10,7 +10,10 @@
 [LaneFinder2]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration9.png "Lane Finder Illustration"
 
 ![Mapped Lane][MappedLane]
+
 ## Advanced Lane Finding
+
+[Sample Output](https://youtu.be/jzAWMtA1zX8)
 
 ### Overview
 
@@ -285,6 +288,7 @@ This upstream processor locates the lane lines in the frame. It is where all the
     	"PeakRangeRatios": [0.10, 0.50],
     	"PeakWindowRatio": 0.05,
     	"LookBackFrames": 4,
+	"DynamicVerticalSplit": 0,
     	"CameraPositionRatio": 0.50
 },
 ```
@@ -311,9 +315,9 @@ This refers to the directional scan of the histogram calculated for each horizon
 
 However, a more restrictive heuristic can be defined by the 'PeakRangeRatios' parameter which is, as with other parameters, expressed as a tuple of fractions, representing the necessary, and the sufficient, magnitude (as a fraction of the SliceSize) thresholds for any given point on the histogram, in the direction of search, to either be dropped from consideration, or to be selected as the peak, respectively. Upon encountering such points, the decision regarding that point is final -- either it is the peak, or it isn't. Points that fall between these two numbers -- i.e, above the necessary threshold and below the sufficient magnitude -- are considered candidates, put to test by being compared against subsequent point values, until either the sufficient threshold is crossed, or scan ends, at which point the highest valued point is labeled as the peak. If no point is found through a scan, the algorithm registers a non-existent peak for that scan.
 
-The search progresses outward from the center of the lane, comprising of one scan from mid -> left extreme, and another scan from mid -> right extreme. The decision of this 'mid point' for the adjacent scans is configurable via the 'CameraPositionRatio' setting. This has been set to 50 % of the X dimension at present, assuming the camera is at the center of the car, but can accommodate the scenario wherein it is not. This setting is necessary so as to determine the position of the car relative to the center of the lane, i.e, the 'drift'. If the camera is not at the center of the car, then that needs to be factored into the calculation of the 'drift'.
+The 'CameraPositionRatio' setting specifies the position of the camera, relatiave to the car. This has been set to 50 % with the assumption that the camera is more-or-less at the center of the car, and therefore, that the left and right of the car is balanced, relative to the camera. The setting can accommodate the scenario wherein it is not balanced too. This knowledge helps determine the position of the car relative to the calculated center of the lane, i.e, the 'drift'. If the camera is not at the center of the car, then that needs to be factored into the calculation of the 'drift'.
 
-It's worth noting here that the center of the lane moves from frame to frame. So, using a fixed value for the midpoint of the horizontal slice is not optimal. On each frame, when partitioning the image into the left and right regions for searching for lane peaks, I calculate the mean center based on the fitted x values of both the first slice and the last slice of the previous frame - i.e, I calculate the mean of 4 points. This is so that, as far as possible, the lanes don't bleed over to the other side further down the road.
+The search progresses outward from the center of the lane, comprising of one scan from mid -> left extreme, and another scan from mid -> right extreme. The decision of this 'mid point' for the adjacent scans is configurable via the 'DynamicVerticalSplit' setting. When switched off, the left-right partitioning of the lane is *always* done at the center of the X-dimension. It's worth noting here that actually, the center of the lane moves from frame to frame. So, using a fixed value for the midpoint of the horizontal slice is not optimal. The 'DynamicVerticalSplit' setting allows one to either use the fixed value above, or to determine the partition center dynamically. If set to '1', then the determination of the partition is made dynamically on each frame, by calculating the mean of the fitted x values of both the first slice and the last slice of the previous frame - i.e, the mean of 4 points. This is so that, as far as possible, the lanes don't bleed over to the other side further down the road. At present, this setting is switched off in the configuration, so a fixed partition point is used for all frames.
 
 
 ###### Aggressive peak search bounding
