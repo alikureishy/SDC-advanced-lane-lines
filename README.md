@@ -9,11 +9,9 @@
 [LaneFinder]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration8.png "Lane Finder Illustration"
 [LaneFinder2]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration9.png "Lane Finder Illustration"
 
-![Mapped Lane][MappedLane]
+[![Mapped Lane][MappedLane]](https://youtu.be/jzAWMtA1zX8 "Mapped Lane Video")
 
 ## Advanced Lane Finding
-
-[![Sample output](http://img.youtube.com/vi/jzAWMtA1zX8/0.jpg)](https://youtu.be/jzAWMtA1zX8)
 
 ### Overview
 
