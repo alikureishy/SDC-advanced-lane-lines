@@ -13,7 +13,7 @@
 
 ## Advanced Lane Finding
 
-[Sample Output](https://youtu.be/jzAWMtA1zX8)
+[![Sample output](http://img.youtube.com/vi/jzAWMtA1zX8/0.jpg)](https://youtu.be/jzAWMtA1zX8)
 
 ### Overview
 
