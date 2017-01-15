@@ -11,6 +11,9 @@ from operations.showoriginal import ShowOriginal
 from operations.lanefinder import LaneFinder
 from operations.perspectivefinder import PerspectiveFinder
 from operations.statswriter import StatsWriter
+from operations.vehiclefinder import VehicleFinder
+from operations.vehicletracker import VehicleTracker
+from operations.vehiclemarker import VehicleMarker
 
 PipelineSection = 'Pipeline'
 # from operations import *
@@ -41,6 +44,12 @@ class Pipeline(object):
             return StatsWriter(config)
         elif name == Undistorter.__name__:
             return Undistorter(config)
+        elif name == VehicleFinder.__name__:
+            return VehicleFinder(config)
+        elif name == VehicleTracker.__name__:
+            return VehicleTracker(config)
+        elif name == VehicleMarker.__name__:
+            return VehicleMarker(config)
         elif name == Thresholder.__name__:
             return Thresholder(config)
         elif name == PerspectiveFinder.__name__:
