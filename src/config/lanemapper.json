@@ -73,6 +73,26 @@
     	"DynamicVerticalSplit": 0,
     	"CameraPositionRatio": 0.50
     },
+    "VehicleFinder": {
+    	"ToPlot": 1,
+    	"ClassifierFile": <classifier-file-path>,
+    	"FeatureExtractors": [
+    		{"SpatialBinning":{"Space": "RGB", "Size": [32,32], "ToPlot": 0}},
+    		{"ColorHistogram":{"Space": "RGB", "NumBins": 32, "BinRange":[0,256], "ToPlot": 0}},
+    		{"HOGExtractor":{"Orientations":9, "HogChannel": 0, "PixelsPerCell": 8, "CellsPerBlock":2, "ToPlot":0}}
+    	]
+    },
+    "VehicleTracker": {
+		"ToPlot": 0,
+		"ConfidenceThreshold": 0.40,
+		"DriftToleranceRatio": 0.05
+    },
+    "VehicleMarker": {
+		"ToPlot": 0,
+		"ConfidenceThreshold": 0.40,
+		"SafeColor": [152, 251, 152],
+    	"DangerColor": [255,0,0]
+    },
     "LaneFiller": {
 		"ToPlot": 0,
 		"LaneConfidenceThreshold": 0.40,
