@@ -2,6 +2,9 @@
     "Pipeline": [
     	"StatsWriter",
     	"Undistorter",
+    	"VehicleFinder",
+    	"VehicleTracker",
+    	"VehicleMarker",
     	"Thresholder",
     	"PerspectiveTransformer",
     	"LaneFinder",
@@ -75,7 +78,7 @@
     },
     "VehicleFinder": {
     	"ToPlot": 1,
-    	"ClassifierFile": <classifier-file-path>,
+    	"ClassifierFile": "config/svm.dump",
     	"FeatureExtractors": [
     		{"SpatialBinning":{"Space": "RGB", "Size": [32,32], "ToPlot": 0}},
     		{"ColorHistogram":{"Space": "RGB", "NumBins": 32, "BinRange":[0,256], "ToPlot": 0}},

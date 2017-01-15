@@ -3,3 +3,4 @@ __pycache__
 .project
 .pydevproject
 *.mp4
+data
