@@ -22,7 +22,7 @@ class SpatialBinner(object):
             image = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
         elif self.__color_space__ == 'YUV':
             image = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
-        image = cv2.resize(image, tuple(self.__size__))
+        image = cv2.resize(image, self.__size__)
         features = image.ravel()
 #         print ("\tSpatial bins = {} slots".format(len(features)))
         return features
