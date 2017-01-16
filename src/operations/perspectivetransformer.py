@@ -6,6 +6,7 @@ Created on Dec 21, 2016
 from operations.baseoperation import Operation
 import numpy as np
 import cv2
+from utils.plotter import Image
 from utils.utilities import plotboundary, getperspectivepoints
 
 # Default:

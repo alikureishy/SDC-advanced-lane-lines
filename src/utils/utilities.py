@@ -36,9 +36,6 @@ def getperspectivepoints(x_dim, y_dim, depth_range_ratio, headings):
     left_x_2 = int(left_x - ((y_dim-y_2) * left_slope))
     right_x_1 = int(right_x - ((y_dim-y_1) * right_slope))
     right_x_2 = int(right_x - ((y_dim-y_2) * right_slope))
-    
-    assert left_x_1 < right_x_1, "Heading vectors crossover at provided depth ratio : {}".format(depth_range_ratio[0])
-    assert left_x_2 < right_x_2, "Heading vectors crossover at provided depth ratio : {}".format(depth_range_ratio[1])
 
     perspective_points = [(left_x_2, y_2), (right_x_2, y_2), (left_x_1, y_1), (right_x_1, y_1)]
     return perspective_points
