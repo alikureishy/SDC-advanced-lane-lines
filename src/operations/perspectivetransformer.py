@@ -6,9 +6,7 @@ Created on Dec 21, 2016
 from operations.baseoperation import Operation
 import numpy as np
 import cv2
-from utils.utilities import plotboundary
-from utils.plotter import Image
-from utils.plotter import Graph
+from utils.utilities import plotboundary, getperspectivepoints
 
 # Default:
 #  Left ds = (.26*x, -.33*y) = (332, -237)
@@ -30,7 +28,6 @@ class PerspectiveTransformer(Operation):
         self.__Minv__ = None
         self.__default_heading__ = params[self.DefaultHeadingRatios]
         self.__depth_range_ratios__ = params[self.DepthRangeRatio]
-#         self.__default_pers_ratios__ = params[self.DefaultPerspectiveRatios]
         self.__transform_ratios__ = params[self.TransformRatios]
         self.__perspective_points__ = None
         self.__transform_points__ = None
@@ -41,23 +38,7 @@ class PerspectiveTransformer(Operation):
 
         # Calculate and cache the transform and perspective points since these will never change:
         if self.__transform_points__ is None:
-            y_1 = int(y_dim * self.__depth_range_ratios__[0])
-            y_2 = int(y_dim * self.__depth_range_ratios__[1])
-            
-            left_x = int(x_dim * self.__default_heading__[0][0])
-            left_slope = self.__default_heading__[0][1]
-
-            right_x = int(x_dim * self.__default_heading__[1][0])
-            right_slope = self.__default_heading__[1][1]
-
-            # Formula is: x = my + b     [where m = dx/dy]
-            left_x_1 = int(left_x - ((y_dim-y_1) * left_slope))
-            left_x_2 = int(left_x - ((y_dim-y_2) * left_slope))
-            right_x_1 = int(right_x - ((y_dim-y_1) * right_slope))
-            right_x_2 = int(right_x - ((y_dim-y_2) * right_slope))
-
-#             self.__perspective_points__ = [[int(x_ratio*x_dim), int(y_ratio*y_dim)] for [x_ratio,y_ratio] in self.__default_pers_ratios__]
-            self.__perspective_points__ = [(left_x_2, y_2), (right_x_2, y_2), (left_x_1, y_1), (right_x_1, y_1)]
+            self.__perspective_points__ = getperspectivepoints(x_dim, y_dim, self.__depth_range_ratios__, self.__default_heading__)
             self.__transform_points__ = [[int(x_ratio*x_dim), int(y_ratio*y_dim)] for [x_ratio,y_ratio] in self.__transform_ratios__]
             self.__M__, self.__Minv__ = self.gettransformations(self.__perspective_points__, self.__transform_points__)
 
