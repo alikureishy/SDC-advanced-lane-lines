@@ -18,6 +18,29 @@ class HoughFilterParams(object):
     RightSlopeRange = 'RightSlopeRange'
     DepthRangeRatio = 'DepthRangeRatio'
 
+# Returns perpsective points as:
+#    [TopLeft, TopRight, BottomLeft, BottomRight]
+def getperspectivepoints(x_dim, y_dim, depth_range_ratio, headings):
+    depth_range_ratio = sorted(depth_range_ratio, reverse=True)
+    y_1 = int(y_dim * depth_range_ratio[0])
+    y_2 = int(y_dim * depth_range_ratio[1])
+    
+    left_x = int(x_dim * headings[0][0])
+    left_slope = headings[0][1]
+
+    right_x = int(x_dim * headings[1][0])
+    right_slope = headings[1][1]
+
+    # Formula is: x = my + b     [where m = dx/dy]
+    left_x_1 = int(left_x - ((y_dim-y_1) * left_slope))
+    left_x_2 = int(left_x - ((y_dim-y_2) * left_slope))
+    right_x_1 = int(right_x - ((y_dim-y_1) * right_slope))
+    right_x_2 = int(right_x - ((y_dim-y_2) * right_slope))
+
+    perspective_points = [(left_x_2, y_2), (right_x_2, y_2), (left_x_1, y_1), (right_x_1, y_1)]
+    return perspective_points
+
+
 def plotboundary(orig, points, color):
     topleft = tuple(points[0])
     topright = tuple(points[1])

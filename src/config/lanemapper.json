@@ -20,6 +20,37 @@
 		"ToPlot": 0,
         "CalibrationFile": "config/calibration.pickle"
 	},
+    "VehicleFinder": {
+    	"ToPlot": 1,
+    	"ClassifierFile": "config/svm.dump",
+    	"SlidingWindow": {
+	        "DefaultHeadingRatios": [
+	        	[0.20, -1.2],
+	        	[0.86, 1.60]
+	        ],
+	    	"DepthRangeRatio": [0.99, 0.58],
+	    	"WindowRangeRatio": [0.05, 0.50],
+	    	"SizeVariations": 5,
+    		"CenterShiftRatio": 0.0,
+    		"StepRatio": 0.50
+    	},
+    	"FeatureExtractors": [
+    		{"SpatialBinning":{"Space": "RGB", "Size": [32,32], "ToPlot": 0}},
+    		{"ColorHistogram":{"Space": "RGB", "NumBins": 32, "BinRange":[0,256], "ToPlot": 0}},
+    		{"HOGExtractor":{"Orientations":9, "HogChannel": 0, "PixelsPerCell": 8, "CellsPerBlock":2, "ToPlot":0}}
+    	]
+    },
+    "VehicleTracker": {
+		"ToPlot": 0,
+		"ConfidenceThreshold": 0.40,
+		"DriftToleranceRatio": 0.05
+    },
+    "VehicleMarker": {
+		"ToPlot": 0,
+		"ConfidenceThreshold": 0.40,
+		"SafeColor": [152, 251, 152],
+    	"DangerColor": [255,0,0]
+    },	
     "Thresholder": {
 		"ToPlot": 0,
     	"HoughFilter": {
@@ -54,7 +85,7 @@
 		}
     },
     "PerspectiveTransformer": {
-		"ToPlot": 0,
+		"ToPlot": 1,
         "DefaultHeadingRatios": [
         	[0.20, -1.2],
         	[0.86, 1.60]
@@ -75,26 +106,6 @@
     	"LookBackFrames": 4,
     	"DynamicVerticalSplit": 0,
     	"CameraPositionRatio": 0.50
-    },
-    "VehicleFinder": {
-    	"ToPlot": 1,
-    	"ClassifierFile": "config/svm.dump",
-    	"FeatureExtractors": [
-    		{"SpatialBinning":{"Space": "RGB", "Size": [32,32], "ToPlot": 0}},
-    		{"ColorHistogram":{"Space": "RGB", "NumBins": 32, "BinRange":[0,256], "ToPlot": 0}},
-    		{"HOGExtractor":{"Orientations":9, "HogChannel": 0, "PixelsPerCell": 8, "CellsPerBlock":2, "ToPlot":0}}
-    	]
-    },
-    "VehicleTracker": {
-		"ToPlot": 0,
-		"ConfidenceThreshold": 0.40,
-		"DriftToleranceRatio": 0.05
-    },
-    "VehicleMarker": {
-		"ToPlot": 0,
-		"ConfidenceThreshold": 0.40,
-		"SafeColor": [152, 251, 152],
-    	"DangerColor": [255,0,0]
     },
     "LaneFiller": {
 		"ToPlot": 0,

@@ -100,16 +100,16 @@ if __name__ == '__main__':
         args.dry = True
         print ("SVC already trained. Reading from previous version.")
         svc = joblib.load(args.output)
-        
+
     print('Train Accuracy of SVC = ', svc.score(X_train, Y_train))
     print('Test Accuracy of SVC = ', svc.score(X_test, Y_test))
-    t=time.time()
+    t= time.time()
     prediction = svc.predict(X_test[0].reshape(1, -1))
     t2 = time.time()
     print(t2-t, 'Seconds to predict with SVC')
-    
+
     if not args.dry:
-        print ("Saving checkpoints to file: {}".format(args.output))
+        print ("Saving classifier to file: {}".format(args.output))
         joblib.dump(svc, args.output)
 
     print ("Thank you. Come again!")
