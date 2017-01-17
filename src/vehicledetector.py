@@ -49,16 +49,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Object Classifier')
     parser.add_argument('-v', dest='vehicledir',    required=True, type=str, help='Path to folder containing vehicle images.')
     parser.add_argument('-n', dest='nonvehicledir',    required=True, type=str, help='Path to folder containing non-vehicle images.')
-    parser.add_argument('-o', dest='output',   required=True, type=str, help='File to store trainer parameters for later use')
+    parser.add_argument('-f', dest='outputfile',   required=True, type=str, help='File to store trainer parameters for later use')
     parser.add_argument('-t', dest='testratio', default=0.10, type=float, help='% of training data held aside for testing.')
     parser.add_argument('-d', dest='dry', action='store_true', help='Dry run. Will not save anything to disk (default: false).')
+    parser.add_argument('-o', dest='overwrite', action='store_true', help='Will save over existing file on disk (default: false).')
     args = parser.parse_args()
 
     # Create all the extractors here:
     print ("Preparing feature extractors...")
     spatialex = SpatialBinner(color_space='RGB', size=(32,32))
     colorhistex = ColorHistogram(color_space='RGB', nbins=32, bins_range=(0, 256))
-    hogex = HogExtractor(orientations=9, pixels_per_cell=8, cells_per_block=2)
+    hogex = HogExtractor(orientations=9, hog_channel=0, size=(64,64), pixels_per_cell=8, cells_per_block=2)
     combiner = FeatureCombiner((spatialex, colorhistex, hogex))
 
     # Collect the image file names:
@@ -89,7 +90,7 @@ if __name__ == '__main__':
 
     # If the SVM was not already trained:
     svc = None
-    if not os.path.isfile(args.output):
+    if args.overwrite is True or not os.path.isfile(args.outputfile):
         print ("Training the SVC...")
         svc = LinearSVC()
         t=time.time()
@@ -99,7 +100,7 @@ if __name__ == '__main__':
     else:
         args.dry = True
         print ("SVC already trained. Reading from previous version.")
-        svc = joblib.load(args.output)
+        svc = joblib.load(args.outputfile)
 
     print('Train Accuracy of SVC = ', svc.score(X_train, Y_train))
     print('Test Accuracy of SVC = ', svc.score(X_test, Y_test))
@@ -108,8 +109,8 @@ if __name__ == '__main__':
     t2 = time.time()
     print(t2-t, 'Seconds to predict with SVC')
 
-    if not args.dry:
-        print ("Saving classifier to file: {}".format(args.output))
-        joblib.dump(svc, args.output)
+    if not args.dry or args.overwrite is True:
+        print ("Saving classifier to file: {}".format(args.outputfile))
+        joblib.dump(svc, args.outputfile)
 
     print ("Thank you. Come again!")
