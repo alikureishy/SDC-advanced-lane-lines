@@ -39,6 +39,7 @@ class VehicleFinder(Operation):
         HogChannel = 'HogChannel'
         PixelsPerCell = 'PixelsPerCell'
         CellsPerBlock = 'CellsPerBlock'
+        Size = 'Size'
 
     # Constants:
     HitWindowColor = [152, 251, 152]
@@ -72,6 +73,7 @@ class VehicleFinder(Operation):
                 cfg = config[self.HOGExtractor.__name__]
                 extractor = HogExtractor(orientations=cfg[self.HOGExtractor.Orientations],
                                           hog_channel=cfg[self.HOGExtractor.HogChannel],
+                                          size=cfg[self.SpatialBinning.Size],
                                           pixels_per_cell=cfg[self.HOGExtractor.PixelsPerCell],
                                           cells_per_block=cfg[self.HOGExtractor.CellsPerBlock])
             else:
@@ -164,7 +166,7 @@ class VehicleFinder(Operation):
                 continue
             windows[i].append(center_box)
             shifts_per_box = int(1 / slide_ratio)
-            boxshift = int(boxwidth / slide_ratio)
+            boxshift = int(boxwidth * slide_ratio)
             numboxes = int(scanwidth / boxwidth) # Boxes each side of the center box
             # Each box on left + right sides of center:
             for j in range(1, numboxes + 1):
