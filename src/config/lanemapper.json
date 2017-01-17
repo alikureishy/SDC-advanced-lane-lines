@@ -26,18 +26,18 @@
     	"SlidingWindow": {
 	        "DefaultHeadingRatios": [
 	        	[0.20, -1.2],
-	        	[0.86, 1.60]
+	        	[0.86, 1.2]
 	        ],
-	    	"DepthRangeRatio": [0.99, 0.58],
-	    	"WindowRangeRatio": [0.05, 0.50],
-	    	"SizeVariations": 5,
+	    	"DepthRangeRatio": [0.99, 0.60],
+	    	"WindowRangeRatio": [0.08, 0.50],
+	    	"SizeVariations": 6,
     		"CenterShiftRatio": 0.0,
-    		"StepRatio": 0.50
+    		"StepRatio": 0.25
     	},
     	"FeatureExtractors": [
     		{"SpatialBinning":{"Space": "RGB", "Size": [32,32], "ToPlot": 0}},
     		{"ColorHistogram":{"Space": "RGB", "NumBins": 32, "BinRange":[0,256], "ToPlot": 0}},
-    		{"HOGExtractor":{"Orientations":9, "HogChannel": 0, "PixelsPerCell": 8, "CellsPerBlock":2, "ToPlot":0}}
+    		{"HOGExtractor":{"Orientations":9, "Size": [64, 64], "HogChannel": 0, "PixelsPerCell": 8, "CellsPerBlock":2, "ToPlot":0}}
     	]
     },
     "VehicleTracker": {
