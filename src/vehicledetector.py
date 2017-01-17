@@ -9,6 +9,9 @@ from sklearn.cross_validation import train_test_split
 from sklearn.svm.classes import LinearSVC
 import time
 from sklearn.utils import shuffle
+import json
+from operations.vehiclefinder import VehicleFinder
+from extractors.helper import buildextractor
 matplotlib.use('TKAgg')
 import matplotlib.image as mpimg
 from extractors.spatialbinner import SpatialBinner
@@ -49,6 +52,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Object Classifier')
     parser.add_argument('-v', dest='vehicledir',    required=True, type=str, help='Path to folder containing vehicle images.')
     parser.add_argument('-n', dest='nonvehicledir',    required=True, type=str, help='Path to folder containing non-vehicle images.')
+    parser.add_argument('-c', dest='configfile',    required=True, type=str, help='Path to configuration file (.json).')
     parser.add_argument('-f', dest='outputfile',   required=True, type=str, help='File to store trainer parameters for later use')
     parser.add_argument('-t', dest='testratio', default=0.10, type=float, help='% of training data held aside for testing.')
     parser.add_argument('-d', dest='dry', action='store_true', help='Dry run. Will not save anything to disk (default: false).')
@@ -57,10 +61,9 @@ if __name__ == '__main__':
 
     # Create all the extractors here:
     print ("Preparing feature extractors...")
-    spatialex = SpatialBinner(color_space='RGB', size=(32,32))
-    colorhistex = ColorHistogram(color_space='RGB', nbins=32, bins_range=(0, 256))
-    hogex = HogExtractor(orientations=9, hog_channel=0, size=(64,64), pixels_per_cell=8, cells_per_block=2)
-    combiner = FeatureCombiner((spatialex, colorhistex, hogex))
+    config = json.load(open(args.configfile))
+    extractorsequence = config[VehicleFinder.__name__][VehicleFinder.FeatureExtractors]
+    combiner = buildextractor(extractorsequence)
 
     # Collect the image file names:
     print ("Gathering data...")
