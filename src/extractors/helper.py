@@ -16,6 +16,7 @@ class Types(object):
         Space = 'Space'
         NumBins = 'NumBins'
         BinRange = 'BinRange'
+        Channel = 'Channel'
     class HOGExtractor(object):
         Orientations = 'Orientations'
         HogChannel = 'HogChannel'
@@ -31,7 +32,7 @@ def buildextractor(extractorsequence):
         if Types.ColorHistogram.__name__ in config:
             cfg = config[Types.ColorHistogram.__name__]
             extractor = ColorHistogram(color_space=cfg[Types.ColorHistogram.Space], nbins=cfg[Types.ColorHistogram.NumBins], 
-                bins_range=cfg[Types.ColorHistogram.BinRange])
+                bins_range=cfg[Types.ColorHistogram.BinRange], channel=cfg[Types.ColorHistogram.Channel])
         elif Types.SpatialBinning.__name__ in config:
             cfg = config[Types.SpatialBinning.__name__]
             extractor = SpatialBinner(color_space=cfg[Types.SpatialBinning.Space], size=cfg[Types.SpatialBinning.Size])
