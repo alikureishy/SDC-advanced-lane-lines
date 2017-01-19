@@ -16,6 +16,8 @@ from utils.utilities import getperspectivepoints
 import cv2
 from extractors.helper import buildextractor
 
+
+
 class VehicleFinder(Operation):
     ClassifierFile = 'ClassifierFile'
     FeatureExtractors = 'FeatureExtractors'
@@ -27,11 +29,15 @@ class VehicleFinder(Operation):
         SizeVariations = 'SizeVariations'
         WindowRangeRatio = 'WindowRangeRatio'
         StepRatio = 'StepRatio'
+        ConfidenceThreshold = 'ConfidenceThreshold'
 
     # Constants:
-    HitWindowColor = [255, 0, 0]
-    MissWindowColor = [152, 0, 0]
+    AllWindowColor = [152, 0, 0]
+    WeakWindowColor = [200, 0, 0]
+    StrongWindowColor = [255, 0, 0]
 
+    # Outputs
+    FrameVehicleDetections = "FrameVehicleDetections"
 
     def __init__(self, params):
         Operation.__init__(self, params)
@@ -41,34 +47,54 @@ class VehicleFinder(Operation):
         # Feature Extractors
         extractorsequence = params[self.FeatureExtractors]
         self.__feature_extractor__ = buildextractor(extractorsequence)
+        
+        self.__frame_vehicles__ = None
 
     def __processupstream__(self, original, latest, data, frame):
         x_dim, y_dim, xy_avg = latest.shape[1], latest.shape[0], int(mean(latest.shape[0:2]))
         slidingwindowconfig = self.getparam(self.SlidingWindow.__name__)
         if self.__windows__ is None:
+            self.__confidence_threshold__ = slidingwindowconfig[self.SlidingWindow.ConfidenceThreshold]
             self.__windows__ = self.generatewindows(slidingwindowconfig, x_dim, y_dim, xy_avg)
 
         # Perform search:
         image = np.copy(latest)
-        detected_vehicles = []
+        weak_candidate_vehicles = []
+        strong_candidate_vehicles = []
         for scan in self.__windows__:
             for (x1, x2, y1, y2) in scan:
                 window = image[y1:y2,x1:x2,:]
                 features = self.__feature_extractor__.extract(window)
-                label = self.__classifier__.predict(features.reshape(1, -1))
+                sample = features.reshape(1, -1)
+                label = self.__classifier__.predict(sample)
+                score = self.__classifier__.decision_function(sample)
+#                 print ("Score obtained: {}".format(score))
                 if label == 1:
-                    detected_vehicles.append((x1,x2,y1,y2))
+                    weak_candidate_vehicles.append((x1,x2,y1,y2))
+                if score > self.__confidence_threshold__:
+                    strong_candidate_vehicles.append((x1,x2,y1,y2))
+        self.__frame_vehicles__ = strong_candidate_vehicles
+        self.setdata(data, self.FrameVehicleDetections, self.__frame_vehicles__)
 
         if self.isplotting():
+            # First show all windows being searched:
             image_all = np.zeros_like(latest)
             for scan in self.__windows__:
                 for (x1,x2,y1,y2) in scan:
-                    cv2.rectangle(image_all, (x1,y1), (x2,y2), self.MissWindowColor, 3)
-            image_hits = np.copy(latest)
-            for (x1,x2,y1,y2) in detected_vehicles:
-                cv2.rectangle(image_hits, (x1,y1), (x2,y2), self.HitWindowColor, 4)
-            todraw = cv2.addWeighted(image_hits, 1, image_all, 0.4, 0)
-            self.__plot__(frame, todraw, None, "Vehicle Search & Hits", None)
+                    cv2.rectangle(image_all, (x1,y1), (x2,y2), self.AllWindowColor, 3)
+                    
+            # Then show all windows that were weak candidates:            
+            images_weak = np.copy(latest)
+            for (x1,x2,y1,y2) in weak_candidate_vehicles:
+                cv2.rectangle(images_weak, (x1,y1), (x2,y2), self.WeakWindowColor, 4)
+            todraw = cv2.addWeighted(images_weak, 0.8, image_all, 0.4, 0)
+
+            # Then show all windows that were strong candidates:
+            image_strong = np.copy(latest)
+            for (x1,x2,y1,y2) in strong_candidate_vehicles:
+                cv2.rectangle(image_strong, (x1,y1), (x2,y2), self.StrongWindowColor, 5)
+            todraw = cv2.addWeighted(image_strong, 1, image_all, 0.4, 0)
+            self.__plot__(frame, todraw, None, "Vehicle Search & Hits (Weak/Strong = {}/{})".format(len(weak_candidate_vehicles), len(strong_candidate_vehicles)), None)
             
         return latest
 
