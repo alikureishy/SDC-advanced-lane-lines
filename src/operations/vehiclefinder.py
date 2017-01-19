@@ -67,34 +67,44 @@ class VehicleFinder(Operation):
                 features = self.__feature_extractor__.extract(window)
                 sample = features.reshape(1, -1)
                 label = self.__classifier__.predict(sample)
-                score = self.__classifier__.decision_function(sample)
+                score = self.__classifier__.decision_function(sample)[0]
 #                 print ("Score obtained: {}".format(score))
                 if label == 1:
-                    weak_candidate_vehicles.append((x1,x2,y1,y2))
+                    weak_candidate_vehicles.append(((x1,x2,y1,y2), score))
                 if score > self.__confidence_threshold__:
-                    strong_candidate_vehicles.append((x1,x2,y1,y2))
+                    strong_candidate_vehicles.append(((x1,x2,y1,y2), score))
         self.__frame_vehicles__ = strong_candidate_vehicles
         self.setdata(data, self.FrameVehicleDetections, self.__frame_vehicles__)
 
         if self.isplotting():
+            all_windows = [x for sublist in self.__windows__ for x in sublist]
             # First show all windows being searched:
             image_all = np.zeros_like(latest)
             for scan in self.__windows__:
                 for (x1,x2,y1,y2) in scan:
-                    cv2.rectangle(image_all, (x1,y1), (x2,y2), self.AllWindowColor, 3)
+                    cv2.rectangle(image_all, (x1,y1), (x2,y2), self.AllWindowColor, 2)
                     
             # Then show all windows that were weak candidates:            
-            images_weak = np.copy(latest)
-            for (x1,x2,y1,y2) in weak_candidate_vehicles:
-                cv2.rectangle(images_weak, (x1,y1), (x2,y2), self.WeakWindowColor, 4)
-            todraw = cv2.addWeighted(images_weak, 0.8, image_all, 0.4, 0)
+            image_weak = np.zeros_like(latest)
+            for ((x1,x2,y1,y2), score) in weak_candidate_vehicles:
+                cv2.rectangle(image_weak, (x1,y1), (x2,y2), self.WeakWindowColor, 2)
+                cv2.putText(image_weak,"{:.2f}".format(score), (x1,y1), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, self.WeakWindowColor, 1)
 
             # Then show all windows that were strong candidates:
             image_strong = np.copy(latest)
-            for (x1,x2,y1,y2) in strong_candidate_vehicles:
-                cv2.rectangle(image_strong, (x1,y1), (x2,y2), self.StrongWindowColor, 5)
-            todraw = cv2.addWeighted(image_strong, 1, image_all, 0.4, 0)
-            self.__plot__(frame, todraw, None, "Vehicle Search & Hits (Weak/Strong = {}/{})".format(len(weak_candidate_vehicles), len(strong_candidate_vehicles)), None)
+            for ((x1,x2,y1,y2), score) in strong_candidate_vehicles:
+                cv2.rectangle(image_strong, (x1,y1), (x2,y2), self.StrongWindowColor, 4)
+                cv2.putText(image_strong,"{:.2f}".format(score), (x1,y1), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, self.StrongWindowColor, 1)
+
+            # Now superimpose all 3 frames onto the latest color frame:
+            todraw = cv2.addWeighted(image_strong, 1, image_all, 0.3, 0)
+            todraw = cv2.addWeighted(todraw, 1, image_weak, 0.6, 0)
+#             todraw = cv2.addWeighted(todraw, 1, image_strong, 1, 0)
+            self.__plot__(frame, todraw, None, "Vehicle Search & Hits (All/Weak/Strong = {}/{}/{})".format(
+                len(all_windows),
+                len(weak_candidate_vehicles), 
+                len(strong_candidate_vehicles)), None)
+
             
         return latest
 
