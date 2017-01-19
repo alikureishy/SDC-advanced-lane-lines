@@ -19,7 +19,7 @@ class Types(object):
         Channel = 'Channel'
     class HOGExtractor(object):
         Orientations = 'Orientations'
-        HogChannel = 'HogChannel'
+        Channel = 'Channel'
         PixelsPerCell = 'PixelsPerCell'
         CellsPerBlock = 'CellsPerBlock'
         Size = 'Size'
@@ -38,7 +38,7 @@ def buildextractor(extractorsequence):
             extractor = SpatialBinner(color_space=cfg[Types.SpatialBinning.Space], size=cfg[Types.SpatialBinning.Size])
         elif Types.HOGExtractor.__name__ in config:
             cfg = config[Types.HOGExtractor.__name__]
-            extractor = HogExtractor(orientations=cfg[Types.HOGExtractor.Orientations], hog_channel=cfg[Types.HOGExtractor.HogChannel], 
+            extractor = HogExtractor(orientations=cfg[Types.HOGExtractor.Orientations], channel=cfg[Types.HOGExtractor.Channel], 
                 size=cfg[Types.SpatialBinning.Size], 
                 pixels_per_cell=cfg[Types.HOGExtractor.PixelsPerCell], 
                 cells_per_block=cfg[Types.HOGExtractor.CellsPerBlock])
