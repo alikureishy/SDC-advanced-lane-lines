@@ -37,14 +37,12 @@ class HogExtractor(object):
                            orientations=self.__orientations__,
                            pixels_per_cell=(self.__pixels_per_cell__, self.__pixels_per_cell__),
                            cells_per_block=(self.__cells_per_block__, self.__cells_per_block__),
-                           transform_sqrt=True,
                            visualise=False, feature_vector=True)
         else:
             features = hog(image[:,:,self.__hog_channel__],
                            orientations=self.__orientations__,
                            pixels_per_cell=(self.__pixels_per_cell__, self.__pixels_per_cell__),
                            cells_per_block=(self.__cells_per_block__, self.__cells_per_block__),
-                           transform_sqrt=True,
                            visualise=False, feature_vector=True)
 #         print ("\tHOG Features = {} slots".format(len(features)))
         return features
