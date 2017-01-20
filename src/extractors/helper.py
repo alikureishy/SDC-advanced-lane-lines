@@ -24,7 +24,6 @@ class Types(object):
         CellsPerBlock = 'CellsPerBlock'
         Size = 'Size'
     
-    
 def getextractors(extractorsequence):
     extractors = []
     for config in extractorsequence:
@@ -46,7 +45,6 @@ def getextractors(extractorsequence):
         else:
             raise ("Unrecognized extractor provided")
         extractors.append(extractor)
-        
     return extractors
     
 def buildextractor(extractorsequence):
