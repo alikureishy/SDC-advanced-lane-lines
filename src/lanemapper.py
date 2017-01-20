@@ -9,7 +9,7 @@ import argparse
 import os
 from operations.pipeline import Pipeline
 from utils.streamers import ImageStreamer, VideoStreamer
-from utils.plotter import Plotter
+from utils.plotter import Illustrator
 import json
 
 if __name__ == '__main__':
@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     # Create the pipelines
     pipelines = []
-    plotter = Plotter(args.plot)
+    illustrator = Illustrator(args.plot)
     for file in args.configs:
         config = json.load(open(file))
         pipeline = Pipeline(config, args.selector)
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     framecount = 0
     for image in streamer.iterator():
         if framecount % args.speed == 0:
-            frame = plotter.nextframe()
+            frame = illustrator.nextframe()
             for (name, pipeline) in pipelines:
                 frame.newsection(name)
                 processed = pipeline.execute(image, frame)

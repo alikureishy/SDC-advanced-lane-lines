@@ -8,6 +8,8 @@ import numpy as np
 import cv2
 from operations.perspectivetransformer import PerspectiveTransformer
 from operations.lanefinder import LaneFinder
+from utils.plotter import Image
+from utils.plotter import Graph
 
 class LaneFiller(Operation):
     DriftToleranceRatio = 'DriftToleranceRatio'
@@ -67,7 +69,7 @@ class LaneFiller(Operation):
             # Get the color image to draw the lane on, just for illustration
             color = self.getdata(data, PerspectiveTransformer.WarpedColor, PerspectiveTransformer).copy()
             color = cv2.addWeighted(color, 1, foreground, 0.4, 0)
-            self.__plot__(frame, color, None, "Filled Lane", None)
+            self.__plot__(frame, Image("Filled Lane", color, None))
 
         return foreground
         

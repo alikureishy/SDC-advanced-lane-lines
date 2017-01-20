@@ -7,6 +7,8 @@ from operations.baseoperation import Operation
 import cv2
 import numpy as np
 from utils.utilities import extractlanes, drawlines
+from utils.plotter import Image
+from utils.plotter import Graph
 
 class PerspectiveFinder(Operation):
     # Outputs
@@ -68,13 +70,13 @@ class PerspectiveFinder(Operation):
         if self.isplotting():
 #             empty = np.zeros((*latest.shape, 3), dtype=np.uint8)
             hough = drawlines (np.zeros_like(latest), lines, 255, 15)
-            self.__plot__(frame, hough, 'gray', "Temp Hough", None)
+            self.__plot__(frame, Image("Temp Hough", hough, 'gray'))
 
             perspective = drawlines (np.zeros_like(latest), [left, right], 255, 15)
             for i in range(len(perspective_points)):
                 perspective = cv2.circle(perspective, tuple(perspective_points[i]), 10, (255,0,0), -1)
             title = "Perspective Points ({})".format(op)
-            self.__plot__(frame, perspective, 'gray', title, None)
+            self.__plot__(frame, Image(title, perspective, 'gray'))
         
         return latest
         

@@ -3,6 +3,9 @@ Created on Dec 22, 2016
 
 @author: safdar
 '''
+from utils.plotter import Image
+from utils.plotter import Graph
+
 class Operation(object):
     # Parameters
     IsPlotting = 'ToPlot'
@@ -87,10 +90,10 @@ class Operation(object):
     def isplotting(self):
         return bool(self.__options__[self.IsPlotting])
 
-    def __plot__(self, frame, image, cmap, title, stats, toplot=True):
+    def __plot__(self, frame, plottable, toplot=True):
         if self.isplotting():
             if toplot:
-                frame.add(image, cmap, title, stats)
+                frame.add(plottable)
 
 # class Canny(Operation):
 #     def __init__(self, params):

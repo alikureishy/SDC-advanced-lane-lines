@@ -7,6 +7,8 @@ from operations.baseoperation import Operation
 import numpy as np    
 import cv2
 from utils.utilities import drawlines, extractlanes
+from utils.plotter import Image
+from utils.plotter import Graph
 
 
 # Supported operations
@@ -120,12 +122,12 @@ class Thresholder(Operation):
                 combined_binary = np.absolute(1 - combined_binary)
                 title = "{} >> NOT".format(title)
 
-            self.__plot__(frame, combined_binary, 'gray', title, stats, toplot=toplot)
+            self.__plot__(frame, Image(title, combined_binary, 'gray'), toplot=toplot)
 
             if not canny is None:
                 combined_binary = cv2.Canny(combined_binary, canny[0], canny[1])
                 title = ">> CANNY ({})".format(canny)
-                self.__plot__(frame, combined_binary, 'gray', title, stats, toplot=toplot)
+                self.__plot__(frame, Image(title, combined_binary, 'gray'), toplot=toplot)
 
             if not hough is None:
                 lines,left,right = extractlanes(combined_binary, hough)
@@ -134,7 +136,7 @@ class Thresholder(Operation):
                     hough_image = drawlines(np.zeros_like(combined_binary), lines)
                 else:
                     hough_image = drawlines(np.zeros_like(combined_binary), [left,right])
-                self.__plot__(frame, hough_image, 'gray', title, stats, toplot=toplot)
+                self.__plot__(frame, Image(title, hough_image, 'gray'), toplot=toplot)
                 
             return combined_binary
         else:                                               # Base case
@@ -167,12 +169,12 @@ class Thresholder(Operation):
                 binary_image = np.absolute(1 - binary_image)
                 title = "NOT ({})".format(title)
             
-            self.__plot__(frame, binary_image, 'gray', title, stats, toplot=toplot)
+            self.__plot__(frame, Image(title, binary_image, 'gray'), toplot=toplot)
             
             if not canny is None:
                 binary_image = cv2.Canny(binary_image, canny[0], canny[1])
                 title = "{} >> CANNY ({})".format(flavor, canny)
-                self.__plot__(frame, binary_image, 'gray', title, stats, toplot=toplot)
+                self.__plot__(frame, Image(title, binary_image, 'gray'), toplot=toplot)
 
             if not hough is None:
                 lines,left,right = extractlanes(binary_image, hough)
@@ -181,7 +183,7 @@ class Thresholder(Operation):
                     hough_image = drawlines(np.zeros_like(binary_image), lines)
                 else:
                     hough_image = drawlines(np.zeros_like(binary_image), [left,right])
-                self.__plot__(frame, hough_image, 'gray', title, stats, toplot=toplot)
+                self.__plot__(frame, Image(title, hough_image, 'gray'), toplot=toplot)
 
             return binary_image
 

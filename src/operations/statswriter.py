@@ -6,7 +6,9 @@ Created on Dec 23, 2016
 from operations.baseoperation import Operation
 from operations.lanefinder import LaneFinder
 import cv2
-    
+from utils.plotter import Image
+from utils.plotter import Graph
+
 # Writes statistics to the output image    
 class StatsWriter(Operation):
     OrigXRatio = 0.20
@@ -41,6 +43,6 @@ class StatsWriter(Operation):
             rightconfidence = '{0:.0f}'.format(rightconfidence)
             caption = "{} m << {}% << [{} m]  >> {}% >> {} m".format(leftcurverad_rs, leftconfidence, drift_rs, rightconfidence, rightcurverad_rs)
             cv2.putText(latest, caption, (x, y), self.Font, 0.8, self.CaptionColor, self.CaptionThickness)
-            self.__plot__(frame, latest, None, "Captioned", None)
+            self.__plot__(frame, Image("Captioned", latest, None))
             
         return latest

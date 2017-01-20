@@ -7,6 +7,8 @@ from operations.baseoperation import Operation
 import numpy as np
 import cv2
 from utils.utilities import plotboundary
+from utils.plotter import Image
+from utils.plotter import Graph
 
 # Default:
 #  Left ds = (.26*x, -.33*y) = (332, -237)
@@ -66,7 +68,7 @@ class PerspectiveTransformer(Operation):
             # Show perspective regions:
             orig_temp = np.copy(orig)
             plotboundary(orig_temp, self.__perspective_points__, (127, 255, 212))
-            self.__plot__(frame, orig_temp, None, "Warp Region (Source)", None)
+            self.__plot__(frame, Image("Warp Region (Source)", orig_temp, None))
 
         # Warp the image:
         warped_orig = cv2.warpPerspective(orig, self.__M__, (x_dim, y_dim), flags=cv2.INTER_LINEAR)
@@ -76,7 +78,7 @@ class PerspectiveTransformer(Operation):
             # Show warped original:
             orig_temp = np.copy(warped_orig)
             plotboundary(orig_temp, self.__transform_points__, (255, 192, 203))
-            self.__plot__(frame, orig_temp, None, "Warped (Original)", None)
+            self.__plot__(frame, Image("Warped (Original)", orig_temp, None))
             
         # Perform perspective transform:
         bw_warped = cv2.warpPerspective(np.float32(latest), self.__M__, (x_dim, y_dim), flags=cv2.INTER_LINEAR)
@@ -94,16 +96,15 @@ class PerspectiveTransformer(Operation):
 
         # Warp the blank back to original image space using inverse perspective matrix (Minv)
         newwarp = cv2.warpPerspective(color_warp, self.__Minv__, (x_dim, y_dim), flags=cv2.INTER_LINEAR)
-        self.__plot__(frame, newwarp, None, "Unwarped Foreground", None)
+        self.__plot__(frame, Image("Warped (Original)", newwarp, None))
 
         # Combine the result with the original image
         unwarped = np.copy(original)
 #         self.__plot__(frame, unwarped, None, "Original Color", None)
         
         title = "Unwarped Full"
-        stats = None
         result = cv2.addWeighted(unwarped, 1, newwarp, 0.3, 0)
-        self.__plot__(frame, result, None, title, stats)
+        self.__plot__(frame, Image(title, result, None))
          
         return result
     

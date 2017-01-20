@@ -9,6 +9,8 @@ from _collections import deque
 import cv2
 from operations.perspectivetransformer import PerspectiveTransformer
 import math
+from utils.plotter import Image
+from utils.plotter import Graph
 
 # Constants:
 # Define conversions in x and y from pixels space to meters
@@ -288,7 +290,7 @@ class LaneFinder(Operation):
             background = cv2.addWeighted(background, 1, timewindows, 0.3, 0)
             background = cv2.addWeighted(background, 1, foundpoints, 0.7, 0)
             
-            self.__plot__(frame, background, None, "Peak Search Algorithm", None)
+            self.__plot__(frame, Image("Peak Search Algorithm", background, None))
 
         # Combine historical points with present before doing a fit:
         all_leftx.append(leftxs)

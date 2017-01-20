@@ -6,6 +6,8 @@ Created on Dec 23, 2016
 import cv2
 from operations.baseoperation import Operation
 import pickle
+from utils.plotter import Image
+from utils.plotter import Graph
 
 class Undistorter(Operation):
     # Parameters
@@ -23,5 +25,5 @@ class Undistorter(Operation):
 
     def __processupstream__(self, original, latest, data, frame):
         undistorted = cv2.undistort(latest, self.__mtx__, self.__dist__, None, self.__mtx__)
-        self.__plot__(frame, undistorted, None, "Undistorter", None)
+        self.__plot__(frame, Image("Undistorter", undistorted, None))
         return undistorted

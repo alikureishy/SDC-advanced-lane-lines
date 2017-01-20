@@ -6,17 +6,89 @@ Created on Dec 22, 2016
 import numpy as np
 import matplotlib.pyplot as plt
 
-class Plotter(object):
+#
+# Plottable base class
+#
+class Plottable(object):
+    def __init__(self, title):
+        self.__title__ = title
+    def title(self):
+        return self.__title__
+
+#
+# Image object to be plotted
+#
+class Image(Plottable):
+    def __init__(self, title, image, cmap):
+        Plottable.__init__(self, title)
+        self.__image__ = np.copy(image)
+        self.__cmap__ = cmap
+    def cmap(self):
+        return self.__cmap__
+    def image(self):
+        return self.__image__
+    
+#
+# Graph object to be plotted
+#
+class Graph(Plottable):
+    def __init__(self, title, xs, ys, xlabel, ylabel):
+        Plottable.__init__(self, title)
+        self.__xs__ = xs
+        self.__ys__ = ys
+        self.__xlabel__ = xlabel
+        self.__ylabel__ = ylabel
+    def plot(self, axes):
+        raise "Not implemented"
+    def replot(self, axes):
+        raise "Not implemented"
+
+class Canvas(object):
+    def __init__(self, axes):
+        self.__axes__ = axes
+    def plot(self):
+        raise "Not implemented"
+    def replot(self, axes):
+        raise "Not implemented"
+    
+class GraphSlot(Canvas):
+    def __init__(self, axes):
+        Canvas.__init__(self, axes)
+    def plot(self, graphdata):
+        self.__axes__.set_xticks([])
+        self.__axes__.set_yticks([])
+        # ToDO>>>
+    def replot(self, graphdata):
+        pass
+        # ToDO>>>
+
+class ImageSlot(Canvas):
+    def __init__(self, axes):
+        Canvas.__init__(self, axes)
+        self.__axesimage__ = None
+
+    def plot(self, imagedata):
+        self.__axes__.set_xticks([])
+        self.__axes__.set_yticks([])
+        self.__axesimage__ = self.__axes__.imshow(imagedata.image(), cmap=imagedata.cmap())
+
+    def replot(self, imagedata):
+        self.__axesimage__.set_data(imagedata.image())
+
+#
+# Plotting class
+#
+class Illustrator(object):
     def __init__(self, plot):
         if plot:
-            self.__drawer__ = PyPlotter()
+            self.__canvas__ = PyplotCanvas()
         else:
-            self.__drawer__ = ImageDrawer()
+            self.__canvas__ = ImageCanvas()
         
     def nextframe(self):
-        return Frame(self.__drawer__)
+        return Frame(self.__canvas__)
     
-class ImageDrawer(object):
+class ImageCanvas(object):
     def __init__(self):
         self.__counter__ = 0
     
@@ -25,15 +97,14 @@ class ImageDrawer(object):
         print(".", end='', flush=True)
         if self.__counter__ % 100 == 0:
             print ("{}".format(self.__counter__))
-        
 
-class PyPlotter(object):
+class PyplotCanvas(object):
     def __init__(self):
         self.__figure__ = None
         self.__axes__ = None
-        self.__axes_images__ = None
         self.__counter__ = 0
         self.__figure_text__ = None
+        self.__canvases__ = None
         
     def redraw(self, sections):
         # If there's only one section, split it into rows/cols:
@@ -44,10 +115,10 @@ class PyPlotter(object):
                 h=int(round(np.sqrt(N)))
                 v=int(np.ceil(N/h))
                 diff = (h*v) - N
-                sample = sections[0][0][0]
+                sample = np.zeros((20, 20, 3), dtype=np.uint8)
                 for _ in range(diff):
-                    sections[0].append((np.zeros_like(sample), None, "--Blank--", None))
-                sections = np.reshape(np.array(sections), (v,h,4))
+                    sections[0].append(Image("--Blank--", sample, None))
+                sections = np.reshape(np.array(sections), (v,h))
         else:
             _, maxsection = max(enumerate(sections), key = lambda tup: len(tup[1]))
             h = len(maxsection)
@@ -57,26 +128,30 @@ class PyPlotter(object):
         if not v is None and not h is None:
             if self.__figure__ == None:
                 self.__figure__, _  = plt.subplots (v, h)
+                self.__slots__ = []
                 if self.__figure_text__ is None:
                     self.__figure_text__ = self.__figure__.suptitle("", fontsize=14, fontweight='bold')
-                self.__axes_images__ = []
+
+#                 self.__axes_images__ = []
                 for i in range(v):
-                    self.__axes_images__.append([])
+                    self.__slots__.append([])
                     for j in range(h):
                         if j >= len(sections[i]):
                             break # We've finished one section (horizontal plots). Goto next i.
-    
-                        (image, cmap, title, stats) = sections[i][j]
                         idx = (i*h) + j
+    
+                        toplot = sections[i][j]
                         axes = self.__figure__.get_axes()[idx]
-                        font = min (max (int( 100 / (np.sqrt(len(title)) * v * h)), 7), 15)
-                        axes.set_title(title, fontsize=font)
-                        axes.set_xticks([])
-                        axes.set_yticks([])
-                        
-                        #TODO: Show stats?
-                        axesimage = axes.imshow(image, cmap=cmap)
-                        self.__axes_images__[i].append(axesimage)
+                        font = min (max (int( 100 / (np.sqrt(len(toplot.title())) * v * h)), 7), 15)
+                        axes.set_title(toplot.title(), fontsize=font)
+                        if type(toplot)==Image:
+                            slot = ImageSlot(axes)
+                        elif type(toplot)==Graph:
+                            slot = GraphSlot(axes)
+                        else:
+                            raise "Type {} unsupported for any slot opereations".format(type(toplot))
+                        self.__slots__[i].append(slot)                  
+                        slot.plot(toplot)
                 plt.ion()
                 plt.show()
             else:
@@ -87,14 +162,11 @@ class PyPlotter(object):
                         idx = (i*h) + j
                         axes = self.__figure__.get_axes()[idx]
                         
-                        (image, cmap, title, stats) = sections[i][j]
-                        axesimage = self.__axes_images__[i][j]
-    #                     axesimage.autoscale()
-                        axesimage.set_data(image)
-                        font = min (max (int( 100 / (np.sqrt(len(title)) * v * h)), 7), 15)
-                        axes.set_title(title, fontsize=font)
-                        # TODO:
-                        # Update stats?
+                        toplot = sections[i][j]
+                        font = min (max (int( 100 / (np.sqrt(len(toplot.title())) * v * h)), 7), 15)
+                        axes.set_title(toplot.title(), fontsize=font)
+                        slot = self.__slots__[i][j]
+                        slot.replot(toplot)
                 plt.ion()
                 self.__figure__.canvas.draw()
                 plt.pause(0.00001)
@@ -105,15 +177,15 @@ class PyPlotter(object):
             print ("{}".format(self.__counter__))
     
 # A Frame represents state that is to be reflected in the current
-# pyplot frame. The actual plotting is performed by the Plotter
+# pyplot frame. The actual plotting is performed by the Illustrator
 class Frame(object):
-    def __init__(self, plotter):
-        self.__plotter__ = plotter
+    def __init__(self, illustrator):
+        self.__plotter__ = illustrator
         self.__sections__ = []
     
-    def add(self, image, cmap, title, stats):
+    def add(self, plottable):
         assert len(self.__sections__)>0, "Must invoke newsection() first before calling add()"
-        self.__sections__[-1].append((image.copy(), cmap, title, stats))
+        self.__sections__[-1].append(plottable)
     
     def newsection(self, name):
         self.__sections__.append([])
