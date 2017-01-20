@@ -38,10 +38,6 @@ class Graph(Plottable):
         self.__ys__ = ys
         self.__xlabel__ = xlabel
         self.__ylabel__ = ylabel
-    def plot(self, axes):
-        raise "Not implemented"
-    def replot(self, axes):
-        raise "Not implemented"
 
 class Canvas(object):
     def __init__(self, axes):
@@ -55,23 +51,26 @@ class GraphSlot(Canvas):
     def __init__(self, axes):
         Canvas.__init__(self, axes)
     def plot(self, graphdata):
-        self.__axes__.set_xticks([])
-        self.__axes__.set_yticks([])
-        # ToDO>>>
+        if graphdata.__xs__ is not None:
+            self.__axes__.plot(graphdata.__xs__, graphdata.__ys__)
+        else:
+            self.__axes__.plot(graphdata.__ys__)
+        if graphdata.__xlabel__ is not None:
+            self.__axes__.set_xlabel(graphdata.__xlabel__)
+        if graphdata.__ylabel__ is not None:
+            self.__axes__.set_ylabel(graphdata.__ylabel__)
     def replot(self, graphdata):
-        pass
-        # ToDO>>>
+        self.__axes__.clear()
+        self.plot(graphdata)
 
 class ImageSlot(Canvas):
     def __init__(self, axes):
         Canvas.__init__(self, axes)
         self.__axesimage__ = None
-
     def plot(self, imagedata):
         self.__axes__.set_xticks([])
         self.__axes__.set_yticks([])
         self.__axesimage__ = self.__axes__.imshow(imagedata.image(), cmap=imagedata.cmap())
-
     def replot(self, imagedata):
         self.__axesimage__.set_data(imagedata.image())
 
