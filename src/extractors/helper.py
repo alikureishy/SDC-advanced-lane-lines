@@ -24,7 +24,8 @@ class Types(object):
         CellsPerBlock = 'CellsPerBlock'
         Size = 'Size'
     
-def buildextractor(extractorsequence):
+    
+def getextractors(extractorsequence):
     extractors = []
     for config in extractorsequence:
         assert len(config.keys()) == 1, "Invalid: {}".format(config)
@@ -45,5 +46,9 @@ def buildextractor(extractorsequence):
         else:
             raise ("Unrecognized extractor provided")
         extractors.append(extractor)
+        
+    return extractors
     
+def buildextractor(extractorsequence):
+    extractors = getextractors(extractorsequence)
     return FeatureCombiner(tuple(extractors))
