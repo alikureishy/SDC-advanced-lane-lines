@@ -182,9 +182,9 @@ class Frame(object):
         self.__plotter__ = illustrator
         self.__sections__ = []
     
-    def add(self, plottable):
+    def add(self, plottable, index=-1):
         assert len(self.__sections__)>0, "Must invoke newsection() first before calling add()"
-        self.__sections__[-1].append(plottable)
+        self.__sections__[index].append(plottable)
     
     def newsection(self, name):
         self.__sections__.append([])
