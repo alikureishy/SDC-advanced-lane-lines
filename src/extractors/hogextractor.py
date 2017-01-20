@@ -16,7 +16,7 @@ class HogExtractor(object):
         self.__size__ = size
         self.__color_space__ = space
         
-    def extract(self, image):
+    def extract(self, image, visualize=False):
         image = cv2.resize(image, tuple(self.__size__))
         cspace = self.__color_space__
         if cspace == 'RGB':
@@ -33,16 +33,14 @@ class HogExtractor(object):
             image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
             
         if cspace == 'GRAY':
-            features = hog(image,
+            return hog(image,
                            orientations=self.__orientations__,
                            pixels_per_cell=(self.__pixels_per_cell__, self.__pixels_per_cell__),
                            cells_per_block=(self.__cells_per_block__, self.__cells_per_block__),
-                           visualise=False, feature_vector=True)
+                           visualise=visualize, feature_vector=True)
         else:
-            features = hog(image[:,:,self.__hog_channel__],
+            return hog(image[:,:,self.__hog_channel__],
                            orientations=self.__orientations__,
                            pixels_per_cell=(self.__pixels_per_cell__, self.__pixels_per_cell__),
                            cells_per_block=(self.__cells_per_block__, self.__cells_per_block__),
-                           visualise=False, feature_vector=True)
-#         print ("\tHOG Features = {} slots".format(len(features)))
-        return features
+                           visualise=visualize, feature_vector=True)

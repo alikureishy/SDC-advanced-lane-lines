@@ -6,6 +6,7 @@ Created on Dec 31, 2016
 import cv2
 import numpy as np
 import math
+import os
 
 class HoughFilterParams(object):
     _ = 'HoughFilter'
@@ -158,5 +159,14 @@ def extractlanes(image, filterparams):
             return lines, leftlane, rightlane
     return lines, None, None
 
-    def inrange(range, y):
-        return min(range) <= y <= max(range)
+def inrange(range, y):
+    return min(range) <= y <= max(range)
+
+def getallpathsunder(path):
+    if not os.path.isdir(path):
+        raise "Folder {} does not exist, or is not a folder".format(path)
+    cars = [os.path.join(dirpath, f)
+            for dirpath, _, files in os.walk(path)
+            for f in files if f.endswith('.png')]
+    return cars
+
