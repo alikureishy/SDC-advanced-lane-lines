@@ -28,25 +28,37 @@
 	        	[0.20, -1.2],
 	        	[0.86, 1.2]
 	        ],
-	    	"DepthRangeRatio": [0.99, 0.60],
-	    	"WindowRangeRatio": [0.08, 0.50],
-	    	"SizeVariations": 6,
+	    	"DepthRangeRatio": [0.99, 0.59],
+	    	"WindowRangeRatio": [0.03, 0.50],
+	    	"SizeVariations": 9,
     		"CenterShiftRatio": 0.0,
-    		"StepRatio": 0.50
+    		"StepRatio": 0.50,
+    		"ConfidenceThreshold": 0.5
+    	},
+    	"Logging": {
+	    	"LogHits": 0,
+	    	"LogMisses": 0,
+	    	"FrameRange": [0,9000],
+	    	"Frames": [],
+	    	"LogFolder": "../data/runs/snaps"
     	},
     	"FeatureExtractors": [
-    		{"ColorHistogram":{"Space": "HSV", "NumBins": 32, "BinRange":[0,256], "ToPlot": 0}},
-    		{"ColorHistogram":{"Space": "HLS", "NumBins": 32, "BinRange":[0,256], "ToPlot": 0}},
-    		{"HOGExtractor":{"Orientations": 9, "Space": "GRAY", "Size": [64, 64], "HogChannel": 0, "PixelsPerCell": 8, "CellsPerBlock":2, "ToPlot":0}}
+    		{"SpatialBinning": {"Space": "YUV", "Channel": 0, "Size": [64,64]}},
+    		{"SpatialBinning": {"Space": "YUV", "Channel": 1, "Size": [64,64]}},
+    		{"SpatialBinning": {"Space": "YUV", "Channel": 2, "Size": [64,64]}},
+    		{"HOGExtractor":{"Orientations": 9, "Space": "GRAY", "Size": [128, 128], "Channel": 0, "PixelsPerCell": 8, "CellsPerBlock":2}}
     	]
     },
     "VehicleTracker": {
 		"ToPlot": 0,
+		"HardFalsePositivesDump": "../data/runs/hard/false-positives",
+		"HardFalseNegativesDump": "../data/runs/hard/false-negatives",
 		"ConfidenceThreshold": 0.40,
 		"DriftToleranceRatio": 0.05
     },
     "VehicleMarker": {
 		"ToPlot": 0,
+		"CurrentBoundingBoxColor": [255, 0, 0],
 		"ConfidenceThreshold": 0.40,
 		"SafeColor": [152, 251, 152],
     	"DangerColor": [255,0,0]
@@ -85,7 +97,7 @@
 		}
     },
     "PerspectiveTransformer": {
-		"ToPlot": 1,
+		"ToPlot": 0,
         "DefaultHeadingRatios": [
         	[0.20, -1.2],
         	[0.86, 1.60]

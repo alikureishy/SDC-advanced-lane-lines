@@ -4,15 +4,17 @@ Created on Dec 21, 2016
 @author: safdar
 '''
 import matplotlib
+from sklearn.neural_network.multilayer_perceptron import MLPClassifier
+import PIL
+matplotlib.use('TKAgg')
 from sklearn.preprocessing.data import StandardScaler
 from sklearn.cross_validation import train_test_split
-from sklearn.svm.classes import LinearSVC
+from sklearn.svm.classes import LinearSVC, SVC
 import time
 from sklearn.utils import shuffle
 import json
 from operations.vehiclefinder import VehicleFinder
 from extractors.helper import buildextractor
-matplotlib.use('TKAgg')
 import matplotlib.image as mpimg
 from extractors.spatialbinner import SpatialBinner
 from extractors.hogextractor import HogExtractor
@@ -38,6 +40,7 @@ def appendXYs(imagefiles, extractor, label, Xs, Ys):
     print ("LABEL: {}".format(label))
     for idx, file in enumerate(imagefiles):
         image = mpimg.imread(file)
+#         image = np.array(PIL.Image.open(file))
         Xs.append(extractor.extract(image))
         Ys.append(label)
         if idx % 100 == 0:
@@ -59,12 +62,6 @@ if __name__ == '__main__':
     parser.add_argument('-o', dest='overwrite', action='store_true', help='Will save over existing file on disk (default: false).')
     args = parser.parse_args()
 
-    # Create all the extractors here:
-    print ("Preparing feature extractors...")
-    config = json.load(open(args.configfile))
-    extractorsequence = config[VehicleFinder.__name__][VehicleFinder.FeatureExtractors]
-    combiner = buildextractor(extractorsequence)
-
     # Collect the image file names:
     print ("Gathering data...")
     cars = getallpathsunder(args.vehicledir)
@@ -73,6 +70,12 @@ if __name__ == '__main__':
     notcars = getallpathsunder(args.nonvehicledir)
     print ("Number of non-car images found: \t{}".format(len(notcars)))
     assert len(notcars)>0, "There should be at least one non-vehicle image to process. Found 0."
+
+    # Create all the extractors here:
+    print ("Preparing feature extractors...")
+    config = json.load(open(args.configfile))
+    extractorsequence = config[VehicleFinder.__name__][VehicleFinder.FeatureExtractors]
+    combiner = buildextractor(extractorsequence)
 
     # Prepare feature vectors:
     print ("Extracting features...")
@@ -84,36 +87,37 @@ if __name__ == '__main__':
 
     # Prepare data:
     # - Normalize, shuffle and split:
-    print ("Preparing data")
-    X_scaler = StandardScaler().fit(Xs)
-    scaled_Xs = X_scaler.transform(Xs)
+#     print ("Preparing data")
+#     X_scaler = StandardScaler().fit(Xs)
+#     scaled_Xs = X_scaler.transform(Xs)
+#     scaled_Xs, Ys = shuffle(scaled_Xs, Ys, random_state=rand_state)
     rand_state = np.random.randint(0, 100)
-    scaled_Xs, Ys = shuffle(scaled_Xs, Ys, random_state=rand_state)
-    X_train, X_test, Y_train, Y_test = train_test_split(scaled_Xs, Ys, test_size=args.testratio, random_state=rand_state)
+    X_train, X_test, Y_train, Y_test = train_test_split(Xs, Ys, test_size=args.testratio, random_state=rand_state)
 
     # If the SVM was not already trained:
-    svc = None
+    classifier = None
     if args.overwrite is True or not os.path.isfile(args.outputfile):
         print ("Training the SVC...")
-        svc = LinearSVC()
+#         classifier = MLPClassifier()
+        classifier = LinearSVC()
         t=time.time()
-        svc.fit(X_train, Y_train)
+        classifier.fit(X_train, Y_train)
         t2 = time.time()
         print(t2-t, 'Seconds to train SVC...')
     else:
         args.dry = True
         print ("SVC already trained. Reading from previous version.")
-        svc = joblib.load(args.outputfile)
+        classifier = joblib.load(args.outputfile)
 
-    print('Train Accuracy of SVC = ', svc.score(X_train, Y_train))
-    print('Test Accuracy of SVC = ', svc.score(X_test, Y_test))
+    print('Train Accuracy of SVC = ', classifier.score(X_train, Y_train))
+    print('Test Accuracy of SVC = ', classifier.score(X_test, Y_test))
     t= time.time()
-    prediction = svc.predict(X_test[0].reshape(1, -1))
+    prediction = classifier.predict(X_test[0].reshape(1, -1))
     t2 = time.time()
     print(t2-t, 'Seconds to predict with SVC')
 
     if not args.dry or args.overwrite is True:
         print ("Saving classifier to file: {}".format(args.outputfile))
-        joblib.dump(svc, args.outputfile)
+        joblib.dump(classifier, args.outputfile)
 
     print ("Thank you. Come again!")

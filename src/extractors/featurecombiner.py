@@ -16,4 +16,5 @@ class FeatureCombiner(object):
             assert feature is not None, "Feature obtained from {} was none".format(extractor.__class__.__name__)
             featurelist.append(feature)
         featurevector = np.concatenate(tuple(featurelist))
+        featurevector /= np.max(np.abs(featurevector),axis=0)
         return featurevector

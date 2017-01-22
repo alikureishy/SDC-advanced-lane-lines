@@ -6,22 +6,29 @@ Created on Jan 14, 2017
 
 from operations.baseoperation import Operation
 from sklearn.externals import joblib
-from extractors.colorhistogram import ColorHistogram
-from extractors.spatialbinner import SpatialBinner
-from extractors.hogextractor import HogExtractor
-from extractors.featurecombiner import FeatureCombiner
 from statistics import mean
 import numpy as np
 from utils.utilities import getperspectivepoints
 import cv2
 from extractors.helper import buildextractor
-
+import os
+from utils.plotter import Image
+import datetime
+import PIL
+import time
+from sklearn.preprocessing.data import StandardScaler
 
 
 class VehicleFinder(Operation):
     ClassifierFile = 'ClassifierFile'
     FeatureExtractors = 'FeatureExtractors'
     SlidingWindow = 'SlidingWindow'
+    class Logging(object):
+        LogHits = 'LogHits'
+        LogMisses = 'LogMisses'
+        FrameRange = 'FrameRange'
+        Frames = 'Frames'
+        LogFolder = 'LogFolder'
     class SlidingWindow(object):
         DepthRangeRatio = 'DepthRangeRatio'
         DefaultHeadingRatios = 'DefaultHeadingRatios'
@@ -43,12 +50,44 @@ class VehicleFinder(Operation):
         Operation.__init__(self, params)
         self.__classifier__ = joblib.load(params[self.ClassifierFile])
         self.__windows__ = None
+        loggingcfg = params[self.Logging.__name__]
+        self.__is_logging_hits__ = loggingcfg[self.Logging.LogHits]
+        self.__is_logging_misses__ = loggingcfg[self.Logging.LogMisses]
+        self.__log_folder__ = os.path.join(loggingcfg[self.Logging.LogFolder], time.strftime('%m-%d-%H-%M-%S'))
+        self.__hits_folder__ = os.path.join(self.__log_folder__, 'Hits')
+        self.__misses_folder__ = os.path.join(self.__log_folder__, 'Misses')
+        self.__frames_to_log__ = loggingcfg[self.Logging.Frames]
+        self.__frame_range_to_log__ = loggingcfg[self.Logging.FrameRange]
+        
+        if self.__is_logging_hits__:
+            if not os.path.isdir(self.__hits_folder__):
+                os.makedirs(self.__hits_folder__, exist_ok=True)
+        if self.__is_logging_misses__:
+            if not os.path.isdir(self.__misses_folder__):
+                os.makedirs(self.__misses_folder__, exist_ok=True)
         
         # Feature Extractors
         extractorsequence = params[self.FeatureExtractors]
         self.__feature_extractor__ = buildextractor(extractorsequence)
         
         self.__frame_vehicles__ = None
+        self.__frame_counter__ = 0
+
+    def islogginghits(self):
+        return self.__is_logging_hits__==1
+
+    def isloggingmisses(self):
+        return self.__is_logging_misses__==1
+
+    def isframewithrange(self):
+        return self.__frame_counter__ in range(*self.__frame_range_to_log__) or \
+            self.__frame_counter__ in self.__frames_to_log__
+
+    def log(self, folder, window, i, j):
+        if self.isframewithrange():
+            windowdumpfile = os.path.join(folder, "{:04d}_{:02d}_{:02d}.png".format(self.__frame_counter__, i, j))
+            towrite = PIL.Image.fromarray(window)
+            towrite.save(windowdumpfile)
 
     def __processupstream__(self, original, latest, data, frame):
         x_dim, y_dim, xy_avg = latest.shape[1], latest.shape[0], int(mean(latest.shape[0:2]))
@@ -57,23 +96,47 @@ class VehicleFinder(Operation):
             self.__confidence_threshold__ = slidingwindowconfig[self.SlidingWindow.ConfidenceThreshold]
             self.__windows__ = self.generatewindows(slidingwindowconfig, x_dim, y_dim, xy_avg)
 
+#         # Try the HAAR cascade classifier:
+#         if self.isplotting():
+#             cascade = cv2.CascadeClassifier('/Users/safdar/Documents/self-driving-car/advanced-lane-lines/data/cascade/checkcas.xml')
+#             objects = cascade.detectMultiScale(latest, scaleFactor=1.1, minNeighbors=2, minSize=(15, 15), flags=cv2.CASCADE_SCALE_IMAGE)
+#             img = np.copy(latest)
+#             for (x,y,w,h) in objects:
+#                 cv2.rectangle(img, (x,y), (x+w,y+h), self.StrongWindowColor, 4)
+#             self.__plot__(frame, Image("Cascade Detections", img, None))
+
         # Perform search:
         image = np.copy(latest)
         weak_candidate_vehicles = []
         strong_candidate_vehicles = []
-        for scan in self.__windows__:
-            for (x1, x2, y1, y2) in scan:
-                window = image[y1:y2,x1:x2,:]
+        for i, scan in enumerate(self.__windows__):
+            for j, (x1, x2, y1, y2) in enumerate(scan):
+                snapshot = image[y1:y2,x1:x2,:]
+                window = snapshot.astype(np.float32)
+                window = window/255
+#                 window /= np.max(np.abs(snapshot),axis=0)
                 features = self.__feature_extractor__.extract(window)
-                sample = features.reshape(1, -1)
-                label = self.__classifier__.predict(sample)
-                score = self.__classifier__.decision_function(sample)[0]
-#                 print ("Score obtained: {}".format(score))
-                if label == 1:
-                    weak_candidate_vehicles.append(((x1,x2,y1,y2), score))
-                if score > self.__confidence_threshold__:
-                    strong_candidate_vehicles.append(((x1,x2,y1,y2), score))
+#                 features = np.array(features, dtype=np.float64)
+#                 X_scaler = StandardScaler().fit([features])
+#                 scaled_features = X_scaler.transform([features])
+#                 sample = scaled_features.reshape(1, -1)
+                label = self.__classifier__.predict([features])
+                score = self.__classifier__.decision_function([features])[0] if "decision_function" in dir(self.__classifier__) else None
+                if label == 1 or label == [1]:
+                    if score is None or score > self.__confidence_threshold__:
+                        strong_candidate_vehicles.append(((x1,x2,y1,y2), score))
+                        if self.islogginghits():
+                            self.log(self.__hits_folder__, snapshot, i, j)
+                    else:
+                        weak_candidate_vehicles.append(((x1,x2,y1,y2), score))
+                else:
+                    if self.isloggingmisses():
+                        self.log(self.__misses_folder__, snapshot, i, j)
         self.__frame_vehicles__ = strong_candidate_vehicles
+        if self.islogginghits() or self.isloggingmisses():
+            imagedumpfile = os.path.join(self.__log_folder__, "{:04d}.png".format(self.__frame_counter__))
+            towrite = PIL.Image.fromarray(latest)
+            towrite.save(imagedumpfile)
         self.setdata(data, self.FrameVehicleDetections, self.__frame_vehicles__)
 
         if self.isplotting():
@@ -88,24 +151,28 @@ class VehicleFinder(Operation):
             image_weak = np.zeros_like(latest)
             for ((x1,x2,y1,y2), score) in weak_candidate_vehicles:
                 cv2.rectangle(image_weak, (x1,y1), (x2,y2), self.WeakWindowColor, 2)
-                cv2.putText(image_weak,"{:.2f}".format(score), (x1,y1), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, self.WeakWindowColor, 1)
+                if score is not None:
+                    cv2.putText(image_weak,"{:.2f}".format(score), (x1,y1), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, self.WeakWindowColor, 1)
 
             # Then show all windows that were strong candidates:
             image_strong = np.copy(latest)
             for ((x1,x2,y1,y2), score) in strong_candidate_vehicles:
                 cv2.rectangle(image_strong, (x1,y1), (x2,y2), self.StrongWindowColor, 4)
-                cv2.putText(image_strong,"{:.2f}".format(score), (x1,y1), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, self.StrongWindowColor, 1)
+                if score is not None:
+                    cv2.putText(image_strong,"{:.2f}".format(score), (x1,y1), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, self.StrongWindowColor, 1)
 
             # Now superimpose all 3 frames onto the latest color frame:
-            todraw = cv2.addWeighted(image_strong, 1, image_all, 0.3, 0)
-            todraw = cv2.addWeighted(todraw, 1, image_weak, 0.6, 0)
+            todraw = cv2.addWeighted(image_strong, 1, image_all, 0.2, 0)
+            todraw = cv2.addWeighted(todraw, 1, image_weak, 0.5, 0)
 #             todraw = cv2.addWeighted(todraw, 1, image_strong, 1, 0)
-            self.__plot__(frame, todraw, None, "Vehicle Search & Hits (All/Weak/Strong = {}/{}/{})".format(
-                len(all_windows),
-                len(weak_candidate_vehicles), 
-                len(strong_candidate_vehicles)), None)
+            self.__plot__(frame, Image("Vehicle Search & Hits (All/Weak/Strong = {}/{}/{})".format(
+                                        len(all_windows),
+                                        len(weak_candidate_vehicles), 
+                                        len(strong_candidate_vehicles)),
+                                       todraw, None))
 
             
+        self.__frame_counter__+=1
         return latest
 
     def getboxcorners(self, center, size, xrange, yrange):
