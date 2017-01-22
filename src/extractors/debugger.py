@@ -5,6 +5,7 @@ Created on Jan 19, 2017
 '''
 import matplotlib
 from utils.utilities import getallpathsunder
+from random import shuffle
 matplotlib.use('TKAgg')
 from matplotlib.pyplot import get_current_fig_manager
 from utils.plotter import Illustrator, Image, Graph
@@ -13,11 +14,13 @@ from matplotlib import image as mpimg
 from matplotlib import pyplot as plt
 import argparse
 import json
+from sklearn.preprocessing import StandardScaler
 from operations.vehiclefinder import VehicleFinder
 from extractors.helper import getextractors
 from extractors.hogextractor import HogExtractor
 from extractors.spatialbinner import SpatialBinner
 from extractors.colorhistogram import ColorHistogram
+import numpy as np
 
 if __name__ == '__main__':
     print ("###############################################")
@@ -33,11 +36,14 @@ if __name__ == '__main__':
     # Collect the image file names:
     print ("Gathering data...")
     cars = getallpathsunder(args.vehicledir)
+    shuffle(cars)
     print ("Number of car images found: \t{}".format(len(cars)))
     assert len(cars)>0, "There should be at least one vehicle image to process. Found 0."
     notcars = getallpathsunder(args.nonvehicledir)
+    shuffle(notcars)
     print ("Number of non-car images found: \t{}".format(len(notcars)))
     assert len(notcars)>0, "There should be at least one non-vehicle image to process. Found 0."
+    
     count = min(len(cars), len(notcars))
     zipped = zip(cars[:count], notcars[:count])
     
@@ -56,12 +62,16 @@ if __name__ == '__main__':
         frame.newsection("Not-Car")
         frame.add(Image("Car", car, None), index=0)
         frame.add(Image("Not-Car", notcar, None), index=1)
+        feature = []
+        car_bin, notcar_bin = [], []
         for (extractor,config) in zip(extractors, extractorsequence):
             if type(extractor) is HogExtractor:
                 car_features, car_hogimage = extractor.extract(car, visualize=True)
                 frame.add(Image("{}".format(config), car_hogimage, None), index=0)
+                frame.add(Graph("{}".format(config), None, car_features, None, None), index=0)
                 notcar_features, notcar_hogimage = extractor.extract(notcar, visualize=True)
                 frame.add(Image("{}".format(config), notcar_hogimage, None), index=1)
+                frame.add(Graph("{}".format(config), None, notcar_features, None, None), index=1)
             elif type(extractor) is SpatialBinner or type(extractor) is ColorHistogram:
                 car_features = extractor.extract(car)
                 frame.add(Graph("{}".format(config), None, car_features, None, None), index=0)
@@ -69,6 +79,19 @@ if __name__ == '__main__':
                 frame.add(Graph("{}".format(config), None, notcar_features, None, None), index=1)
             else:
                 raise "Debugger is not aware of the extractor type: {}".format(extractor)
+            car_bin.append(car_features)
+            notcar_bin.append(notcar_features)
+        # Finally, graph the entire feature vector:
+        carvector = np.concatenate(car_bin)
+        carvector /= np.max(np.abs(carvector),axis=0)
+        
+#         scalar = StandardScaler().fit([carvector])
+#         carvector = scalar.transform([carvector])
+        
+        frame.add(Graph("Total Vector", None, carvector, None, None), index=0)
+        notcarvector = np.concatenate(notcar_bin)
+        notcarvector /= np.max(np.abs(notcarvector),axis=0)
+        frame.add(Graph("Total Vector", None, notcarvector, None, None), index=1)
         frame.render()
 
     wm = plt.get_current_fig_manager() 

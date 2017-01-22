@@ -31,16 +31,26 @@ class HogExtractor(object):
             image = cv2.cvtColor(image, cv2.COLOR_RGB2YUV)
         elif cspace == 'GRAY':
             image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-            
+        
+        
         if cspace == 'GRAY':
-            return hog(image,
-                           orientations=self.__orientations__,
-                           pixels_per_cell=(self.__pixels_per_cell__, self.__pixels_per_cell__),
-                           cells_per_block=(self.__cells_per_block__, self.__cells_per_block__),
-                           visualise=visualize, feature_vector=True)
+            image = image
         else:
-            return hog(image[:,:,self.__hog_channel__],
-                           orientations=self.__orientations__,
-                           pixels_per_cell=(self.__pixels_per_cell__, self.__pixels_per_cell__),
-                           cells_per_block=(self.__cells_per_block__, self.__cells_per_block__),
-                           visualise=visualize, feature_vector=True)
+            image = image[:,:,self.__hog_channel__]
+
+        if not visualize:
+            features = hog(image,
+                               orientations=self.__orientations__,
+                               pixels_per_cell=(self.__pixels_per_cell__, self.__pixels_per_cell__),
+                               cells_per_block=(self.__cells_per_block__, self.__cells_per_block__),
+                               visualise=False, feature_vector=True)
+#             features /= np.max(np.abs(features),axis=0)
+            return features
+        else:
+            features, viz = hog(image,
+                               orientations=self.__orientations__,
+                               pixels_per_cell=(self.__pixels_per_cell__, self.__pixels_per_cell__),
+                               cells_per_block=(self.__cells_per_block__, self.__cells_per_block__),
+                               visualise=True, feature_vector=True)
+#             features /= np.max(np.abs(features),axis=0)
+            return features, viz
