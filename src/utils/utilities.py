@@ -19,18 +19,19 @@ class HoughFilterParams(object):
     RightSlopeRange = 'RightSlopeRange'
     DepthRangeRatio = 'DepthRangeRatio'
 
+
 # Returns perpsective points as:
 #    [TopLeft, TopRight, BottomLeft, BottomRight]
-def getperspectivepoints(x_dim, y_dim, depth_range_ratio, headings):
+def getperspectivepoints(x_dim, y_dim, depth_range_ratio, perspective):
     depth_range_ratio = sorted(depth_range_ratio, reverse=True)
     y_1 = int(y_dim * depth_range_ratio[0])
     y_2 = int(y_dim * depth_range_ratio[1])
     
-    left_x = int(x_dim * headings[0][0])
-    left_slope = math.tan(math.radians(headings[0][1]))
+    left_x = int(x_dim * perspective[0][0])
+    left_slope = math.tan(math.radians(perspective[0][1]))
 
-    right_x = int(x_dim * headings[1][0])
-    right_slope = math.tan(math.radians(headings[1][1]))
+    right_x = int(x_dim * perspective[1][0])
+    right_slope = math.tan(math.radians(perspective[1][1]))
 
     # Formula is: x = my + b     [where m = dx/dy]
     left_x_1 = int(left_x - ((y_dim-y_1) * left_slope))
