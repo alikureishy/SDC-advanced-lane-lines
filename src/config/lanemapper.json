@@ -3,8 +3,6 @@
     	"StatsWriter",
     	"Undistorter",
     	"VehicleFinder",
-    	"VehicleTracker",
-    	"VehicleMarker",
     	"Thresholder",
     	"PerspectiveTransformer",
     	"LaneFinder",
@@ -24,16 +22,12 @@
     	"ToPlot": 1,
     	"ClassifierFile": "config/svm.dump",
     	"SlidingWindow": {
-	        "DefaultHeadingRatios": [
-	        	[0.20, -1.2],
-	        	[0.86, 1.2]
-	        ],
 	    	"DepthRangeRatio": [0.99, 0.59],
 	    	"WindowRangeRatio": [0.03, 0.50],
 	    	"SizeVariations": 9,
     		"CenterShiftRatio": 0.0,
     		"StepRatio": 0.50,
-    		"ConfidenceThreshold": 0.5
+    		"ConfidenceThreshold": 0.3
     	},
     	"Logging": {
 	    	"LogHits": 0,
@@ -51,15 +45,16 @@
     },
     "VehicleTracker": {
 		"ToPlot": 0,
-		"HardFalsePositivesDump": "../data/runs/hard/false-positives",
-		"HardFalseNegativesDump": "../data/runs/hard/false-negatives",
-		"ConfidenceThreshold": 0.40,
+        "Perspective": [
+        	[0.20, -50],
+        	[0.86,  50]
+        ],
+		"PerspectiveMultiplier": 2,
 		"DriftToleranceRatio": 0.05
     },
     "VehicleMarker": {
 		"ToPlot": 0,
 		"CurrentBoundingBoxColor": [255, 0, 0],
-		"ConfidenceThreshold": 0.40,
 		"SafeColor": [152, 251, 152],
     	"DangerColor": [255,0,0]
     },	
@@ -98,9 +93,9 @@
     },
     "PerspectiveTransformer": {
 		"ToPlot": 0,
-        "DefaultHeadingRatios": [
-        	[0.20, -1.2],
-        	[0.86, 1.60]
+        "Perspective": [
+        	[0.20, -50],
+        	[0.86,  58]
         ],
     	"DepthRangeRatio": [0.99, 0.63],
         "TransformRatios": [
