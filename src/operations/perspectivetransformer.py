@@ -27,7 +27,7 @@ class PerspectiveTransformer(Operation):
         
         self.__M__ = None
         self.__Minv__ = None
-        self.__default_heading__ = params[self.Perspective]
+        self.__perspective__ = params[self.Perspective]
         self.__depth_range_ratios__ = params[self.DepthRangeRatio]
         self.__transform_ratios__ = params[self.TransformRatios]
         self.__perspective_points__ = None
@@ -39,7 +39,7 @@ class PerspectiveTransformer(Operation):
 
         # Calculate and cache the transform and perspective points since these will never change:
         if self.__transform_points__ is None:
-            self.__perspective_points__ = getperspectivepoints(x_dim, y_dim, self.__depth_range_ratios__, self.__default_heading__)
+            self.__perspective_points__ = getperspectivepoints(x_dim, y_dim, self.__depth_range_ratios__, self.__perspective__)
             self.__transform_points__ = [[int(x_ratio*x_dim), int(y_ratio*y_dim)] for [x_ratio,y_ratio] in self.__transform_ratios__]
             self.__M__, self.__Minv__ = self.gettransformations(self.__perspective_points__, self.__transform_points__)
 
