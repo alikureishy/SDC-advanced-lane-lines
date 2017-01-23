@@ -31,7 +31,6 @@ class VehicleFinder(Operation):
         LogFolder = 'LogFolder'
     class SlidingWindow(object):
         DepthRangeRatio = 'DepthRangeRatio'
-        DefaultHeadingRatios = 'DefaultHeadingRatios'
         CenterShiftRatio = 'CenterShiftRatio'
         SizeVariations = 'SizeVariations'
         WindowRangeRatio = 'WindowRangeRatio'
@@ -171,6 +170,14 @@ class VehicleFinder(Operation):
                                         len(strong_candidate_vehicles)),
                                        todraw, None))
 
+            # Try group rectangles:
+#             cons = np.copy(latest)
+#             if len(self.__frame_vehicles__)>0:
+#                 grouped, weights = cv2.groupRectangles(list(zip(*self.__frame_vehicles__))[0], 1, .2)
+#                 for ((x1,x2,y1,y2), weight) in zip(grouped, weights):
+#                     cv2.rectangle(cons, (x1,y1), (x2,y2), self.StrongWindowColor, 3)
+#                     cv2.putText(cons,"{}".format(weight), (x1,y1), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, self.StrongWindowColor, 1)
+#             self.__plot__(frame, Image("Grouped", cons, None))
             
         self.__frame_counter__+=1
         return latest
