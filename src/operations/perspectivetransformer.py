@@ -15,7 +15,7 @@ from utils.utilities import plotboundary, getperspectivepoints
 
 class PerspectiveTransformer(Operation):
     # Config
-    DefaultHeadingRatios = 'DefaultHeadingRatios'
+    Perspective = 'Perspective'
     DepthRangeRatio = 'DepthRangeRatio'
     TransformRatios = 'TransformRatios'
     
@@ -27,7 +27,7 @@ class PerspectiveTransformer(Operation):
         
         self.__M__ = None
         self.__Minv__ = None
-        self.__default_heading__ = params[self.DefaultHeadingRatios]
+        self.__default_heading__ = params[self.Perspective]
         self.__depth_range_ratios__ = params[self.DepthRangeRatio]
         self.__transform_ratios__ = params[self.TransformRatios]
         self.__perspective_points__ = None
