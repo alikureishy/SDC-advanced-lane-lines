@@ -12,7 +12,7 @@ from operations.lanefinder import LaneFinder
 from operations.perspectivefinder import PerspectiveFinder
 from operations.statswriter import StatsWriter
 from operations.vehiclefinder import VehicleFinder
-from operations.vehicletracker import VehicleTracker
+from operations.vehicleclusterer import VehicleClusterer
 from operations.vehiclemarker import VehicleMarker
 
 PipelineSection = 'Pipeline'
@@ -46,8 +46,8 @@ class Pipeline(object):
             return Undistorter(config)
         elif name == VehicleFinder.__name__:
             return VehicleFinder(config)
-        elif name == VehicleTracker.__name__:
-            return VehicleTracker(config)
+        elif name == VehicleClusterer.__name__:
+            return VehicleClusterer(config)
         elif name == VehicleMarker.__name__:
             return VehicleMarker(config)
         elif name == Thresholder.__name__:
