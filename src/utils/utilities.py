@@ -19,7 +19,42 @@ class HoughFilterParams(object):
     RightSlopeRange = 'RightSlopeRange'
     DepthRangeRatio = 'DepthRangeRatio'
 
-
+# ~~~~~~~~~~~~ HAS NOT BEEN TESTED YET ~~~~~~~~~~~~~~~
+# Based on the given perspective, this method calculates
+# the real distance between two points on the image.
+# For the higher the gap between the y values,
+# the greater the change in the perceived->actual
+# distance between the x values. Similarly,
+# The actual distance variation across each y unit
+# is different from the perceived unit. This is
+# summed up in this method.
+# 'imageshape' is expressed as (x_dim, y_dim)
+# This ONLY works for points being measured against solid surfaces
+# such as the road (i.e, preferably within the lower half of the camera image)
+# This is because on the road, each point has a specific location.
+# If we consider the sky, however, each point has no specific location
+# -- it could be as far as inifinity, or as close as 0.
+# ~~~~~~~~~~~~ HAS NOT BEEN TESTED YET ~~~~~~~~~~~~~~~
+def getrealpixeldistance(point1, point2, imageshape, depth_range_ratio, perspective):
+    y_dim = imageshape[0]
+    (p1, p2, p3, p4) = getperspectivepoints(imageshape[1], imageshape[0], depth_range_ratio, perspective)
+    dy_perceived = np.absolute(int(y_dim * (depth_range_ratio[0] - depth_range_ratio[1]))) # Y variation of perspective
+    dy_real = y_dim    # Actual y variation corresponding to perceived y variation
+    dx_perceived = np.absolute(p2[0] - p1[0]) # Upper 2 x values of the perspective
+    dx_real = np.absolute(p4[0] - p3[0]) # Lower 2 x values of the perspective (at base)
+    mag_x_per_y = dx_real / dy_perceived
+    mag_y_per_x = dy_real / dx_perceived
+    
+    # Now apply the ratios above to get distance between point1 and point 2:
+    y_near = max(point1[1], point2[1])
+    y_far = min(point1[1], point2[1])
+    
+    dx = point2[0] - point1[0]
+    dy = point2[1] - point1[1]
+    realdx = dx + (mag_x_per_y * dy) # If y is increasing, x should increase. If y is decreasing, x should decrease
+    realdy = dy + (mag_y_per_x * dx) # If x is increasing, y should increase. If x is decreasing, y should decrease.
+    return math.sqrt(realdx**2 + realdy**2)
+    
 # Returns perpsective points as:
 #    [TopLeft, TopRight, BottomLeft, BottomRight]
 def getperspectivepoints(x_dim, y_dim, depth_range_ratio, perspective):

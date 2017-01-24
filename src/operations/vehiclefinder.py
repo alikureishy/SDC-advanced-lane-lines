@@ -113,7 +113,7 @@ class VehicleFinder(Operation):
                 snapshot = image[y1:y2,x1:x2,:]
                 window = snapshot.astype(np.float32)
                 window = window/255
-#                 window /= np.max(np.abs(snapshot),axis=0)
+#                 window /= np.max(np.abs(snapshot),axis=0) #TODO: Check axis setting. Might have to be 1
                 features = self.__feature_extractor__.extract(window)
 #                 features = np.array(features, dtype=np.float64)
 #                 X_scaler = StandardScaler().fit([features])
@@ -132,11 +132,12 @@ class VehicleFinder(Operation):
                     if self.isloggingmisses():
                         self.log(self.__misses_folder__, snapshot, i, j)
         self.__frame_vehicles__ = strong_candidate_vehicles
+        self.setdata(data, self.FrameVehicleDetections, self.__frame_vehicles__)
+        
         if self.islogginghits() or self.isloggingmisses():
             imagedumpfile = os.path.join(self.__log_folder__, "{:04d}.png".format(self.__frame_counter__))
             towrite = PIL.Image.fromarray(latest)
             towrite.save(imagedumpfile)
-        self.setdata(data, self.FrameVehicleDetections, self.__frame_vehicles__)
 
         if self.isplotting():
             all_windows = [x for sublist in self.__windows__ for x in sublist]
