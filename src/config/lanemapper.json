@@ -3,6 +3,7 @@
     	"StatsWriter",
     	"Undistorter",
     	"VehicleFinder",
+    	"VehicleTracker",
     	"Thresholder",
     	"PerspectiveTransformer",
     	"LaneFinder",
@@ -44,12 +45,13 @@
     	]
     },
     "VehicleTracker": {
-		"ToPlot": 0,
+		"ToPlot": 1,
+		"ClusterRangeRatio": 0.05,
+    	"DepthRangeRatio": [0.99, 0.63],
         "Perspective": [
         	[0.20, -50],
         	[0.86,  50]
         ],
-		"PerspectiveMultiplier": 2,
 		"DriftToleranceRatio": 0.05
     },
     "VehicleMarker": {
