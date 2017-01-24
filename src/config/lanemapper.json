@@ -3,7 +3,7 @@
     	"StatsWriter",
     	"Undistorter",
     	"VehicleFinder",
-    	"VehicleTracker",
+    	"VehicleClusterer",
     	"Thresholder",
     	"PerspectiveTransformer",
     	"LaneFinder",
@@ -44,7 +44,7 @@
     		{"HOGExtractor":{"Orientations": 9, "Space": "GRAY", "Size": [128, 128], "Channel": 0, "PixelsPerCell": 8, "CellsPerBlock":2}}
     	]
     },
-    "VehicleTracker": {
+    "VehicleClusterer": {
 		"ToPlot": 1,
 		"ClusterRangeRatio": 0.05,
     	"DepthRangeRatio": [0.99, 0.63],

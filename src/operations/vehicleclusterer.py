@@ -6,15 +6,12 @@ Created on Jan 15, 2017
 from operations.baseoperation import Operation
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
-from scipy.spatial.distance import euclidean
 from operations.vehiclefinder import VehicleFinder
 from math import sqrt
 import numpy as np
 from utils.plotter import Image
 
 import math
-from sklearn.cluster import KMeans
-from scipy.spatial.distance import euclidean
 import cv2
 
 
@@ -34,7 +31,7 @@ class Car(object):
         pass
     
     
-class VehicleTracker(Operation):
+class VehicleClusterer(Operation):
     # Configuration:
 #     Perspective = 'Perspective'
 #     DepthRangeRatio = 'DepthRangeRatio'
