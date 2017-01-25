@@ -5,6 +5,7 @@
     	"VehicleFinder",
     	"VehicleClusterer",
     	"VehicleTracker",
+    	"VehicleMarker",
     	"Thresholder",
     	"PerspectiveTransformer",
     	"LaneFinder",
@@ -60,8 +61,8 @@
     	"LookBackFrames": 4
     },
     "VehicleMarker": {
-		"ToPlot": 0,
-		"CertainThreshold": 0.5,
+		"ToPlot": 1,
+		"ConfidenceThreshold": 0.5,
 		"AgeThreshold": 4,
 		"CurrentBoundingBoxColor": [255, 0, 0],
 		"SafeColor": [152, 251, 152],
