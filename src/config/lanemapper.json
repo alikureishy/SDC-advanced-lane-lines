@@ -4,6 +4,7 @@
     	"Undistorter",
     	"VehicleFinder",
     	"VehicleClusterer",
+    	"VehicleTracker",
     	"Thresholder",
     	"PerspectiveTransformer",
     	"LaneFinder",
@@ -46,16 +47,22 @@
     },
     "VehicleClusterer": {
 		"ToPlot": 1,
-		"ClusterRangeRatio": 0.05,
+		"ClusterRangeRatio": 0.10,
     	"DepthRangeRatio": [0.99, 0.63],
         "Perspective": [
         	[0.20, -50],
         	[0.86,  50]
-        ],
-		"DriftToleranceRatio": 0.05
+        ]
+    },
+    "VehicleTracker": {
+    	"ToPlot": 1,
+		"DriftToleranceRatio": 0.05,
+    	"LookBackFrames": 4
     },
     "VehicleMarker": {
 		"ToPlot": 0,
+		"CertainThreshold": 0.5,
+		"AgeThreshold": 4,
 		"CurrentBoundingBoxColor": [255, 0, 0],
 		"SafeColor": [152, 251, 152],
     	"DangerColor": [255,0,0]
