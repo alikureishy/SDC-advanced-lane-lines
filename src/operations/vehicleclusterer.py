@@ -13,6 +13,28 @@ from utils.plotter import Image
 
 import math
 import cv2
+from networkx.algorithms.distance_measures import center
+from numpy import diagonal
+
+class Detection(object):
+    def __init__(self, center, score, diagonal, box):
+        self.__center__ = center
+        self.__score__ = score
+        self.__diagonal__ = diagonal
+        self.__box__ = box
+    def center(self):
+        return self.__center__
+    def score(self):
+        return self.__score__
+    def diagonal(self):
+        return self.__diagonal__
+    def box(self):
+        return self.__box__
+    def nparray(self):
+        return np.array([*self.center(), self.score(), self.diagonal(), *self.box()], dtype=np.int32)
+    @staticmethod
+    def empty():
+        return Detection((0,0), 0, 0, (0,0,0,0))
 
 class VehicleClusterer(Operation):
     # Configuration:
@@ -69,6 +91,13 @@ class VehicleClusterer(Operation):
             centers.append((center, boxnumber))
         return centers
     
+    @staticmethod
+    def boundary(center, diagonal):
+        (cx, cy) = center
+        s = int(math.sqrt(((diagonal ** 2) / 2)))
+        box = cx - (s // 2), cx + (s // 2), cy + (s // 2), cy - (s // 2)
+        return box
+
     def __processupstream__(self, original, latest, data, frame):
         if self.__cluster_range__ is None:
             self.__cluster_range__ = int(self.__cluster_range__ratio * (np.average(latest.shape[0:2])))
@@ -103,14 +132,13 @@ class VehicleClusterer(Operation):
                     center,diagonal = self.get_center_and_diagonal(boxes[i])
                     centers.append(center)
                     diagonals.append(diagonal)
-                cx,cy = tuple(np.average(centers, axis=0, weights=scores[ids]).astype(np.uint16))
+                cx,cy = tuple(np.average(centers, axis=0, weights=scores[ids]).astype(np.int32))
                 diagonal = np.average(diagonals, weights=scores[ids])
-                cluster_vehicles.append(((cx,cy), diagonal, sum(scores[ids])))
 
                 # Generate new box:
-                s = int(math.sqrt(((diagonal**2)/2)))
-                box = (cx-(s//2), cx+(s//2), cy+(s//2), cy-(s//2)) 
+                box = self.boundary((cx, cy), diagonal) 
                 cluster_boxes.append(box)
+                cluster_vehicles.append(Detection((cx,cy), diagonal, sum(scores[ids]), box))
             self.setdata(data, self.ClusterBoxes, cluster_boxes)
             self.setdata(data, self.ClusterVehicles, cluster_vehicles)
 
