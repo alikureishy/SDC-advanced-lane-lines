@@ -14,28 +14,15 @@ from utils.plotter import Image
 import math
 import cv2
 
-
-# This class creates objects for each box that is detected.
-# Each box is then tracked.
-# Need a way to merge boxes when they represent the same object.
-#    - How to determine that boxes represent the same object?
-#    - Weight each object by the number of neighbor boxes
-#    -
-class Candidate (object):
-    def __init__(self, coordinates, score):
-        self.__coordinates__ = coordinates
-        self.__score__ = score
-        
-class Car(object):
-    def __init__(self):
-        pass
-    
-    
 class VehicleClusterer(Operation):
     # Configuration:
 #     Perspective = 'Perspective'
 #     DepthRangeRatio = 'DepthRangeRatio'
     ClusterRangeRatio = 'ClusterRangeRatio'
+    
+    # Outputs:
+    ClusterVehicles = 'ClusterVehicles'
+    ClusterBoxes = 'ClusterBoxes'
     
     # Constants:
     StrongWindowColor = [255, 0, 0]
@@ -84,12 +71,14 @@ class VehicleClusterer(Operation):
     
     def __processupstream__(self, original, latest, data, frame):
         if self.__cluster_range__ is None:
-            self.__cluster_range__ = int(self.__cluster_range__ratio * (np.average(latest.shape)))
+            self.__cluster_range__ = int(self.__cluster_range__ratio * (np.average(latest.shape[0:2])))
         
         detections = self.getdata(data, VehicleFinder.FrameVehicleDetections, VehicleFinder)
+        cluster_boxes = []
+        cluster_vehicles = []
         if detections is not None:
             boxes, scores = tuple(zip(*detections))
-            scores = (np.array(normalize(scores)*10, dtype=np.uint8)+1)[0] # Convert to 1-11 range.
+            scores = (np.array(normalize([scores])*10, dtype=np.uint8)+1)[0] # Convert to 1-11 range.
             centers,boxnumbers = tuple(zip(*self.get_centers(detections)))
             assert len(centers) == len(boxnumbers)
 
@@ -107,7 +96,6 @@ class VehicleClusterer(Operation):
                 clusters[label].append(boxnumber)
 
             # Generate box for each cluster:
-            aggregates = []
             for cluster in clusters:
                 ids = clusters[cluster]
                 centers, diagonals = [], []
@@ -117,16 +105,19 @@ class VehicleClusterer(Operation):
                     diagonals.append(diagonal)
                 cx,cy = tuple(np.average(centers, axis=0, weights=scores[ids]).astype(np.uint16))
                 diagonal = np.average(diagonals, weights=scores[ids])
+                cluster_vehicles.append(((cx,cy), diagonal, sum(scores[ids])))
 
                 # Generate new box:
                 s = int(math.sqrt(((diagonal**2)/2)))
                 box = (cx-(s//2), cx+(s//2), cy+(s//2), cy-(s//2)) 
-                aggregates.append(box)
+                cluster_boxes.append(box)
+            self.setdata(data, self.ClusterBoxes, cluster_boxes)
+            self.setdata(data, self.ClusterVehicles, cluster_vehicles)
 
-            if self.isplotting():
-                clustered = np.copy(latest)
-                for (x1,x2,y1,y2) in aggregates:
-                    cv2.rectangle(clustered, (x1,y1), (x2,y2), self.StrongWindowColor, 2)
-                self.__plot__(frame, Image("Clustered", clustered, None))
+        if self.isplotting():
+            clustered = np.copy(latest)
+            for (x1,x2,y1,y2) in cluster_boxes:
+                cv2.rectangle(clustered, (x1,y1), (x2,y2), self.StrongWindowColor, 2)
+            self.__plot__(frame, Image("Clustered Vehicles", clustered, None))
         return latest
         
