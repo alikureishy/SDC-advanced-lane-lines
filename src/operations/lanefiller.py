@@ -37,7 +37,7 @@ class LaneFiller(Operation):
         # Check if new lane information is available:
         leftlane = self.getdata(data, LaneFinder.LeftLane, LaneFinder)
         rightlane = self.getdata(data, LaneFinder.RightLane, LaneFinder)
-        car = self.getdata(data, LaneFinder.Car, LaneFinder)
+        car = self.getdata(data, LaneFinder.Vehicle, LaneFinder)
         
         if self.__drift_tolerance_pixels__ is None:
             self.__drift_tolerance_pixels__ = self.__drift_tolerance_ratio__ * latest.shape[1]

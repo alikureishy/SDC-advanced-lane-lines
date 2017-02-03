@@ -6,45 +6,22 @@ Created on Jan 15, 2017
 from operations.baseoperation import Operation
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import normalize
-from operations.vehiclefinder import VehicleFinder
-from math import sqrt
+from operations.vehiclefinder import VehicleFinder, Box, Candidate
 import numpy as np
 from utils.plotter import Image
 
 import math
 import cv2
-from networkx.algorithms.distance_measures import center
-from numpy import diagonal
-
-class Detection(object):
-    def __init__(self, center, score, diagonal, box):
-        self.__center__ = center
-        self.__score__ = score
-        self.__diagonal__ = diagonal
-        self.__box__ = box
-    def center(self):
-        return self.__center__
-    def score(self):
-        return self.__score__
-    def diagonal(self):
-        return self.__diagonal__
-    def box(self):
-        return self.__box__
-    def nparray(self):
-        return np.array([*self.center(), self.score(), self.diagonal(), *self.box()], dtype=np.int32)
-    @staticmethod
-    def empty():
-        return Detection((0,0), 0, 0, (0,0,0,0))
 
 class VehicleClusterer(Operation):
     # Configuration:
 #     Perspective = 'Perspective'
 #     DepthRangeRatio = 'DepthRangeRatio'
     ClusterRangeRatio = 'ClusterRangeRatio'
+    MinSamplesRatio = 'MinSamplesRatio'
     
     # Outputs:
-    ClusterVehicles = 'ClusterVehicles'
-    ClusterBoxes = 'ClusterBoxes'
+    ClusterCandidates = 'ClusterCandidates'
     
     # Constants:
     StrongWindowColor = [255, 0, 0]
@@ -53,9 +30,9 @@ class VehicleClusterer(Operation):
         Operation.__init__(self, params)
 #         self.__perspective__ = params[self.Perspective]
 #         self.__depth_range_ratios__ = params[self.DepthRangeRatio]
-        self.__cluster_range__ratio = params[self.ClusterRangeRatio]
+        self.__heatmap_threshold__ = params[self.ClusterRangeRatio]
         self.__cluster_range__ = None
-        
+        self.__min_samples_ratio__ = params[self.MinSamplesRatio]
 
     def get_distance(self, left, right):
         (x1,x2,y1,y2) = left
@@ -67,85 +44,48 @@ class VehicleClusterer(Operation):
         distance = math.sqrt(dx**2 + dy**2)
         return distance
 
-    def get_distance_matrix(self, boxes):
-        distances = [[0 for _ in range(len(boxes))] for __ in range(len(boxes))]
-        for i, (leftbox, _) in enumerate(boxes):
-            for j, (rightbox, _) in enumerate(boxes):
-                if i == j:
-                    continue
-                distances[i][j] = distances[j][i] = self.get_distance(leftbox, rightbox)
-        return distances
-
-    def get_center_and_diagonal(self, boxcorners):
-        (x1,x2,y1,y2) = boxcorners
-        center = ((x1+x2)//2, (y1+y2)//2)
-        diagonal = int(sqrt((x1-x2)**2 + (y1-y2)**2))
-#         diagonal = euclidean((x1,y1), (x2,y2))
-        return center, diagonal
-    
-    def get_centers(self, detections):
-        boxes, _ = tuple(zip(*detections))
-        centers = []
-        for boxnumber,box in enumerate(boxes):
-            center,_ = self.get_center_and_diagonal(box)
-            centers.append((center, boxnumber))
-        return centers
-    
-    @staticmethod
-    def boundary(center, diagonal):
-        (cx, cy) = center
-        s = int(math.sqrt(((diagonal ** 2) / 2)))
-        box = cx - (s // 2), cx + (s // 2), cy + (s // 2), cy - (s // 2)
-        return box
-
     def __processupstream__(self, original, latest, data, frame):
+        x_dim, y_dim = latest.shape[1], latest.shape[0]
         if self.__cluster_range__ is None:
-            self.__cluster_range__ = int(self.__cluster_range__ratio * (np.average(latest.shape[0:2])))
+            self.__cluster_range__ = int(self.__heatmap_threshold__ * (np.average(latest.shape[0:2])))
         
-        detections = self.getdata(data, VehicleFinder.FrameVehicleDetections, VehicleFinder)
-        cluster_boxes = []
-        cluster_vehicles = []
-        if detections is not None:
-            boxes, scores = tuple(zip(*detections))
+        framecandidates = self.getdata(data, VehicleFinder.FrameCandidates, VehicleFinder)
+        windowrange = self.getdata(data, VehicleFinder.WindowSizeRange, VehicleFinder)
+        
+        candidates = []
+        if framecandidates is not None and len(framecandidates) > 0:
+            framecandidates = np.array(framecandidates)
+            scores = np.array([x.score() for x in framecandidates])
             scores = (np.array(normalize([scores])*10, dtype=np.uint8)+1)[0] # Convert to 1-11 range.
-            centers,boxnumbers = tuple(zip(*self.get_centers(detections)))
-            assert len(centers) == len(boxnumbers)
+            centers = np.array([x.center() for x in framecandidates], dtype=np.uint32)
 
             # Do the clustering:
-            centers = np.array(list(centers))
-            dbscan = DBSCAN(eps=self.__cluster_range__, min_samples=min(scores))
+            distancemaxtrix = Box.get_distance_matrix(framecandidates, (x_dim, y_dim), windowrange)
+            minsamples = len(centers) * self.__min_samples_ratio__ if self.__min_samples_ratio__ is not None else None
+            dbscan = DBSCAN(eps=self.__cluster_range__, min_samples=minsamples)
+            dbscan_distance_matrix = DBSCAN(eps=self.__cluster_range__, metric='precomputed', min_samples=minsamples)
             clusterer = dbscan.fit(centers, sample_weight=scores)
+            clusterer_distance_matrix = dbscan_distance_matrix.fit(distancemaxtrix, sample_weight=scores)
             labels = clusterer.labels_
+            labels_distance_matrix = clusterer_distance_matrix.labels_
             
-            # Collect the box numbers in each cluster:
+            # Collect the boundary numbers in each cluster:
             clusters = {}
-            for boxnumber, label in zip(boxnumbers, labels):
+            for i,label in enumerate(labels_distance_matrix):
                 if label not in clusters:
                     clusters[label] = []
-                clusters[label].append(boxnumber)
+                clusters[label].append(framecandidates[i])
 
-            # Generate box for each cluster:
+            # Generate a clustered Candidate for each cluster:
             for cluster in clusters:
-                ids = clusters[cluster]
-                centers, diagonals = [], []
-                for i in ids:
-                    center,diagonal = self.get_center_and_diagonal(boxes[i])
-                    centers.append(center)
-                    diagonals.append(diagonal)
-                cx,cy = tuple(np.average(centers, axis=0, weights=scores[ids]).astype(np.int32))
-                diagonal = np.average(diagonals, weights=scores[ids])
-
-                # Generate new box:
-                box = self.boundary((cx, cy), diagonal) 
-                cluster_boxes.append(box)
-                cluster_vehicles.append(Detection((cx,cy), diagonal, sum(scores[ids]), box))
-            self.setdata(data, self.ClusterBoxes, cluster_boxes)
-            self.setdata(data, self.ClusterVehicles, cluster_vehicles)
+                candidates.append(Candidate.merge(clusters[cluster]))
+            self.setdata(data, self.ClusterCandidates, candidates)
 
         if self.isplotting():
             clustered = np.copy(latest)
-            for (x1,x2,y1,y2) in cluster_boxes:
+            for candidate in candidates:
+                (x1,x2,y1,y2) = candidate.boundary()
                 cv2.rectangle(clustered, (x1,y1), (x2,y2), self.StrongWindowColor, 2)
-            self.__plot__(frame, Image("Clustered Vehicles", clustered, None))
+            self.__plot__(frame, Image("Clustered Candidates", clustered, None))
         return latest
         

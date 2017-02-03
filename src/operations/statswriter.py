@@ -25,7 +25,7 @@ class StatsWriter(Operation):
     def __processdownstream__(self, original, latest, data, frame):
         leftlane = self.getdata(data, LaneFinder.LeftLane, LaneFinder)
         rightlane = self.getdata(data, LaneFinder.RightLane, LaneFinder)
-        car = self.getdata(data, LaneFinder.Car, LaneFinder)
+        car = self.getdata(data, LaneFinder.Vehicle, LaneFinder)
         if not leftlane is None and not rightlane is None and not car is None:
             x, y = int(latest.shape[1]*self.OrigXRatio), int(latest.shape[0]*self.OrigYRatio)
             leftcurverad_ps, leftcurverad_rs = leftlane.get_curverad()

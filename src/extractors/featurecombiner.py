@@ -17,4 +17,9 @@ class FeatureCombiner(object):
             featurelist.append(feature)
         featurevector = np.concatenate(tuple(featurelist))
         featurevector /= np.max(np.abs(featurevector),axis=0)
+#         features = np.array(features, dtype=np.float64)
+#         X_scaler = StandardScaler().fit([features])
+#         scaled_features = X_scaler.transform([features])
+#         sample = scaled_features.reshape(1, -1)
+        
         return featurevector

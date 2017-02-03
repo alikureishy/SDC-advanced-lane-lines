@@ -76,7 +76,7 @@ class Lane(object):
     def getxhistory(self):
         return list(self.xs) # [item for sublist in self.xs for item in sublist]
         
-class Car(object):
+class Vehicle(object):
     def __init__(self, cameracenter_ps, cameracenter_rs):
         self.__position__ = None #Distance from center. Left of center = -, right of center = +
         self.__lanecenter_ps__ = None
@@ -141,7 +141,7 @@ class LaneFinder(Operation):
     # Outputs
     LeftLane = "LeftLane"
     RightLane = "RightLane"
-    Car = 'Car'
+    Vehicle = 'Vehicle'
     
     def __init__(self, params):
         Operation.__init__(self, params)
@@ -171,10 +171,10 @@ class LaneFinder(Operation):
             self.__right_lane__ = Lane(self.__look_back_frames__, self.__yvals__)
             self.__camera_position_ps__ = int(x_dim * self.__camera_position_ratio__)
             self.__camera_position_rs__ = int(x_dim * self.__camera_position_ratio__ * xm_per_pix)
-            self.__car__ = Car(self.__camera_position_ps__, self.__camera_position_rs__)
+            self.__vehicle__ = Vehicle(self.__camera_position_ps__, self.__camera_position_rs__)
             self.setdata(data, self.LeftLane, self.__left_lane__)
             self.setdata(data, self.RightLane, self.__right_lane__)
-            self.setdata(data, self.Car, self.__car__)
+            self.setdata(data, self.Vehicle, self.__vehicle__)
 
         if self.__use_dynamic_vertical_split__:
             midx = self.find_midx(x_dim, self.__left_lane__, self.__right_lane__)
@@ -332,7 +332,7 @@ class LaneFinder(Operation):
         if not lpos is None and not rpos is None:
             lanecenter_ps = (lpos + rpos) / 2
             lanecenter_rs = lanecenter_ps * xm_per_pix
-            self.__car__.set_lanecenter(lanecenter_ps, lanecenter_rs)
+            self.__vehicle__.set_lanecenter(lanecenter_ps, lanecenter_rs)
             
         return latest
     
