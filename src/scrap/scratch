@@ -1,3 +1,17 @@
+    "Pipeline": [
+    	"StatsWriter",
+    	"Undistorter",
+    	"VehicleFinder",
+    	"VehicleClusterer",
+    	"VehicleTracker",
+    	"VehicleMarker",
+    	"Thresholder",
+    	"PerspectiveTransformer",
+    	"LaneFinder",
+    	"LaneFiller"
+    ],
+
+
 # This tresholder configuraion works for the most part, except near the white sections, after which there's some persistent diversion.
 # HOWEVER, note that that persistent diversion is because of the PeakWindowRangeRatio setting, and the way it is strictly adhered to.
 # Adjusting the peak window range ratio based on the confidence level of the previous frame, so that the range is extended when the
