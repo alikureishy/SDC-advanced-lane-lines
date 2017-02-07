@@ -11,11 +11,11 @@ from operations.showoriginal import ShowOriginal
 from operations.lanefinder import LaneFinder
 from operations.perspectivefinder import PerspectiveFinder
 from operations.statswriter import StatsWriter
-from operations.vehiclefinder import VehicleFinder
-from operations.vehicleclusterer import VehicleClusterer
-from operations.vehicletracker import VehicleTracker
-from operations.vehiclemarker import VehicleMarker
-from operations.vehiclelabeler import VehicleLabeler
+from operations.vehicledetection.vehiclefinder import VehicleFinder
+from operations.vehicledetection.vehicleclusterer import VehicleClusterer
+from operations.vehicledetection.vehicletracker import VehicleTracker
+from operations.vehicledetection.vehiclemarker import VehicleMarker
+from operations.vehicledetection.vehiclelabeler import VehicleLabeler
 
 PipelineSection = 'Pipeline'
 # from operations import *

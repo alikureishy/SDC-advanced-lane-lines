@@ -5,7 +5,7 @@ Created on Jan 15, 2017
 '''
 
 from operations.baseoperation import Operation
-from operations.vehicletracker import VehicleTracker
+from operations.vehicledetection.vehicletracker import VehicleTracker
 from utils.plotter import Image
 import cv2
 

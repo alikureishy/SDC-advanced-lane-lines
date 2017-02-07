@@ -4,22 +4,15 @@ Created on Dec 21, 2016
 @author: safdar
 '''
 import matplotlib
-from sklearn.neural_network.multilayer_perceptron import MLPClassifier
-import PIL
 matplotlib.use('TKAgg')
-from sklearn.preprocessing.data import StandardScaler
+from sklearn.neural_network.multilayer_perceptron import MLPClassifier
+from skimage.io import imread
 from sklearn.cross_validation import train_test_split
 from sklearn.svm.classes import LinearSVC, SVC
 import time
-from sklearn.utils import shuffle
 import json
-from operations.vehiclefinder import VehicleFinder
+from operations.vehicledetection.vehiclefinder import VehicleFinder
 from extractors.helper import buildextractor
-import matplotlib.image as mpimg
-from extractors.spatialbinner import SpatialBinner
-from extractors.hogextractor import HogExtractor
-from extractors.colorhistogram import ColorHistogram
-from extractors.featurecombiner import FeatureCombiner
 import argparse
 import numpy as np
 import os
@@ -37,11 +30,12 @@ def getallpathsunder(path):
     return cars
 
 def appendXYs(imagefiles, extractor, label, Xs, Ys):
-    print ("LABEL: {}".format(label))
+    print ("Extracting features for '{}'".format("Cars" if label == 1 else "Non-Cars"))
     for idx, file in enumerate(imagefiles):
-        image = mpimg.imread(file)
+        image = imread(file) # Change to skimage.io.imread() to get pixel values within [0,255]
 #         image = np.array(PIL.Image.open(file))
-        Xs.append(extractor.extract(image))
+        featurevector = extractor.extract(image)
+        Xs.append(featurevector)
         Ys.append(label)
         if idx % 100 == 0:
             print(".", end='', flush=True)

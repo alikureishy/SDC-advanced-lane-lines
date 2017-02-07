@@ -76,7 +76,7 @@ class Lane(object):
     def getxhistory(self):
         return list(self.xs) # [item for sublist in self.xs for item in sublist]
         
-class Vehicle(object):
+class Car(object):
     def __init__(self, cameracenter_ps, cameracenter_rs):
         self.__position__ = None #Distance from center. Left of center = -, right of center = +
         self.__lanecenter_ps__ = None
@@ -171,7 +171,7 @@ class LaneFinder(Operation):
             self.__right_lane__ = Lane(self.__look_back_frames__, self.__yvals__)
             self.__camera_position_ps__ = int(x_dim * self.__camera_position_ratio__)
             self.__camera_position_rs__ = int(x_dim * self.__camera_position_ratio__ * xm_per_pix)
-            self.__vehicle__ = Vehicle(self.__camera_position_ps__, self.__camera_position_rs__)
+            self.__vehicle__ = Car(self.__camera_position_ps__, self.__camera_position_rs__)
             self.setdata(data, self.LeftLane, self.__left_lane__)
             self.setdata(data, self.RightLane, self.__right_lane__)
             self.setdata(data, self.Vehicle, self.__vehicle__)

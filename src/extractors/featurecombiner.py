@@ -4,6 +4,7 @@ Created on Jan 14, 2017
 @author: safdar
 '''
 import numpy as np
+from sklearn.preprocessing.data import StandardScaler
 
 class FeatureCombiner(object):
     def __init__(self, extractors):
@@ -15,11 +16,9 @@ class FeatureCombiner(object):
             feature = extractor.extract(image)
             assert feature is not None, "Feature obtained from {} was none".format(extractor.__class__.__name__)
             featurelist.append(feature)
-        featurevector = np.concatenate(tuple(featurelist))
-        featurevector /= np.max(np.abs(featurevector),axis=0)
-#         features = np.array(features, dtype=np.float64)
-#         X_scaler = StandardScaler().fit([features])
-#         scaled_features = X_scaler.transform([features])
-#         sample = scaled_features.reshape(1, -1)
+        features = np.concatenate(tuple(featurelist))
+        scaled_features = StandardScaler().fit_transform(features.reshape(-1,1))
+        #scaled_features = scaled_features.reshape(1, -1)
+        scaled_features = scaled_features.ravel()
         
-        return featurevector
+        return scaled_features
