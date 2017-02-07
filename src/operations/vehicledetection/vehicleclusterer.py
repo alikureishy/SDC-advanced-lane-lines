@@ -9,8 +9,7 @@ import numpy as np
 from utils.plotter import Image
 
 import cv2
-from operations.vehicledetection.clusterers import PerspectiveDBSCANClustererImpl,\
-    ClustererFactory
+from operations.vehicledetection.clusterers import ClustererFactory
 
 class VehicleClusterer(Operation):
     # Configuration:

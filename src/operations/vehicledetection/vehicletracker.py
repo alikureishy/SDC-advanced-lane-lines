@@ -4,13 +4,12 @@ Created on Jan 15, 2017
 @author: safdar
 '''
 from operations.baseoperation import Operation
-from operations.vehicledetection.vehiclefinder import VehicleFinder
 import numpy as np
 from utils.plotter import Image
 import cv2
 from operations.vehicledetection.vehicleclusterer import VehicleClusterer
-from operations.vehicledetection.tracker import VehicleManager
 from operations.vehicledetection.clusterers import ClustererFactory
+from _collections import deque
 
 
 # This class creates objects for each boundary that is detected.
@@ -32,54 +31,69 @@ class VehicleTracker(Operation):
     Clusterer = 'Clusterer'
     
     # Constants:
-    VehicleWindowColor = [255, 0, 0]
-    MergedVehicleColor = [155, 0, 0]
+    HistoryVehicleColor = [155, 0, 0]
+    TrackedWindowColor = [255, 0, 0]
     
     # Outputs:
-    VehicleManager = 'VehicleManager'
+    TrackedVehicles = 'TrackedVehicles'
     
     def __init__(self, params):
         Operation.__init__(self, params)
-        self.__vehicle_manager__ = None
         self.__clusterer__ = None
+        self.__lookback_frames__ = params[self.LookBackFrames]
+        self.__history__ = deque(maxlen=self.__lookback_frames__)
+        self.__vehicles__ = []
 
+    def __get_flattened_history__(self):
+        flattened = []
+        for detections in self.__history__:
+            if detections is not None and len(detections) > 0:
+                for detection in detections:
+                    flattened.append(detection)
+        return flattened
+
+    def __is_history_warmed(self):
+        return len(self.__history__) == self.__lookback_frames__
+    
+    def __add_candidates__(self, candidates):
+        self.__history__.append(candidates)
+    
     def __processupstream__(self, original, latest, data, frame):
-        if self.__vehicle_manager__ is None:
+        if self.__clusterer__ is None:
             config = self.getparam(self.Clusterer)
             config[list(config.keys())[0]]['image_shape'] = latest.shape[0:2]
             self.__clusterer__ = ClustererFactory.create(config)
-            self.__vehicle_manager__ = VehicleManager(self.getparam(self.LookBackFrames), self.__clusterer__)
         
         # Candidate: (center, diagonal, score)
-        detections = self.getdata(data, VehicleClusterer.ClusterCandidates, VehicleClusterer)
-        self.__vehicle_manager__.add_candidates(detections, continuity_threshold=4)
+        newcandidates = self.getdata(data, VehicleClusterer.ClusterCandidates, VehicleClusterer)
+        if self.__is_history_warmed():
+            # Once history is warmed, any absent candidates still count towards the history
+            self.__add_candidates__(newcandidates)
+        elif newcandidates is not None and len(newcandidates) > 0:
+            self.__add_candidates__(newcandidates)
+            
+        flattened = self.__get_flattened_history__()
+        if flattened is not None and len(flattened) > 0:
+            self.__vehicles__ = self.__clusterer__.clusterandmerge(flattened)
+        self.setdata(data, self.TrackedVehicles, self.__vehicles__)
 
         if self.isplotting():
-            allvehicles = np.copy(latest)
-            tracked_vehicles = self.__vehicle_manager__.get_vehicles()
-            print ("Plotting {} vehicles".format(len(tracked_vehicles)))
+            historicalview = np.copy(latest)
+            allvehicles = self.__get_flattened_history__()
+            for vehicle in allvehicles:
+                (x1,x2,y1,y2) = vehicle.boundary()
+                cv2.rectangle(historicalview, (x1,y1), (x2,y2), self.HistoryVehicleColor, 6)
+            self.__plot__(frame, 
+                          Image("History - {}".format("Warming..." if not self.__is_history_warmed() else "Warmed"), 
+                                historicalview, 
+                                None))
+            
+            mergedview = np.copy(latest)
+            tracked_vehicles = self.__vehicles__
             for vehicle in tracked_vehicles:
                 (x1,x2,y1,y2) = vehicle.boundary()
-                if vehicle.wasmerged():
-                    cv2.rectangle(allvehicles, (x1,y1), (x2,y2), self.MergedVehicleColor, 3)
-                else:
-                    cv2.rectangle(allvehicles, (x1,y1), (x2,y2), self.VehicleWindowColor, 2)
-                cv2.putText(allvehicles,\
-                            "[{} - {}, {}/{}, {}/{}]".format(\
-                                                        "Merged" if vehicle.wasmerged() else "New",\
-                                                        vehicle.age(), \
-                                                        vehicle.continuous_hits(),\
-                                                        vehicle.hits(),\
-                                                        vehicle.continuous_misses(),\
-                                                        vehicle.misses()),\
-                            (x1,y1), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, self.VehicleWindowColor, thickness=2)
-#                 history = vehicle.location_history().astype(np.int32)
-#                 if len(history) > 0:
-#                     cv2.polylines(allvehicles, [history], False, self.StrongWindowColor, thickness=2, lineType=cv2.LINE_4)
-#                     for point in history:
-#                         cv2.circle(allvehicles, tuple(point), 4, self.StrongWindowColor, -1)
-            self.__plot__(frame, Image("Tracked Cars", allvehicles, None))
+                cv2.rectangle(mergedview, (x1,y1), (x2,y2), self.TrackedWindowColor, 6)
+            self.__plot__(frame, Image("Tracked Cars", mergedview, None))
 
-        self.setdata(data, self.VehicleManager, self.__vehicle_manager__)
         return latest
         
