@@ -16,104 +16,7 @@ import PIL
 import time
 from sklearn.preprocessing.data import StandardScaler
 import math
-from builtins import staticmethod
-
-class Box(object):
-    def __init__(self, center, diagonal, bounds=None):
-        assert  (center is not None and diagonal is not None), "Invalid input"
-        self.__center__ = center
-        self.__diagonal__ = diagonal
-        (cx, cy) = self.__center__
-        s = int(math.sqrt(((self.__diagonal__ ** 2) / 2)))
-        leftx, rightx, topy, bottomy = cx - (s // 2), cx + (s // 2), cy - (s // 2), cy + (s // 2)
-        if bounds is not None:
-            xrange, yrange=bounds[0], bounds[1]
-            if leftx < xrange[0]:
-                leftx = xrange[0]
-            if rightx > xrange[1]:
-                rightx = xrange[1]
-            if topy < yrange[0]:
-                topy = yrange[0]
-            if bottomy > yrange[1]:
-                bottomy = yrange[1]
-            self.__fitted__ = True
-        else:
-            self.__fitted__ = False
-        assert not (leftx == rightx) or not (topy == bottomy), "Zero sized window found with center: {}, size: {}".format(center, diagonal)
-        self.__boundary__ = (leftx, rightx, topy, bottomy)
-    def fitted(self):
-        return self.__fitted__
-    def center(self):
-        return self.__center__
-    def score(self):
-        return self.__score__
-    def diagonal(self):
-        return self.__diagonal__
-    def boundary(self):
-        return self.__boundary__
-    # This method determines distance between two boxes as being
-    # inversely proportional to the box size. The distance between
-    # large boxes is the same as the distance in actual pixels.
-    # Distance between smaller boxes is inversely proportional
-    # to the difference in the size. A small box is far in the horizon. Larger boxes are closer.
-    @staticmethod
-    def get_perspective_distance(leftbox, rightbox, imageshape, windowrange):
-        maxwindow = max(windowrange)
-        # Y-magnification depends on size ratio of the two boxes
-        ymagnification = min(rightbox.diagonal()/leftbox.diagonal(), leftbox.diagonal()/rightbox.diagonal())
-        # X-magnification depends on the size ratio of small box relative to the biggest box
-        xmagnification = maxwindow / min(leftbox.diagonal(), rightbox.diagonal())
-        dx = np.absolute(leftbox.center()[0] - rightbox.center()[0]) * xmagnification
-        dy = np.absolute(imageshape[1] * ymagnification) # np.absolute(leftcenter[1] - rightcenter[1]) * ymagnification
-        distance = int(math.sqrt(dx**2 + dy**2))
-#         print ("Perspective: {} <--> {} : ({}, {})".format(leftbox.diagonal(), rightbox.diagonal(), dx, dy))
-        return distance
-    @staticmethod
-    def get_manhattan_distance(leftbox, rightbox):
-        dx = np.absolute(leftbox.center()[0] - rightbox.center()[0])
-        dy = np.absolute(leftbox.center()[1] - rightbox.center()[1])
-        distance = int(math.sqrt(dx**2 + dy**2))
-        return distance
-    @staticmethod
-    def get_distance_matrix(candidates, imageshape, windowsizerange):
-        distances = np.full((len(candidates), len(candidates)), fill_value=0, dtype=np.int32)
-        for i, leftbox in enumerate(candidates):
-            for j, rightbox in enumerate(candidates):
-                if i == j:
-                    continue
-                distances[i][j] = distances[j][i] = Box.get_perspective_distance(leftbox, rightbox, imageshape, windowsizerange)
-        return distances
-    @staticmethod
-    def cluster(boxes):
-        return [[]] # Returns a list (rows) of lists (columns). Each row represents one cluster of boxes. 
-
-class Candidate(Box):
-    def __init__(self, center, diagonal, score):
-        assert  (center is not None and score is not None and diagonal is not None), "Invalid input"
-        Box.__init__(self, center, diagonal)
-        self.__score__ = score
-    def score(self):
-        return self.__score__
-    def nparray(self):
-        return np.array([*self.center(), self.diagonal(), self.score()], dtype=np.int32)
-    @staticmethod
-    def merge(candidates):
-        if len(candidates) == 0:
-            return None
-        elif len(candidates) == 1:
-            return candidates[0]
-        else:
-            asarray = np.array([x.nparray() for x in candidates])
-            # Center is the centroid of the candidates' centers:
-            center = np.average(asarray[:,0:2], weights=asarray[:,2], axis=0).astype(np.int32)
-            # Instead of being the average, perhaps consider different options. Like
-            # the 3*Sigma of the candidates' diagonals?
-            diagonal = np.average(asarray[:,2], weights=asarray[:,2], axis=0).astype(np.int32)
-            # Score could perhaps also be the 3*Sigma.
-            score = np.average(asarray[:,3], axis=0).astype(np.int32) # Only simple average for score
-            mergedcandidate = Candidate(center, diagonal, score)
-            mergedcandidate.__merged__ = True
-            return mergedcandidate
+from operations.vehicledetection.entities import Candidate, Box
 
 class VehicleFinder(Operation):
     ClassifierFile = 'ClassifierFile'
@@ -140,7 +43,6 @@ class VehicleFinder(Operation):
 
     # Outputs
     FrameCandidates = "FrameCandidates"
-    WindowSizeRange = 'WindowSizeRange'
 
     def __init__(self, params):
         Operation.__init__(self, params)
@@ -193,7 +95,6 @@ class VehicleFinder(Operation):
             self.__windows__ = self.generatewindows(slidingwindowconfig, x_dim, y_dim, xy_avg)
             self.__window_range_ratio__ = slidingwindowconfig[self.SlidingWindow.WindowRangeRatio]
             self.__window_range__ = [int(xy_avg * r) for r in self.__window_range_ratio__]
-        self.setdata(data, self.WindowSizeRange, self.__window_range__)
 
         # Perform search:
         image = np.copy(latest)
@@ -208,13 +109,13 @@ class VehicleFinder(Operation):
                 window = snapshot.astype(np.float32)
                 if np.max(window) == 0:
                     print ("Error")
-                window = window/255
+#                 window = window/255
 #                 window /= np.max(np.abs(snapshot),axis=0) #TODO: Check axis setting. Might have to be 1
                 features = self.__feature_extractor__.extract(window)
 #                 features = np.array(features, dtype=np.float64)
 #                 X_scaler = StandardScaler().fit([features])
 #                 scaled_features = X_scaler.transform([features])
-#                 sample = scaled_features.reshape(1, -1)
+#                 features = scaled_features.reshape(1, -1)
                 try:
                     label = self.__classifier__.predict([features])
                 except ValueError:
