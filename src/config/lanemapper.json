@@ -3,7 +3,8 @@
     	"Undistorter",
     	"VehicleFinder",
     	"VehicleLabeler",
-    	"VehicleClusterer"
+    	"VehicleClusterer",
+    	"VehicleTracker"
     ],
     "ShowOriginal": {
 		"ToPlot": 0
@@ -43,12 +44,12 @@
     },
     "VehicleClusterer": {
 		"ToPlot": 1,
-		"Clusterer": {"HeatmapClustererImpl": {"min_samples_ratio": 4}}
+		"Clusterer": {"HeatmapClustererImpl": {"min_samples_ratio": 3}}
     },
     "VehicleTracker": {
-    	"ToPlot": 0,
-		"Clusterer": {"PerspectiveDBSCANClustererImpl": {"min_samples_ratio": 0.10, "cluster_range_ratio": 0.15}},
-    	"LookBackFrames": 5
+    	"ToPlot": 1,
+    	"LookBackFrames": 5,
+		"Clusterer": {"HeatmapClustererImpl": {"min_samples_ratio": 4}}
     },
     "VehicleMarker": {
 		"ToPlot": 0,
