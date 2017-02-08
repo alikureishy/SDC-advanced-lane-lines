@@ -14,8 +14,6 @@ import os
 from utils.plotter import Image
 import PIL
 import time
-from sklearn.preprocessing.data import StandardScaler
-import math
 from operations.vehicledetection.entities import Candidate, Box
 
 class VehicleFinder(Operation):
@@ -109,13 +107,7 @@ class VehicleFinder(Operation):
                 window = snapshot.astype(np.float32)
                 if np.max(window) == 0:
                     print ("Error")
-#                 window = window/255
-#                 window /= np.max(np.abs(snapshot),axis=0) #TODO: Check axis setting. Might have to be 1
                 features = self.__feature_extractor__.extract(window)
-#                 features = np.array(features, dtype=np.float64)
-#                 X_scaler = StandardScaler().fit([features])
-#                 scaled_features = X_scaler.transform([features])
-#                 features = scaled_features.reshape(1, -1)
                 try:
                     label = self.__classifier__.predict([features])
                 except ValueError:
