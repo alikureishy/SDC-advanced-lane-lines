@@ -15,7 +15,7 @@
 <!--
 [![Mapped Lane][MappedLane]](https://youtu.be/jzAWMtA1zX8 "Click to see video on youtube")
 -->
-[![VehicleDetection1][VehicleDetection1]](https://youtu.be/z6ftjTBW_-4 "Click to see video on youtube")
+[![VehicleDetector1][VehicleDetector1]](https://youtu.be/z6ftjTBW_-4 "Click to see video on youtube")
 
 ## Vehicle Detection + Advanced Lane Finding
 
