@@ -1,19 +1,24 @@
 {
     "Pipeline": [
+    	"StatsWriter",
     	"Undistorter",
     	"VehicleFinder",
     	"VehicleClusterer",
     	"VehicleTracker",
-    	"VehicleMarker"
+    	"VehicleMarker",
+    	"Thresholder",
+    	"PerspectiveTransformer",
+    	"LaneFinder",
+    	"LaneFiller"
     ],
     "ShowOriginal": {
-		"ToPlot": 0
+		"ToPlot": 1
 	},
 	"StatsWriter": {
 		"ToPlot": 1
 	},
     "Undistorter": {
-		"ToPlot": 0,
+		"ToPlot": 1,
         "CalibrationFile": "config/calibration.pickle"
 	},
     "VehicleFinder": {
@@ -54,19 +59,19 @@
 		"ToPlot": 1
     },
     "Thresholder": {
-		"ToPlot": 0,
+		"ToPlot": 1,
     	"HoughFilter": {
     		"Rho": 2, "Theta": 0.0174, "Threshold": 100, "MinLineLength": 75, "MaxLineGap": 30,
 	    	"LeftRadianRange": [-0.95, -0.50], "RightRadianRange": [0.50, 0.95], "DepthRangeRatio": [0.95, 0.70]
     	},
 		"Term":
 		{
-			"ToPlot": 1,
+			"ToPlot": 0,
 			"Operator": "OR",
 			"Negate": 0,
 			"Operands": [
 				{
-					"ToPlot": 1,
+					"ToPlot": 0,
 					"Operator": "AND",
 					"Negate": 0,
 					"Operands": [
@@ -75,7 +80,7 @@
 				    ]
 				},
 				{
-					"ToPlot": 1,
+					"ToPlot": 0,
 					"Operator": "AND",
 					"Negate": 0,
 					"Operands": [
@@ -87,7 +92,7 @@
 		}
     },
     "PerspectiveTransformer": {
-		"ToPlot": 0,
+		"ToPlot": 1,
         "Perspective": [
         	[0.20, -50],
         	[0.86,  58]
@@ -101,7 +106,7 @@
         ]
     },
     "LaneFinder": {
-		"ToPlot": 0,
+		"ToPlot": 1,
 		"SliceRatio": 0.05,
     	"PeakWindowRatio": 0.05,
     	"PeakRangeRatios": [0.10, 0.50],
@@ -110,7 +115,7 @@
     	"CameraPositionRatio": 0.50
     },
     "LaneFiller": {
-		"ToPlot": 0,
+		"ToPlot": 1,
 		"LaneConfidenceThreshold": 0.40,
 		"DriftToleranceRatio": 0.05,
 		"SafeColor": [152, 251, 152],
