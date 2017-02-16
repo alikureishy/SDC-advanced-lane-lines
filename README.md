@@ -8,17 +8,20 @@
 [Thresholding2]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration7.png "Thresholding"
 [LaneFinder]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration8.png "Lane Finder Illustration"
 [LaneFinder2]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration9.png "Lane Finder Illustration"
+[VehicleDetector1]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration10.png "Vehicle Detection Green Lane"
+[VehicleDetector2]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration11.png "Vehicle Detection Red Lane"
+[HighLevel-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration12.png "High Level Illustration"
 
 <!--
 [![Mapped Lane][MappedLane]](https://youtu.be/jzAWMtA1zX8 "Click to see video on youtube")
 -->
-[![Mapped Lane][MappedLane]](https://youtu.be/z6ftjTBW_-4 "Click to see video on youtube")
+[![VehicleDetection1][VehicleDetection1]](https://youtu.be/z6ftjTBW_-4 "Click to see video on youtube")
 
 ## Vehicle Detection + Advanced Lane Finding
 
 ### Overview
 
-This was project # 4 and # 5 of the Self Driving Car curriculum at Udacity. It was aimed at advanced lane detection and vehicle detection for a front-facing camera on the car. No additional sensor inputs were utilized for this project.
+This is a combination of project # 4 (Advanced Lane Finding) and # 5 (Vehicle Detection) of the Self Driving Car curriculum at Udacity. It was aimed at advanced lane detection and vehicle detection for a front-facing camera on the car. No additional sensor inputs were utilized for this project.
 
 The goals / steps of the advanced lane finding project were the following:
 
@@ -39,7 +42,9 @@ Similarly, the steps for vehicle detection were the following:
 * Merge the clustered detections into single bounding boxes using various types of merging algorithms
 * Output the resultant bounding boxes around detected cars as they progress across the road on the screen
 
-I've tried to make the utility extensible and configurable. All configuration settings involving locations of points on images have been expressed as a fraction of the 2 dimenions. So, for such configurations, no changes are necessary when changing the input video frame size. A significant amount of time was spent building a 'framework' which could support the needs of the project, and to allow for such configurability. In as much as the parameters for this project were known to me, the implementation does a reasonably good job. However, a _lot_ still remains to be cleaned up and refactored. Please bear this in mind during any inspection of the code base.
+The utility as it stands now, is built around a Chain of Responsibility design pattern wherein execution proceeds through a nested sequence of 'handlers', first in one direction, and then in the reverse direction (unwind). Each of the features above is supported by a collection of such handlers that will be discussed in further detail later in this document.
+
+I've tried to make the utility extensible and configurable. All configuration settings involving locations of points on images have been expressed as a fraction of the 2 (X and Y) dimenions. So, for such configurations, no changes are necessary when changing the input video frame size. A significant amount of time was spent building a 'framework' which could support the needs of the project, and to allow for such configurability. In as much as the parameters for this project were known to me, the implementation does a reasonably good job of providing for such configuragbility and further extensibility. However, a _lot_ still remains to be commented, cleaned up and refactored. Please bear this in mind during any inspection of the code base.
 
 ### Installation
 
@@ -47,17 +52,53 @@ This is a python utility requiring the following libraries to be installed prior
 * python (>= 3)
 * numpy
 * scikit-learn
+* skimage
 * OpenCV3
 * matplotlib
 * scipy
 
-Here is a [sample output](https://www.google.com "advanced lane detection project output") produced by this utility on the project video.
+The image above was produced by this utility from a sample frame of an input video.
 
 ### Execution
 
-There are two utilities in this project. One is the calibrator (calibrator.py) that is to be run as a preparatory step prior to running the second, which is the lane mapper (lanemapper.py).
+There are three utilities in this project. One is the Trainer (trainer.py) that is used to train the vehicle detection classifier, the second is the calibrator (calibrator.py) that is to be run as a preparatory step prior to running the third, which is the lane mapper (lanemapper.py) that processes the input video itself by running each frame through a pipeline of operations.
 
-#### Image Calibration
+#### Vehicle Detection Classification Trainer (Component of Project 5)
+
+The output of this utility run against a set of input images is a linear Support Vector Machine classifier whose parameters are stored in a file that can then be used to reload the classifier when processing the input video through lanemapper.py.
+
+The utility is in the file trainer.py. It is a command line utility, with a sample invocation as follows:
+
+```
+/Users/safdar/git/advanced-lane-detection/src> python3.5 trainer.py -v ../data/training/vehicles -n ../data/training/nonvehicles -f config/svm.dump -c config/lanemapper.json -t 0.15 -o
+```
+
+Here's the help menu:
+```
+###############################################
+#          VEHICLE DETECTION TRAINER          #
+###############################################
+usage: trainer.py [-h] -v VEHICLEDIR -n NONVEHICLEDIR -c CONFIGFILE -f
+                  OUTPUTFILE [-t TESTRATIO] [-to] [-d] [-o]
+
+Vehicle Detection Trainer
+
+optional arguments:
+  -h, --help        show this help message and exit
+  -v VEHICLEDIR     Path to folder containing vehicle images.
+  -n NONVEHICLEDIR  Path to folder containing non-vehicle images.
+  -c CONFIGFILE     Path to configuration file (.json).
+  -f OUTPUTFILE     File to store trainer parameters for later use
+  -t TESTRATIO      Percent of training data held aside for testing.
+  -to               Whether to skip training and just test (default: false).
+  -d                Dry run. Will not save anything to disk (default: false).
+  -o                Will save over existing file on disk (default: false).
+  ```
+  
+Note the '-f' parameter because the value used here will need to be provided in the 'VehicleFinder' section of the configuration settings for the 'Lane Mapper' utility below. Please see the 'Implementation' section below for details.
+
+
+#### Image Calibration (Component of Project 4)
 
 The output of this utility run against a folder of images is stored in a file that is then used to undistort/redistort images during advanced lane detection. The utility is in the file calibrator.py. It is a command line utility, with a sample invocation as follows:
 
@@ -84,7 +125,7 @@ optional arguments:
   -d          Dry run. Will not save anything to disk (default: false).
   ```
 
-Note the '-o' parameter because the parameter used here will need to be provided in the configuration settings for the 'Lane Mapper' utility below. Please see the 'Implementation' section below for details.
+Note the '-o' parameter because the value used here will need to be provided in the 'Calibrator' section of the configuration settings for the 'Lane Mapper' utility below. Please see the 'Implementation' section below for details.
 
 
 #### Lane Mapper Utility
@@ -92,13 +133,13 @@ Note the '-o' parameter because the parameter used here will need to be provided
 This utility is in the file lanemapper.py. It is also a command line utility, invoked as in the following example:
 
 ```
-/Users/safdar/git/advanced-lane-detection/src> python3.5 lanemapper.py -i ../project_video.mp4 -o ../sample_out.mp4 -c config/lanemapper.json -x 1 -p
+/Users/safdar/git/advanced-lane-detection/src> python3.5 lanemapper.py -i ../project_video.mp4 -o ../sample_out.mp4 -c config/lanemapper.json -x 1 -p -r 100 400
 ```
-Note that the '-p' flag turns on the illustration (via a plot window) of various image transformations that each frame goes through -- the plot window is kept updated throughout. This is illustrated here:
+Note that the '-p' flag turns on the illustration (via a plot window) of various image transformations that each frame goes through; this plot window is updated for each frame that gets processed from the input video, providing an active illustration of the inner workings of various handlers in the utility. This is illustrated here:
 
-![High level transformation sequence][HighLevel-Green]
+![High level transformation sequence][HighLevel-Illustration]
 
-Note: To not output these illustrations, remove the '-p' flag. Removing the -p flag will also cause the utility to run a lot faster. Though using this flag slows down processing, it also provides insight into the working of the utility. The illustrations can also be individually toggled in the config file (src/config/lanemapper.json). To enable additional details of the image transformations, go to the lanemapper.json file and search for the 'ToPlot' flags. Each component has that flag, and a value of '1' indicates that it is enabled, and '0' indicates it is disabled. Toggle the value for the components that you want to visualize, for example, the 'PerspectiveTransformer' or the 'Thresholder' etc. At present, only the 'StatsWriter' and 'Thresholder' are enabled. Thresholder illustrations are enabled at a high level only -- that is, only the final output is shown. Individual threshold transformations can also be enabled using the finer grained 'ToPlot' settings on each such threshold operation.
+Note: To switch off these illustrations, remove the '-p' flag. Removing the -p flag will also cause the utility to run a lot faster. Though using this flag slows down processing, it also provides insight into the working of the utility. The illustrations can also be individually toggled in the config file (src/config/lanemapper.json). To enable additional details of the image transformations, go to the lanemapper.json file and search for the 'ToPlot' flags. Each component has that flag, and a value of '1' indicates that it is enabled, and '0' indicates it is disabled. Toggle the value for the components that you want to visualize, for example, the 'PerspectiveTransformer' or the 'Thresholder' etc. At present, only the 'StatsWriter' and 'Thresholder' are enabled. Thresholder illustrations are enabled at a high level only -- that is, only the final output is shown. Individual threshold transformations can also be enabled using the finer grained 'ToPlot' settings on each such threshold operation.
 
 Here's the help menu:
 ```
@@ -106,7 +147,8 @@ Here's the help menu:
 #                 LANE MAPPER                 #
 ###############################################
 usage: lanemapper.py [-h] -i INPUT [-o OUTPUT] -c [CONFIGS [CONFIGS ...]]
-                     [-s SELECTOR] [-x SPEED] [-d] [-p]
+                     [-s SELECTOR] [-x SPEED] [-r [RANGE [RANGE ...]]] [-d]
+                     [-p]
 
 Lane Finder
 
@@ -117,9 +159,11 @@ optional arguments:
                         input type)
   -c [CONFIGS [CONFIGS ...]]
                         Configuration files.
-  -s SELECTOR           Limit the pipeline to perform only specified # of
-                        operations.
+  -s SELECTOR           Short circuit the pipeline to perform only specified #
+                        of operations.
   -x SPEED              Speed (1 ,2, 3 etc) interpreted as 1x, 2x, 3x etc)
+  -r [RANGE [RANGE ...]]
+                        Range of frames to process (default: None)
   -d                    Dry run. Will not save anything to disk (default:
                         false).
   -p                    Plot all illustrations marked as 'ToPlot' in the
