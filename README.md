@@ -9,15 +9,18 @@
 [LaneFinder]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration8.png "Lane Finder Illustration"
 [LaneFinder2]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration9.png "Lane Finder Illustration"
 
+<!--
 [![Mapped Lane][MappedLane]](https://youtu.be/jzAWMtA1zX8 "Click to see video on youtube")
+-->
+[![Mapped Lane][MappedLane]](https://youtu.be/z6ftjTBW_-4 "Click to see video on youtube")
 
-## Advanced Lane Finding
+## Vehicle Detection + Advanced Lane Finding
 
 ### Overview
 
-This was project # 4 of the Self Driving Car curriculum at Udacity. It was aimed at advanced lane detection for a front-facing camera on the car. No additional sensor inputs were utilized for this project.
+This was project # 4 and # 5 of the Self Driving Car curriculum at Udacity. It was aimed at advanced lane detection and vehicle detection for a front-facing camera on the car. No additional sensor inputs were utilized for this project.
 
-The goals / steps of this project were the following:
+The goals / steps of the advanced lane finding project were the following:
 
 * Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
 * Apply the distortion correction to the raw image.
@@ -28,7 +31,15 @@ The goals / steps of this project were the following:
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
-I've tried to make the utility extensible and configurable. All configuration settings involving locations of points on images have been expressed as a fraction of the 2 dimenions. So, for such configurations, no changes ar necessary when changing the input video frame size. A significant amount of time was spent building a 'framework' which could support the needs of the project, and to allow for such configurability. In as much as the parameters for this project were known to me, the implementation does a reasonably good job. However, a *lot* still remains to be cleaned up and refactored. Please bear this in mind during any inspection of the code base.
+Similarly, the steps for vehicle detection were the following:
+
+* Train a classifier to detect if an image is that of a vehicle
+* Utilize the classifier to detect cars in each frame by utilizing a sliding window search over the frame
+* Utilize clustering algorithms (spatial and temporal) to eliminate false positive car detections
+* Merge the clustered detections into single bounding boxes using various types of merging algorithms
+* Output the resultant bounding boxes around detected cars as they progress across the road on the screen
+
+I've tried to make the utility extensible and configurable. All configuration settings involving locations of points on images have been expressed as a fraction of the 2 dimenions. So, for such configurations, no changes are necessary when changing the input video frame size. A significant amount of time was spent building a 'framework' which could support the needs of the project, and to allow for such configurability. In as much as the parameters for this project were known to me, the implementation does a reasonably good job. However, a _lot_ still remains to be cleaned up and refactored. Please bear this in mind during any inspection of the code base.
 
 ### Installation
 
@@ -38,6 +49,7 @@ This is a python utility requiring the following libraries to be installed prior
 * scikit-learn
 * OpenCV3
 * matplotlib
+* scipy
 
 Here is a [sample output](https://www.google.com "advanced lane detection project output") produced by this utility on the project video.
 
