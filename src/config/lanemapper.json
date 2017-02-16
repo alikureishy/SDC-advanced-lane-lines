@@ -10,7 +10,7 @@
 		"ToPlot": 0
 	},
 	"StatsWriter": {
-		"ToPlot": 0
+		"ToPlot": 1
 	},
     "Undistorter": {
 		"ToPlot": 0,
@@ -25,31 +25,30 @@
 	    	"SizeVariations": 12,
     		"CenterShiftRatio": 0.0,
     		"StepRatio": 0.25,
-    		"ConfidenceThreshold": 0.3
+    		"ConfidenceThreshold": 0.8
     	},
     	"Logging": {
 	    	"LogHits": 0,
 	    	"LogMisses": 0,
-	    	"FrameRange": [0,9000],
-	    	"Frames": [],
-	    	"LogFolder": "../data/runs/snaps"
+	    	"FrameRange": null,
+	    	"Frames": [530,540,550,560,570],
+	    	"HitsXRange": [0, 640],
+	    	"MissesXRange": [640, 1280],
+	    	"LogFolder": "../data/runs"
     	},
     	"FeatureExtractors": [
-    		{"HOGExtractor":{"Orientations": 9, "Space": "GRAY", "Size": [128, 128], "Channel": 0, "PixelsPerCell": 8, "CellsPerBlock":2}}
+    		{"SpatialBinning":{"Space": "RGB", "Size": [16,16], "Channel": null}},
+    		{"HOGExtractor":{"Orientations": 8, "Space": "GRAY", "Size": [128, 128], "Channel": 0, "PixelsPerCell": 8, "CellsPerBlock":2}}
     	]
-    },
-    "VehicleLabeler": {
-    	"ToPlot": 1,
-		"Clusterer": {"HeatmapClustererImpl": {"min_samples_ratio": 3}}
     },
     "VehicleClusterer": {
 		"ToPlot": 1,
-		"Clusterer": {"HeatmapClustererImpl": {"min_samples_ratio": 3}}
+		"Clusterer": {"HeatmapClustererImpl": {"min_samples_ratio": 8}}
     },
     "VehicleTracker": {
     	"ToPlot": 1,
-    	"LookBackFrames": 9,
-		"Clusterer": {"HeatmapClustererImpl": {"min_samples_ratio": 8}}
+    	"LookBackFrames": 5,
+		"Clusterer": {"ManhattanDBSCANClustererImpl": {"min_samples_ratio": 4, "cluster_range_ratio": 0.05}}
     },
     "VehicleMarker": {
 		"ToPlot": 1

@@ -84,28 +84,25 @@ class Illustrator(object):
         else:
             self.__canvas__ = ImageCanvas()
         
-    def nextframe(self):
-        return Frame(self.__canvas__)
+    def nextframe(self, framenum):
+        return Frame(self.__canvas__, framenum)
     
 class ImageCanvas(object):
     def __init__(self):
-        self.__counter__ = 0
-    
-    def redraw(self, sections):
-        self.__counter__ += 1
+        pass
+    def redraw(self, sections, framenum):
         print(".", end='', flush=True)
-        if self.__counter__ % 100 == 0:
-            print ("{}".format(self.__counter__))
+        if framenum % 100 == 0:
+            print ("{}".format(framenum))
 
 class PyplotCanvas(object):
     def __init__(self):
         self.__figure__ = None
         self.__axes__ = None
-        self.__counter__ = 0
         self.__figure_text__ = None
         self.__canvases__ = None
         
-    def redraw(self, sections):
+    def redraw(self, sections, framenum):
         # If there's only one section, split it into rows/cols:
         h,v = None, None
         if len(sections)==1:
@@ -169,25 +166,28 @@ class PyplotCanvas(object):
                 plt.ion()
                 self.__figure__.canvas.draw()
                 plt.pause(0.00001)
-            self.__figure_text__.set_text("Frame: {}".format(self.__counter__))
-        self.__counter__ += 1
+            self.__figure_text__.set_text("Frame: {}".format(framenum))
         print(".", end='', flush=True)
-        if self.__counter__ % 100 == 0:
-            print ("{}".format(self.__counter__))
+        if framenum % 100 == 0:
+            print ("{}".format(framenum))
     
 # A Frame represents state that is to be reflected in the current
 # pyplot frame. The actual plotting is performed by the Illustrator
 class Frame(object):
-    def __init__(self, illustrator):
+    def __init__(self, illustrator, framenum):
         self.__plotter__ = illustrator
         self.__sections__ = []
+        self.__framenum__ = framenum
     
     def add(self, plottable, index=-1):
         assert len(self.__sections__)>0, "Must invoke newsection() first before calling add()"
         self.__sections__[index].append(plottable)
+
+    def framenumber(self):
+        return self.__framenum__
     
     def newsection(self, name):
         self.__sections__.append([])
     
     def render(self):
-        self.__plotter__.redraw(self.__sections__)
+        self.__plotter__.redraw(self.__sections__, self.__framenum__)

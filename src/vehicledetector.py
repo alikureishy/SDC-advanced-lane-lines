@@ -30,7 +30,7 @@ def getallpathsunder(path):
     return cars
 
 def appendXYs(imagefiles, extractor, label, Xs, Ys):
-    print ("Extracting features for '{}'".format("Cars" if label == 1 else "Non-Cars"))
+    print ("'{}'".format("Cars" if label == 1 else "Non-Cars"))
     for idx, file in enumerate(imagefiles):
         image = imread(file) # Change to skimage.io.imread() to get pixel values within [0,255]
 #         image = np.array(PIL.Image.open(file))
@@ -52,6 +52,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', dest='configfile',    required=True, type=str, help='Path to configuration file (.json).')
     parser.add_argument('-f', dest='outputfile',   required=True, type=str, help='File to store trainer parameters for later use')
     parser.add_argument('-t', dest='testratio', default=0.10, type=float, help='% of training data held aside for testing.')
+    parser.add_argument('-to', dest='testonly', action='store_true', help='Whether to skip training and just test (default: false).')
     parser.add_argument('-d', dest='dry', action='store_true', help='Dry run. Will not save anything to disk (default: false).')
     parser.add_argument('-o', dest='overwrite', action='store_true', help='Will save over existing file on disk (default: false).')
     args = parser.parse_args()
@@ -72,25 +73,25 @@ if __name__ == '__main__':
     combiner = buildextractor(extractorsequence)
 
     # Prepare feature vectors:
-    print ("Extracting features...")
-    Xs, Ys = [], []
-    appendXYs(cars, combiner, CAR_FLAG, Xs, Ys)
-    appendXYs(notcars, combiner, NOTCAR_FLAG, Xs, Ys)
+    print ("Extracting features for...")
+    Xs_cars, Xs_non_cars, Ys_cars , Ys_non_cars= [], [], [], []
+    appendXYs(cars, combiner, CAR_FLAG, Xs_cars, Ys_cars)
+    appendXYs(notcars, combiner, NOTCAR_FLAG, Xs_non_cars, Ys_non_cars)
+    Xs, Ys = Xs_cars + Xs_non_cars, Ys_cars + Ys_non_cars
     Xs = np.array(Xs, dtype=np.float64)
     print ("\tFeatures shape: {}".format(Xs.shape))
 
     # Prepare data:
-    # - Normalize, shuffle and split:
-#     print ("Preparing data")
-#     X_scaler = StandardScaler().fit(Xs)
-#     scaled_Xs = X_scaler.transform(Xs)
-#     scaled_Xs, Ys = shuffle(scaled_Xs, Ys, random_state=rand_state)
-    rand_state = np.random.randint(0, 100)
-    X_train, X_test, Y_train, Y_test = train_test_split(Xs, Ys, test_size=args.testratio, random_state=rand_state)
+    if not args.testonly:
+        # - Shuffle and split:
+        rand_state = np.random.randint(0, 100)
+        X_train, X_test, Y_train, Y_test = train_test_split(Xs, Ys, test_size=args.testratio, random_state=rand_state)
+    else:
+        X_train, X_test, Y_train, Y_test = None, Xs, None, Ys
 
     # If the SVM was not already trained:
     classifier = None
-    if args.overwrite is True or not os.path.isfile(args.outputfile):
+    if not args.testonly and (args.overwrite is True or not os.path.isfile(args.outputfile)):
         print ("Training the SVC...")
 #         classifier = MLPClassifier()
         classifier = LinearSVC()
@@ -98,19 +99,25 @@ if __name__ == '__main__':
         classifier.fit(X_train, Y_train)
         t2 = time.time()
         print(t2-t, 'Seconds to train SVC...')
+    elif args.testonly and not os.path.isfile(args.outputfile):
+        raise ("Cannot run test if classifier cannot be loaded: {}".format(args.outputfile))
     else:
         args.dry = True
         print ("SVC already trained. Reading from previous version.")
         classifier = joblib.load(args.outputfile)
 
-    print('Train Accuracy of SVC = ', classifier.score(X_train, Y_train))
+    if not args.testonly:
+        print('Train Accuracy of SVC = ', classifier.score(X_train, Y_train))
     print('Test Accuracy of SVC = ', classifier.score(X_test, Y_test))
+    print('Accuracy of SVC for all cars=', classifier.score(Xs_cars, Ys_cars))
+    print('Accuracy of SVC for all non-cars=', classifier.score(Xs_non_cars, Ys_non_cars))
+    sample = X_test[0].reshape(1, -1)
     t= time.time()
-    prediction = classifier.predict(X_test[0].reshape(1, -1))
+    prediction = classifier.predict(sample)
     t2 = time.time()
     print(t2-t, 'Seconds to predict with SVC')
 
-    if not args.dry or args.overwrite is True:
+    if not args.testonly and (not args.dry or args.overwrite):
         print ("Saving classifier to file: {}".format(args.outputfile))
         joblib.dump(classifier, args.outputfile)
 

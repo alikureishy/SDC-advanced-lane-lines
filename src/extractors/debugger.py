@@ -15,7 +15,7 @@ from matplotlib import pyplot as plt
 import argparse
 import json
 from sklearn.preprocessing import StandardScaler
-from operations.vehiclefinder import VehicleFinder
+from operations.vehicledetection.vehiclefinder import VehicleFinder
 from extractors.helper import getextractors
 from extractors.hogextractor import HogExtractor
 from extractors.spatialbinner import SpatialBinner
@@ -67,16 +67,16 @@ if __name__ == '__main__':
         for (extractor,config) in zip(extractors, extractorsequence):
             if type(extractor) is HogExtractor:
                 car_features, car_hogimage = extractor.extract(car, visualize=True)
-                frame.add(Image("{}".format(config), car_hogimage, None), index=0)
-                frame.add(Graph("{}".format(config), None, car_features, None, None), index=0)
+                frame.add(Image("Hog Image", car_hogimage, None), index=0)
+                frame.add(Graph("Hog Vector", None, car_features, None, None), index=0)
                 notcar_features, notcar_hogimage = extractor.extract(notcar, visualize=True)
-                frame.add(Image("{}".format(config), notcar_hogimage, None), index=1)
-                frame.add(Graph("{}".format(config), None, notcar_features, None, None), index=1)
+                frame.add(Image("Hog Image", notcar_hogimage, None), index=1)
+                frame.add(Graph("Hog Vector", None, notcar_features, None, None), index=1)
             elif type(extractor) is SpatialBinner or type(extractor) is ColorHistogram:
                 car_features = extractor.extract(car)
-                frame.add(Graph("{}".format(config), None, car_features, None, None), index=0)
+                frame.add(Graph("{}".format(extractor.__class__.__name__), None, car_features, None, None), index=0)
                 notcar_features = extractor.extract(notcar)
-                frame.add(Graph("{}".format(config), None, notcar_features, None, None), index=1)
+                frame.add(Graph("{}".format(extractor.__class__.__name__), None, notcar_features, None, None), index=1)
             else:
                 raise "Debugger is not aware of the extractor type: {}".format(extractor)
             car_bin.append(car_features)
