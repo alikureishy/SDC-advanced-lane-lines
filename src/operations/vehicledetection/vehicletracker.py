@@ -88,12 +88,12 @@ class VehicleTracker(Operation):
                                 historicalview, 
                                 None))
             
-            mergedview = np.copy(latest)
-            tracked_vehicles = self.__vehicles__
-            for vehicle in tracked_vehicles:
-                (x1,x2,y1,y2) = vehicle.boundary()
-                cv2.rectangle(mergedview, (x1,y1), (x2,y2), self.TrackedWindowColor, 6)
-            self.__plot__(frame, Image("Tracked Cars", mergedview, None))
+#             mergedview = np.copy(latest)
+#             tracked_vehicles = self.__vehicles__
+#             for vehicle in tracked_vehicles:
+#                 (x1,x2,y1,y2) = vehicle.boundary()
+#                 cv2.rectangle(mergedview, (x1,y1), (x2,y2), self.TrackedWindowColor, 6)
+#             self.__plot__(frame, Image("Tracked Cars", mergedview, None))
 
         return latest
         

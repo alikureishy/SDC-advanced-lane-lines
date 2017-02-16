@@ -4,4 +4,10 @@ __pycache__
 .project
 .pydevproject
 *.mp4
-data
+data/imgs
+data/cascade
+data/vids
+data/runs
+data/templs
+data/samples
+data/training/extra

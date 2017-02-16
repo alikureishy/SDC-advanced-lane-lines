@@ -22,17 +22,21 @@ class Box(object):
     def fromBoundary(upperleft, lowerright):
         x1,y1 = upperleft
         x2,y2 = lowerright
+        slope = (x2-x1) / (y2 - y1)
         center = (x1+x2)//2, (y1+y2)//2
         diagonal = Box.get_distance((x1,y2), (x2,y2))
-        return Box(center, diagonal)
+        return Box(center, diagonal, slope=slope)
         
-    def __init__(self, center, diagonal, bounds=None):
+    def __init__(self, center, diagonal, slope=1.0, bounds=None):
         assert  (center is not None and diagonal is not None), "Invalid input"
         self.__center__ = center
         self.__diagonal__ = diagonal
+        self.__slope__ = slope
         (cx, cy) = self.__center__
-        s = int(math.sqrt(((self.__diagonal__ ** 2) / 2)))
-        leftx, rightx, topy, bottomy = cx - (s // 2), cx + (s // 2), cy - (s // 2), cy + (s // 2)
+        radius = int(math.sqrt(((self.__diagonal__ ** 2) / 2))) // 2
+        dx = int(radius * self.__slope__)
+        dy = int(radius / self.__slope__)
+        leftx, rightx, topy, bottomy = cx - dx, cx + dx, cy - dy, cy + dy
         if bounds is not None:
             xrange, yrange=bounds[0], bounds[1]
             if leftx < xrange[0]:
@@ -54,26 +58,25 @@ class Box(object):
         return self.__center__
     def score(self):
         return self.__score__
+    def slope(self):
+        return self.__slope__
     def diagonal(self):
         return self.__diagonal__
     def boundary(self):
         return self.__boundary__
-    @staticmethod
-    def cluster(boxes):
-        return [[]] # Returns a list (rows) of lists (columns). Each row represents one cluster of boxes. 
 
 class Candidate(Box):
     @staticmethod
-    def create(center, diagonal, score):
-        return Candidate(center, diagonal, score)
-    def __init__(self, center, diagonal, score):
+    def create(center, diagonal, score, slope=1.0):
+        return Candidate(center, diagonal, score, slope=slope)
+    def __init__(self, center, diagonal, score, slope=1.0):
         assert  (center is not None and score is not None and diagonal is not None), "Invalid input"
-        Box.__init__(self, center, diagonal)
+        Box.__init__(self, center, diagonal, slope=slope)
         self.__score__ = score
     def score(self):
         return self.__score__
     def nparray(self):
-        return np.array([*self.center(), self.diagonal(), self.score()], dtype=np.int32)
+        return np.array([*self.center(), self.diagonal(), self.score(), self.slope(), *self.boundary()], dtype=np.int32)
     @staticmethod
     def merge(candidates):
         if len(candidates) == 0:
@@ -83,13 +86,20 @@ class Candidate(Box):
         else:
             asarray = np.array([x.nparray() for x in candidates])
             # Center is the centroid of the candidates' centers:
-            center = np.average(asarray[:,0:2], weights=asarray[:,2], axis=0).astype(np.int32)
+            center = np.average(asarray[:,0:2], weights=asarray[:,3], axis=0).astype(np.int32)
             # Instead of being the average, perhaps consider different options. Like
             # the 3*Sigma of the candidates' diagonals?
-            diagonal = np.average(asarray[:,2], weights=asarray[:,2], axis=0).astype(np.int32)
+#             diagonal = 5*np.std(asarray[:,2], axis=0).astype(np.int32)
             # Score could perhaps also be the 3*Sigma.
             score = np.average(asarray[:,3], axis=0).astype(np.int32) # Only simple average for score
-            mergedcandidate = Candidate(center, diagonal, score)
+#             slope = np.average(asarray[:,4], weights=asarray[:,2], axis=0)
+            minx = np.average(asarray[:,5], axis=0).astype(np.int32) - 1*np.std(asarray[:,5], axis=0).astype(np.int32)
+            maxx = np.average(asarray[:,6], axis=0).astype(np.int32) + 1*np.std(asarray[:,6], axis=0).astype(np.int32)
+            miny = np.average(asarray[:,7], axis=0).astype(np.int32) - 1*np.std(asarray[:,7], axis=0).astype(np.int32)
+            maxy = np.average(asarray[:,8], axis=0).astype(np.int32) + 1*np.std(asarray[:,8], axis=0).astype(np.int32)
+            diagonal = int(sqrt ((maxx-minx)**2 + (maxy-miny)**2))
+            slope = (maxx - minx) / -(maxy - miny)
+            mergedcandidate = Candidate(center, diagonal, score, slope=slope)
             mergedcandidate.__merged__ = True
             return mergedcandidate
 

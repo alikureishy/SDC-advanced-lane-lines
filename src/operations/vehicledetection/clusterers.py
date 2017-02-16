@@ -7,7 +7,7 @@ Created on Feb 3, 2017
 import numpy as np
 from scipy.ndimage.measurements import label
 from sklearn.preprocessing import normalize
-from operations.vehicledetection.entities import Candidate, Box
+from operations.vehicledetection.entities import Candidate
 from sklearn.cluster import DBSCAN
 import math
 from math import sqrt
@@ -101,7 +101,7 @@ class ManhattanDBSCANClustererImpl(DBSCANClustererImpl):
             scores = (np.array(normalize([scores])*10, dtype=np.uint8)+1)[0] # Convert to 1-11 range.
             minsamples = max([1, self.__min_samples__, len(candidates) * self.__min_samples_ratio__])
             dbscan = DBSCAN(eps=self.__cluster_range__, min_samples=minsamples)
-            clusterer = dbscan.fit(centers, sample_weight=scores)
+            clusterer = dbscan.fit(centers)
             labels = clusterer.labels_
             
             # Collect the boundary numbers in each cluster:
@@ -153,9 +153,11 @@ class PerspectiveDBSCANClustererImpl(DBSCANClustererImpl):
             distancemaxtrix = self.__get_distance_matrix__(candidates)
             minsamples = max([1, self.__min_samples__, len(candidates) * self.__min_samples_ratio__])
             dbscan = DBSCAN(eps=self.__cluster_range__, metric='precomputed', min_samples=minsamples)
-            clusterer_distance_matrix = dbscan.fit(distancemaxtrix, sample_weight=scores)
+            clusterer_distance_matrix = dbscan.fit(distancemaxtrix)
             labels_distance_matrix = clusterer_distance_matrix.labels_
             
+            if len(labels_distance_matrix) > minsamples:
+                print ("Aha...")
             # Collect the boundary numbers in each cluster:
             clusters = {}
             for i,label in enumerate(labels_distance_matrix):

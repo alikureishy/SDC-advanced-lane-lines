@@ -23,6 +23,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', dest='configs',   required=True, nargs='*', type=str, help="Configuration files.")
     parser.add_argument('-s', dest='selector', type=int, help='Short circuit the pipeline to perform only specified # of operations.')
     parser.add_argument('-x', dest='speed', type=int, default=1, help='Speed (1 ,2, 3 etc) interpreted as 1x, 2x, 3x etc)')
+    parser.add_argument('-r', dest='range', nargs='*', type=int, default=None, help='Range of frames to process (default: None)')
     parser.add_argument('-d', dest='dry', action='store_true', help='Dry run. Will not save anything to disk (default: false).')
     parser.add_argument('-p', dest='plot', action='store_true', help='Plot all illustrations marked as \'ToPlot\' in the config. (default: false).')
     args = parser.parse_args()
@@ -56,12 +57,13 @@ if __name__ == '__main__':
     framecount = 0
     for image in streamer.iterator():
         if framecount % args.speed == 0:
-            frame = illustrator.nextframe()
-            for (name, pipeline) in pipelines:
-                frame.newsection(name)
-                processed = pipeline.execute(image, frame)
-                streamer.write(processed)
-            frame.render()
+            if args.range is None or framecount in range(*args.range):
+                frame = illustrator.nextframe(framecount)
+                for (name, pipeline) in pipelines:
+                    frame.newsection(name)
+                    processed = pipeline.execute(image, frame)
+                    streamer.write(processed)
+                frame.render()
         framecount+=1
     
 #     cv2.waitKey()

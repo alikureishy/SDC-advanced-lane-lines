@@ -26,6 +26,8 @@ class VehicleFinder(Operation):
         FrameRange = 'FrameRange'
         Frames = 'Frames'
         LogFolder = 'LogFolder'
+        HitsXRange = 'HitsXRange'
+        MissesXRange = 'MissesXRange'
     class SlidingWindow(object):
         DepthRangeRatio = 'DepthRangeRatio'
         CenterShiftRatio = 'CenterShiftRatio'
@@ -54,6 +56,10 @@ class VehicleFinder(Operation):
         self.__misses_folder__ = os.path.join(self.__log_folder__, 'Misses')
         self.__frames_to_log__ = loggingcfg[self.Logging.Frames]
         self.__frame_range_to_log__ = loggingcfg[self.Logging.FrameRange]
+        self.__hits_x_range_to_log__ = loggingcfg[self.Logging.HitsXRange]
+        assert self.__hits_x_range_to_log__ is None or len(self.__hits_x_range_to_log__) == 2
+        self.__misses_x_range_to_log__ = loggingcfg[self.Logging.MissesXRange]
+        assert self.__misses_x_range_to_log__ is None or len(self.__misses_x_range_to_log__) == 2
         
         if self.__is_logging_hits__:
             if not os.path.isdir(self.__hits_folder__):
@@ -67,7 +73,6 @@ class VehicleFinder(Operation):
         self.__feature_extractor__ = buildextractor(extractorsequence)
         
         self.__frame_candidates__ = None
-        self.__frame_counter__ = 0
 
     def islogginghits(self):
         return self.__is_logging_hits__==1
@@ -75,16 +80,28 @@ class VehicleFinder(Operation):
     def isloggingmisses(self):
         return self.__is_logging_misses__==1
 
-    def isframewithrange(self):
-        return self.__frame_counter__ in range(*self.__frame_range_to_log__) or \
-            self.__frame_counter__ in self.__frames_to_log__
+    def isframewithrange(self, frame):
+        return (self.__frame_range_to_log__ is None or frame.framenumber() in range(*self.__frame_range_to_log__)) and \
+               (self.__frames_to_log__ is None or frame.framenumber() in self.__frames_to_log__)
 
-    def log(self, folder, window, i, j):
-        if self.isframewithrange():
-            windowdumpfile = os.path.join(folder, "{:04d}_{:02d}_{:02d}.png".format(self.__frame_counter__, i, j))
+    def log(self, folder, window, i, j, frame):
+        if self.isframewithrange(frame):
+            windowdumpfile = os.path.join(folder, "{:04d}_{:02d}_{:02d}.png".format(frame.framenumber(), i, j))
             towrite = PIL.Image.fromarray(window)
             towrite.save(windowdumpfile)
 
+    def isWindowMissInRange(self, boundary):
+        (x1, x2, _, _) = boundary
+        if self.__misses_x_range_to_log__ is not None:
+            return x1 in range(*self.__misses_x_range_to_log__) and x2 in range(*self.__misses_x_range_to_log__)
+        return True
+
+    def isWindowHitInRange(self, boundary):
+        (x1, x2, _, _) = boundary
+        if self.__hits_x_range_to_log__ is not None:
+            return x1 in range(*self.__hits_x_range_to_log__) and x2 in range(*self.__hits_x_range_to_log__)
+        return True
+    
     def __processupstream__(self, original, latest, data, frame):
         x_dim, y_dim, xy_avg = latest.shape[1], latest.shape[0], int(mean(latest.shape[0:2]))
         slidingwindowconfig = self.getparam(self.SlidingWindow.__name__)
@@ -117,18 +134,18 @@ class VehicleFinder(Operation):
                 if label == 1 or label == [1]:
                     if score is None or score > self.__continuity_threshold__:
                         strong_candidates.append(Candidate(box.center(), box.diagonal(), score))
-                        if self.islogginghits():
-                            self.log(self.__hits_folder__, snapshot, i, j)
+                        if self.islogginghits() and self.isWindowHitInRange(box.boundary()):
+                            self.log(self.__hits_folder__, snapshot, i, j, frame)
                     else:
                         weak_candidates.append(Candidate(box.center(), box.diagonal(), score))
                 else:
-                    if self.isloggingmisses():
-                        self.log(self.__misses_folder__, snapshot, i, j)
+                    if self.isloggingmisses() and self.isWindowMissInRange(box.boundary()):
+                        self.log(self.__misses_folder__, snapshot, i, j, frame)
         self.__frame_candidates__ = strong_candidates
         self.setdata(data, self.FrameCandidates, self.__frame_candidates__)
         
-        if self.islogginghits() or self.isloggingmisses():
-            imagedumpfile = os.path.join(self.__log_folder__, "{:04d}.png".format(self.__frame_counter__))
+        if (self.islogginghits() or self.isloggingmisses()) and self.isframewithrange(frame):
+            imagedumpfile = os.path.join(self.__log_folder__, "{:04d}.png".format(frame.framenumber()))
             towrite = PIL.Image.fromarray(latest)
             towrite.save(imagedumpfile)
 
@@ -178,7 +195,6 @@ class VehicleFinder(Operation):
 #                     cv2.putText(cons,"{}".format(weight), (x1,y1), cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, self.StrongWindowColor, 1)
 #             self.__plot__(frame, Image("Grouped", cons, None))
             
-        self.__frame_counter__+=1
         return latest
 
     def generatewindows(self, cfg, x_dim, y_dim, xy_avg):

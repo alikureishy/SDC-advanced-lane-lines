@@ -15,7 +15,6 @@ from operations.vehicledetection.vehiclefinder import VehicleFinder
 from operations.vehicledetection.vehicleclusterer import VehicleClusterer
 from operations.vehicledetection.vehicletracker import VehicleTracker
 from operations.vehicledetection.vehiclemarker import VehicleMarker
-from operations.vehicledetection.vehiclelabeler import VehicleLabeler
 
 PipelineSection = 'Pipeline'
 # from operations import *
@@ -48,8 +47,6 @@ class Pipeline(object):
             return Undistorter(config)
         elif name == VehicleFinder.__name__:
             return VehicleFinder(config)
-        elif name == VehicleLabeler.__name__:
-            return VehicleLabeler(config)
         elif name == VehicleClusterer.__name__:
             return VehicleClusterer(config)
         elif name == VehicleTracker.__name__:
