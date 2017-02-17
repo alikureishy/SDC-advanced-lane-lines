@@ -16,6 +16,8 @@
 [VehicleTracker-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration15.png "Vehicle Tracker Illustration"
 [VehicleMarker-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration16.png "Vehicle Marker Illustration"
 [PerspectiveProblem-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration17.png "Perspective Problem Illustration"
+[FeatureExplorer-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration18.png "Feature Explorer - Illustration"
+
 <!--
 [![Mapped Lane][MappedLane]](https://youtu.be/jzAWMtA1zX8 "Click to see video on youtube")
 -->
@@ -285,13 +287,26 @@ This handler has a few sub-components, as can be seen in the following configura
 }
 ```
 
-*Sliding Window Search*
+*Sliding Window Search*:
+
 This sub-component scans the input image for vehicles by invoking the vehicle classifer on the features extracted from each of the sub-windows of different sizes across the searchable area of the image. The features to be extracted are also configurable (see 'Feature Extraction' sub-component below). The search region is configurable (as can be seen by the 'SlidingWindow' settings), but can be safely limited to the lower half of the image, considering a regular dashboard mounted camera. The collection of all positive detections (called 'boxes') are then passed upstream to the subsequent handler (the 'Vehicle Clusterer') in the pipeline, for clustering. There is a 'ConfidenceThreshold' setting here which allows low confidence detections (as per the output from the SVC) to be filterd out of this list of detections.
 
-*Feature Extraction*
+*Feature Extraction*:
+
 This sub-component is configured with a configurable list of extractors that each sub-window is to be passed through before classification as a vehicle or non-vehicle. The same configuration is (by design) also used by the trainer.py utility discussed above, when training the classifier, so that the same features are being extracted for both training and classification.
 
-*Logging*
+Notice here, based on the above configuration, that there are two features being extracted from each image:
+* Spatial binning for the RGB color space, generated after resizing the input image into a 16x16 image
+* HOG features
+
+Below is an illustration of exactly how those features help to distinguish between vehicle/non-vehicle entities. This illustration was obtained by the debugger.py utility (Feature Engineering Explorer) listed in the 'Execution' section of this document.
+
+![FeatureExplorer-Illustration]
+
+The upper row shows the car input image, and the sequence of features extracted from it. The second row shows the same for a non-car input image. The 2nd column is the spatial binning feature vector discussed above. The 3rd column is the HOG visualization. The 4th column is the HOG feature vector for the same (plotted as-is). The 5th (final) column is the combined (normalized) feature vector generated from the input image in each row.
+
+*Logging*:
+
 This last sub-component is only useful for data generation, to prune the training data used to better train the classifier. It is not enabled during the actual use of the utility. The way it works is to log each sub-window based on whether hits or misses (or both) are being logged, and puts them into corresponding folders -- called 'Hits' or 'Misses' -- nested under a folder dedicated to the given run of the utility. Each run generates a new such folder, with its corresponding 'Hits' and 'Misses' folders containing the relevant images obtained through the video. These folders, understandably, can be rather large, depending on the number of hits. Typically however, it is the misses that contribute the most images to a run. To reduce not just the overhead of saving such files to disk, but also the hassle of sifting through so many files for gathering training data, there are additional settings to prune the misses (and hits) based on bounding coordinates for the sub-window concerned. There are also settings to restrict the logging to specific frame numbers, or a range of frames. This utility is invaluable during the training phase of the vehicle classifier. However, it is to be used with restraint, in order to avoid overfitting the data to the given input video.
 
 It should be noted that beyond confidence-based filtering discussed above, this handler does not deal with elimination of false positives, which will almost certainly exist in the list of detections it outputs to the subsequent upstream handler. The removal of these false positives occurs through a combination of clustering, filtering and merging techniques employed in the subsequent upstream handlers -- the 'Vehicle Clusterer' and the 'Vehicle Tracker'.
