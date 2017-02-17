@@ -15,7 +15,7 @@
 [VehicleClusterer-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration14.png "Vehicle Clusterer Illustration"
 [VehicleTracker-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration15.png "Vehicle Tracker Illustration"
 [VehicleMarker-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration16.png "Vehicle Marker Illustration"
-
+[PerspectiveProblem-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration17.png "Perspective Problem Illustration"
 <!--
 [![Mapped Lane][MappedLane]](https://youtu.be/jzAWMtA1zX8 "Click to see video on youtube")
 -->
@@ -355,14 +355,14 @@ DBSCAN-based clustering has the advantage of combining detections that do not ha
 
 The disadvantage of DBSCAN-based clustering is that it can generate clusters that do not accurately reflect the span of the vehicle whose detections were clustered. It is then upto the merge algorithm to appropriately merge these clustered detections. It can be viewed as a logical 'OR' operation being applied to the participating detection regions.
 
-####### ManhattanDBSCANClustererImpl
+####### EuclidianDBSCANClustererImpl
 
-DBSCAN employed without a custom distance matrix. In other words, this is a regular DBSCAN clustering invocation, using the default manhattan-distance distane metric under the cover. It is ignorant of perspective depth, and treats distances between box centers closer in the perspective in the same way as those further out in the perspective depth, even though the 'real' distances between those latter centers would be significantly greater than those of the former.
+DBSCAN employed without a custom distance matrix. In other words, this is a regular DBSCAN clustering invocation, using the default euclidian-distance distane metric under the cover. It is ignorant of perspective depth, and treats distances between box centers closer in the perspective in the same way as those further out in the perspective depth, even though the 'real' distances between those latter centers would be significantly greater than those of the former.
 
 However, this mechanism is simple, and less error-prone than one using a perspective-based distance metric, and is therefore the one that is used in this project.
 
 ```
-	{"ManhattanDBSCANClustererImpl": {"min_samples_ratio": 4, "cluster_range_ratio": 0.05}}
+	{"EuclidianDBSCANClustererImpl": {"min_samples_ratio": 4, "cluster_range_ratio": 0.05}}
 ```
 
 ####### PrespectiveDBSCAClustererImpl
@@ -385,26 +385,30 @@ It not only achieves a smoothing of the final vehicle detection, but also achiev
 "VehicleTracker": {
     	"ToPlot": 0,
     	"LookBackFrames": 5,
-	"Clusterer": {"ManhattanDBSCANClustererImpl": {"min_samples_ratio": 4, "cluster_range_ratio": 0.05}}
+	"Clusterer": {"EuclidianDBSCANClustererImpl": {"min_samples_ratio": 4, "cluster_range_ratio": 0.05}}
 }
 ```
 
-Note that the clustering mechanism used here is the 'ManhattanDBSCANClustererImpl' (discussed in previous section). This is an appropriate mechanism to use since the previous handler's heatmap-based clustering would have generated a high probability detection.
+Note that the clustering mechanism used here is the 'EuclidianDBSCANClustererImpl' (discussed in previous section). This is an appropriate mechanism to use since the previous handler's heatmap-based clustering would have generated a high probability detection.
 
 Given an input video of a reasonably high FPS value, it is likely that a 'LookBackFrames' setting of several frames would achieve a near accurate span of the object. A value that is too high would however generate detections that are wider than the actual vehicle, while a value that is too small would be jittery and would also not eliminate sufficient false positives collected over the configured period. The min_samples_ratio setting is important when eliminating false positives, for any given 'LookBackFrames' setting value and should necessarily be less than the latter, but not too low either. A gap of 1-2 samples achieves a sufficiently high-quality detection (as depicted in the configuration above).
 
+Here is an illustration of the tempero-spatial clustering (last window -- bottom right) that is occurring due to the output from the 'Vehicle Clusterer'. The final result of that tempero-spatial clustering is not shown here but will be shown on the next illustration:
 ![VehicleTracker-Illustration]
+
+...and as promised, here at the bottom right is the final output of the tempero-spatial clustering. Note how the configuration settings above -- namely the 'LookBackFrames' and 'min_samples_ratio' settings above are taking effect:
+![VehicleMarker-Illustration]
+(The lower right window illustrated here is actually created by the 'Vehicle Marker', but the data for it is produced by the 'Vehicle Tracker' and is therefore being illustrated here).
 
 #### Vehicle Marker
 
-This is a downstream processor that draws the bounding boxes for detected->clustered->tracked vehicles to the final processed image. It kicks in on the unwind of the stack of pipeline handlers. The bounding data in this case is generated by the 'Vehicle Tracker' component that kicks in during upstream processing of the pipeline, whose output is available to this processor on the unwind.
+This is the downstream processor that actually draws the bounding boxes for detected->clustered->tracked vehicles to the final processed image, which has already been illustrated above. This is the component responsible for the final vehicle detection boxes that are seen in the output video. It kicks in on the unwind of the stack of pipeline handlers. The bounding data in this case is generated by the 'Vehicle Tracker' component that kicks in during upstream processing of the pipeline, whose output is available to this processor on the unwind.
 
 ```
 "VehicleMarker": {
 	"ToPlot": 0
 }
 ```
-![VehicleMarker-Illustration]
 
 ### Lane Finding Handlers
 
@@ -626,11 +630,22 @@ Areas where this project could improve are discussed below, outlining scenarios 
 
 #### Vehicle Detection Scenarios
 
-##### A
+##### Perspective-based clustering algorithm
 
-##### B
+Presently, there are two functional clustering algorithms being utilized -- heatmap clustering and DBSCAN. DBSCAN by default uses euclidian distance for calculating distance between two centers. A perspective based approach would achieve better clustering performance, since the distance of objects further down in the perspective is not the same as the straightforward euclidian distance between the points in the pixel-space. There would be a multiplicative effect of any difference in relative perspective position between two centers, and if taht is captured accurately, it would achieve more accurate differentiation between cars further down the road. At present, detections of cars further down the road get clumped together. The solution to this is not trivial, even though a very rough implementation has been attempted. However, the implementation leaves room for improvement, which I have not had the time to devote yet. It remains on my list of things to improve down the road.
 
-##### C
+Here is an illustration of the same. Note how the two cars further down the road are perceived as one, and combined.
+![PerspectiveProblem-Illustration]
+
+A solution to this perspective problem would also help make the system more robust towards detections of smaller cars near the horizon.
+
+##### Additional Statistics
+
+An extention to the perspective problem above is a general awareness of the distance between the camera and other cars in the image. Therefore, a solution to this problem would also allow the system to determine the actual distance to each detected vehicle in the image. This information could be displayed alongside each detected vehicle, and would also help determine the manouvering undertaken by the car to avoid the same. This distance could also be used to change the color of the car to a different color to show when a car is closer to the camera than a particular threshold.
+
+Furthermore, additional statistics could also be obtained by performing more detailed 'tracking' of the moving cars, perhaps using Kalman filters (or similar) in order to predict the directional speed of each such vehicle.
+
+This is a broad area of improvement.
 
 #### Lane Finding Scenarios
 
@@ -662,7 +677,7 @@ Another alternative, instead of shortening the perpspective, is to use a higher 
 
 Presently, a static window is used to determine the bounds of the points used to detect a histogram peak, relative to the location of the peak in the slice right below the present slice, or the peak in the subsequent slice of the previous frame. Though these approaches allow a more efficient scan, it is possible to get stuck looking for a lane close to an erroneous lane or peak that was previously detected. To avoid this, it might be beneficial to increase the window size proportional to the confidence of the previously detected lane, or the confidence of the peaks obtained in the slices below. The lower the confidence, the larger the window becomes, upto a maximum size of the search region itself. The higher the confidence, the smaller the window gets, upto a minimum of the configured window size.
 
-### Open Defects
+### Open Issues
 
 I will get to these when time permits. Until then, am calling them out here. Please see the 'Issues' section of this github repository for further details.
 
