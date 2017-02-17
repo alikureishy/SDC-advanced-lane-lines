@@ -264,9 +264,9 @@ This sub-component scans the input image for vehicles by invoking the vehicle cl
 This sub-component is configured with a configurable list of extractors that each sub-window is to be passed through before classification as a vehicle or non-vehicle. The same configuration is (by design) also used by the trainer.py utility discussed above, when training the classifier, so that the same features are being extracted for both training and classification.
 
 *Logging*
-This last sub-component is only useful for data generation, to prune the training data used to better train the classifier. It is not enabled during the actual use of the utility. The way it works is to log each sub-window based on whether hits or misses (or both) are being logged, and puts them into corresponding folders -- called 'Hits' or 'Misses' -- nested under a folder dedicated to the given run of the utility. Each run generates a new such folder, with its corresponding 'Hits' and 'Misses' folders containing the relevant images obtained through the video. These folders, understandably, can be rather large, depending on the number of hits. Typically however, it is the misses that contribute the most images to a run. To reduce not just the overhead of saving such files to disk, but also the hassle of sifting through so many files for gathering training data, there are additional settings to prune the misses (and hits) based on bounding coordinates for the sub-window concerned. There are also settings to restrict the logging to specific frame numbers, or a range of frames. This utility is invaluable during the training phase of the vehicle classifier. However, it is to be used cautiously, in order to avoid overfitting the data to the given input video.
+This last sub-component is only useful for data generation, to prune the training data used to better train the classifier. It is not enabled during the actual use of the utility. The way it works is to log each sub-window based on whether hits or misses (or both) are being logged, and puts them into corresponding folders -- called 'Hits' or 'Misses' -- nested under a folder dedicated to the given run of the utility. Each run generates a new such folder, with its corresponding 'Hits' and 'Misses' folders containing the relevant images obtained through the video. These folders, understandably, can be rather large, depending on the number of hits. Typically however, it is the misses that contribute the most images to a run. To reduce not just the overhead of saving such files to disk, but also the hassle of sifting through so many files for gathering training data, there are additional settings to prune the misses (and hits) based on bounding coordinates for the sub-window concerned. There are also settings to restrict the logging to specific frame numbers, or a range of frames. This utility is invaluable during the training phase of the vehicle classifier. However, it is to be used with restraint, in order to avoid overfitting the data to the given input video.
 
-It should be noted that beyond confidence-based filtering discussed above, this handler does not deal with elimination of false positives, which will almost certainly exist in the list it outputs to the subsequent upstream handler. The removal of these false positives occurs through a combination of clustering, filtering and merging techniques employed in the subsequent upstream handlers -- the 'Vehicle Clusterer' and the 'Vehicle Tracker'.
+It should be noted that beyond confidence-based filtering discussed above, this handler does not deal with elimination of false positives, which will almost certainly exist in the list of detections it outputs to the subsequent upstream handler. The removal of these false positives occurs through a combination of clustering, filtering and merging techniques employed in the subsequent upstream handlers -- the 'Vehicle Clusterer' and the 'Vehicle Tracker'.
 
 The data representing each vehicle detection comprises of:
 - Center coordinates
@@ -306,6 +306,12 @@ The data representing each vehicle detection comprises of:
 
 #### Vehicle Clusterer
 
+This handler processes a list of detections obtained from the 'Vehicle Finder' handler. It's role is to cluster (including filtering) and then merge those detections into single detections of cars across the image. Though lower than the 'Vehicle Finder', this stage also has a likeyhood of false positives emerging out of the clustering. However, these occurrences will be far fewer.
+
+This step can be summarized as *spatial clustering*, since clustering is performed only on the detections for the given frame (in 'space'). Spatial *and* temporal clustering is performed by the subsequent handler (the 'Vehicle Tracker'), which achieves an even more robust clustering, eliminating a far higher percentage of false positives.
+
+There is presently support for 3 types of clustering methods, one of which can be selected in the configuration below. Those implementations are discussed further below. The choice of the clustering method is specified via the 'Clusterer' setting in the configuration of this handler, as shown below. The sub params should be self explanatory.
+
 ```
 "VehicleClusterer": {
 	"ToPlot": 0,
@@ -314,6 +320,24 @@ The data representing each vehicle detection comprises of:
 ```
 
 ![VehicleClusterer-Illustration]
+
+##### Clustering Implementations
+
+Though these implementations are also used by the 'Vehicle Tracker' handler. This was an appropriate point in the document to introduce them.
+
+###### HeatmapClustererImpl
+
+A simple heatmap based clustering
+
+###### ManhattanDBSCANClustererImpl
+
+DBSCAN employed without a custom distance matrix. In other words, this is a regular DBSCAN clustering invocation, using the default manhattan-distance distane metric under the cover. It is ignorant of perspective depth, and treats distances between box centers closer in the perspective in the same way as those further out in the perspective depth, even though the 'real' distances between those latter centers would be significantly greater than those of the former.
+
+However, this mechanism is simple, and less error-prone than one using a perspective-based distance metric, and is therefore the one that is .
+
+###### PrespectiveDBSCAClustererImpl
+
+DBSCAN employed using a custom distance matrix generated based on perspective depth and box size to more accurately mimic actual distances between detections.
 
 #### Vehicle Tracker
 
