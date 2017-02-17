@@ -1,24 +1,20 @@
 {
     "Pipeline": [
-    	"StatsWriter",
+    	"ShowOriginal",
     	"Undistorter",
     	"VehicleFinder",
     	"VehicleClusterer",
     	"VehicleTracker",
-    	"VehicleMarker",
-    	"Thresholder",
-    	"PerspectiveTransformer",
-    	"LaneFinder",
-    	"LaneFiller"
+    	"VehicleMarker"
     ],
     "ShowOriginal": {
-		"ToPlot": 1
+		"ToPlot": 0
 	},
 	"StatsWriter": {
-		"ToPlot": 1
+		"ToPlot": 0
 	},
     "Undistorter": {
-		"ToPlot": 1,
+		"ToPlot": 0,
         "CalibrationFile": "config/calibration.pickle"
 	},
     "VehicleFinder": {
