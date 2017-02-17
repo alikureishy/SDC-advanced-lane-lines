@@ -24,7 +24,7 @@ import numpy as np
 
 if __name__ == '__main__':
     print ("###############################################")
-    print ("#          VEHICLE FEATURE EXPLORER           #")
+    print ("#              FEATURE EXPLORER               #")
     print ("###############################################")
 
     parser = argparse.ArgumentParser(description='Object Classifier')
