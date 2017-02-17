@@ -21,8 +21,8 @@ class ClustererFactory(object):
             clusterer = HeatmapClustererImpl(**config[flavor])
         elif flavor == PerspectiveDBSCANClustererImpl.__name__:
             clusterer = PerspectiveDBSCANClustererImpl(**config[flavor])
-        elif flavor == ManhattanDBSCANClustererImpl.__name__:
-            clusterer = ManhattanDBSCANClustererImpl(**config[flavor])
+        elif flavor == EuclidianDBSCANClustererImpl.__name__:
+            clusterer = EuclidianDBSCANClustererImpl(**config[flavor])
         else:
             raise "Clusterer not recognized: {}".format(flavor)
         return clusterer
@@ -84,7 +84,7 @@ class DBSCANClustererImpl(Clusterer):
         Clusterer.__init__(self, image_shape, min_samples_ratio)
         self.__cluster_range__ = cluster_range_ratio * np.average(image_shape)
     
-class ManhattanDBSCANClustererImpl(DBSCANClustererImpl):
+class EuclidianDBSCANClustererImpl(DBSCANClustererImpl):
     def __init__(self, image_shape, min_samples_ratio, cluster_range_ratio):
         DBSCANClustererImpl.__init__(self, image_shape, min_samples_ratio, cluster_range_ratio)
     @staticmethod

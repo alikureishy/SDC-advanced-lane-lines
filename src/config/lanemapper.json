@@ -1,20 +1,25 @@
 {
     "Pipeline": [
     	"ShowOriginal",
+    	"StatsWriter",
     	"Undistorter",
     	"VehicleFinder",
     	"VehicleClusterer",
     	"VehicleTracker",
-    	"VehicleMarker"
+    	"VehicleMarker",
+    	"Thresholder",
+    	"PerspectiveTransformer",
+    	"LaneFinder",
+    	"LaneFiller"
     ],
     "ShowOriginal": {
-		"ToPlot": 0
+		"ToPlot": 1
 	},
 	"StatsWriter": {
-		"ToPlot": 0
+		"ToPlot": 1
 	},
     "Undistorter": {
-		"ToPlot": 0,
+		"ToPlot": 1,
         "CalibrationFile": "config/calibration.pickle"
 	},
     "VehicleFinder": {
@@ -49,7 +54,7 @@
     "VehicleTracker": {
     	"ToPlot": 1,
     	"LookBackFrames": 5,
-		"Clusterer": {"ManhattanDBSCANClustererImpl": {"min_samples_ratio": 4, "cluster_range_ratio": 0.05}}
+		"Clusterer": {"EuclidianDBSCANClustererImpl": {"min_samples_ratio": 4, "cluster_range_ratio": 0.05}}
     },
     "VehicleMarker": {
 		"ToPlot": 1
@@ -62,12 +67,12 @@
     	},
 		"Term":
 		{
-			"ToPlot": 0,
+			"ToPlot": 1,
 			"Operator": "OR",
 			"Negate": 0,
 			"Operands": [
 				{
-					"ToPlot": 0,
+					"ToPlot": 1,
 					"Operator": "AND",
 					"Negate": 0,
 					"Operands": [
@@ -76,7 +81,7 @@
 				    ]
 				},
 				{
-					"ToPlot": 0,
+					"ToPlot": 1,
 					"Operator": "AND",
 					"Negate": 0,
 					"Operands": [
