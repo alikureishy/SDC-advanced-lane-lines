@@ -8,9 +8,9 @@
 [Thresholding2]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration7.png "Thresholding"
 [LaneFinder]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration8.png "Lane Finder Illustration"
 [LaneFinder2]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration9.png "Lane Finder Illustration"
-[VehicleDetector1]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration10.png "Vehicle Detection Green Lane"
-[VehicleDetector2]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration11.png "Vehicle Detection Red Lane"
-[HighLevel-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/master/docs/images/illustration12.png "High Level Illustration"
+[VehicleDetector1]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration10.png "Vehicle Detection Green Lane"
+[VehicleDetector2]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration11.png "Vehicle Detection Red Lane"
+[HighLevel-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration12.png "High Level Illustration"
 
 <!--
 [![Mapped Lane][MappedLane]](https://youtu.be/jzAWMtA1zX8 "Click to see video on youtube")
@@ -23,6 +23,23 @@
 
 This is a combination of project # 4 (Advanced Lane Finding) and # 5 (Vehicle Detection) of the Self Driving Car curriculum at Udacity. It was aimed at advanced lane detection and vehicle detection for a front-facing camera on the car. No additional sensor inputs were utilized for this project.
 
+The utility as it stands now, is built around a Chain of Responsibility design pattern wherein execution proceeds through a nested sequence of 'handlers', first in one direction, and then in the reverse direction (unwind). Each of the features above is supported by a collection of such handlers that will be discussed in further detail later in this document.
+
+I've tried to make the utility extensible and configurable. All configuration settings involving locations of points on images have been expressed as a fraction of the 2 (X and Y) dimenions. So, for such configurations, no changes are necessary when changing the input video frame size. A significant amount of time was spent building a 'framework' which could both support the needs of the project, and to allow for such configurability for the addition of subsequent such features. In as much as the parameters for this project were known to me, the implementation does a reasonably good job of providing for such configuragbility and further extensibility. However, a _lot_ still remains to be commented, cleaned up and refactored. Please bear this in mind during any inspection of the code base.
+
+The image above was produced by this utility by processing a sample frame of an input video.
+
+#### Vehicle Detection
+
+The steps for vehicle detection were the following:
+
+* Train a classifier to detect if an image is that of a vehicle
+* Utilize the classifier to detect cars in each frame by utilizing a sliding window search over the frame
+* Utilize clustering algorithms (spatial and temporal) to eliminate false positive car detections
+* Merge the clustered detections into single bounding boxes using various types of merging algorithms
+* Output the resultant bounding boxes around detected cars as they progress across the road on the screen
+
+#### Advanced Lane Finding
 The goals / steps of the advanced lane finding project were the following:
 
 * Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
@@ -33,18 +50,6 @@ The goals / steps of the advanced lane finding project were the following:
 * Determine curvature of the lane and vehicle position with respect to center.
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
-
-Similarly, the steps for vehicle detection were the following:
-
-* Train a classifier to detect if an image is that of a vehicle
-* Utilize the classifier to detect cars in each frame by utilizing a sliding window search over the frame
-* Utilize clustering algorithms (spatial and temporal) to eliminate false positive car detections
-* Merge the clustered detections into single bounding boxes using various types of merging algorithms
-* Output the resultant bounding boxes around detected cars as they progress across the road on the screen
-
-The utility as it stands now, is built around a Chain of Responsibility design pattern wherein execution proceeds through a nested sequence of 'handlers', first in one direction, and then in the reverse direction (unwind). Each of the features above is supported by a collection of such handlers that will be discussed in further detail later in this document.
-
-I've tried to make the utility extensible and configurable. All configuration settings involving locations of points on images have been expressed as a fraction of the 2 (X and Y) dimenions. So, for such configurations, no changes are necessary when changing the input video frame size. A significant amount of time was spent building a 'framework' which could support the needs of the project, and to allow for such configurability. In as much as the parameters for this project were known to me, the implementation does a reasonably good job of providing for such configuragbility and further extensibility. However, a _lot_ still remains to be commented, cleaned up and refactored. Please bear this in mind during any inspection of the code base.
 
 ### Installation
 
@@ -57,17 +62,15 @@ This is a python utility requiring the following libraries to be installed prior
 * matplotlib
 * scipy
 
-The image above was produced by this utility from a sample frame of an input video.
-
 ### Execution
 
-There are three utilities in this project. One is the Trainer (trainer.py) that is used to train the vehicle detection classifier, the second is the calibrator (calibrator.py) that is to be run as a preparatory step prior to running the third, which is the lane mapper (lanemapper.py) that processes the input video itself by running each frame through a pipeline of operations.
+There are four utilities in this project.
 
-#### Vehicle Detection Classification Trainer (Component of Project 5)
+#### Vehicle Detection Classification Trainer (trainer.py)
 
-The output of this utility run against a set of input images is a linear Support Vector Machine classifier whose parameters are stored in a file that can then be used to reload the classifier when processing the input video through lanemapper.py.
+This utility is used to train the vehicle detection classifier. The output of this utility when run against a labeled (car vs non-car) set of input images is a trained Support Vector Machine classifier whose parameters are stored in a file that can then be used for vehicle detection/classification when processing the input video through lanemapper.py (discussed later).
 
-The utility is in the file trainer.py. It is a command line utility, with a sample invocation as follows:
+It is a command line utility, with a sample invocation as follows:
 
 ```
 /Users/safdar/git/advanced-lane-detection/src> python3.5 trainer.py -v ../data/training/vehicles -n ../data/training/nonvehicles -f config/svm.dump -c config/lanemapper.json -t 0.15 -o
@@ -94,11 +97,35 @@ optional arguments:
   -d                Dry run. Will not save anything to disk (default: false).
   -o                Will save over existing file on disk (default: false).
   ```
-  
-Note the '-f' parameter because the value used here will need to be provided in the 'VehicleFinder' section of the configuration settings for the 'Lane Mapper' utility below. Please see the 'Implementation' section below for details.
 
+Note the '-f' parameter because the value used here will need to be provided in the 'VehicleFinder:ClassifierFile' setting for the 'Lane Mapper' utility configuration (discussed later in this document). Please see the 'Implementation' section below for details.
 
-#### Image Calibration (Component of Project 4)
+#### Feature Engineering Debugger (debugger.py)
+
+This utility is used to visualize the features being extracted from images when training the vehicle classifier. The output of this utility when run against a set of input images is a plot window with two sections, the upper one showing the picture of a car and the features extracted from it, and the lower one showing the picture of a non-car and same features extracted from it.
+
+It is a command line utility, with a sample invocation as follows:
+```
+/Users/safdar/git/advanced-lane-detection/src> python3.5 debugger.py 
+```
+
+Here's the help menu:
+```
+###############################################
+#          VEHICLE FEATURE EXPLORER           #
+###############################################
+usage: debugger.py [-h] -v VEHICLEDIR -n NONVEHICLEDIR -c CONFIGFILE
+
+Object Classifier
+
+optional arguments:
+  -h, --help        show this help message and exit
+  -v VEHICLEDIR     Path to folder containing vehicle images.
+  -n NONVEHICLEDIR  Path to folder containing non-vehicle images.
+  -c CONFIGFILE     Path to configuration file (.json).
+```
+
+#### Image Calibration (calibrator.py)
 
 The output of this utility run against a folder of images is stored in a file that is then used to undistort/redistort images during advanced lane detection. The utility is in the file calibrator.py. It is a command line utility, with a sample invocation as follows:
 
@@ -127,19 +154,15 @@ optional arguments:
 
 Note the '-o' parameter because the value used here will need to be provided in the 'Calibrator' section of the configuration settings for the 'Lane Mapper' utility below. Please see the 'Implementation' section below for details.
 
+#### Lane Mapper Utility (lanemapper.py)
 
-#### Lane Mapper Utility
+This is the main utility of this project, that loads the pipeline configuration from a configuration file and then reads in the input video, passing each frame of the video (subject to some filters) through the pipeline, and outputing the result of the pipeline into an output video, an example of which can be seen by following the YouTube link via the image at the top of this document.
 
-This utility is in the file lanemapper.py. It is also a command line utility, invoked as in the following example:
+This is also a command line utility, invoked as in the following example:
 
 ```
 /Users/safdar/git/advanced-lane-detection/src> python3.5 lanemapper.py -i ../project_video.mp4 -o ../sample_out.mp4 -c config/lanemapper.json -x 1 -p -r 100 400
 ```
-Note that the '-p' flag turns on the illustration (via a plot window) of various image transformations that each frame goes through; this plot window is updated for each frame that gets processed from the input video, providing an active illustration of the inner workings of various handlers in the utility. This is illustrated here:
-
-![High level transformation sequence][HighLevel-Illustration]
-
-Note: To switch off these illustrations, remove the '-p' flag. Removing the -p flag will also cause the utility to run a lot faster. Though using this flag slows down processing, it also provides insight into the working of the utility. The illustrations can also be individually toggled in the config file (src/config/lanemapper.json). To enable additional details of the image transformations, go to the lanemapper.json file and search for the 'ToPlot' flags. Each component has that flag, and a value of '1' indicates that it is enabled, and '0' indicates it is disabled. Toggle the value for the components that you want to visualize, for example, the 'PerspectiveTransformer' or the 'Thresholder' etc. At present, only the 'StatsWriter' and 'Thresholder' are enabled. Thresholder illustrations are enabled at a high level only -- that is, only the final output is shown. Individual threshold transformations can also be enabled using the finer grained 'ToPlot' settings on each such threshold operation.
 
 Here's the help menu:
 ```
@@ -170,10 +193,15 @@ optional arguments:
                         config. (default: false).
 ```
 
+Note that the '-p' flag turns on the illustration (via a plot window) of various image transformations that each frame goes through; this plot window is updated for each frame that gets processed from the input video, providing a real-time illustration of the inner workings of various handlers in the utility. This is illustrated here:
+
+![HighLevel-Illustration][HighLevel-Illustration]
+
+Note: To switch off these illustrations, remove the '-p' flag. Removing the -p flag will also cause the utility to run a lot faster. Though using this flag slows down processing, it also provides insight into the working of the utility. The illustrations can also be individually toggled in the config file (src/config/lanemapper.json). To enable additional details of the image transformations, go to the lanemapper.json file and search for the 'ToPlot' flags. Each component has that flag, and a value of '1' indicates that it is enabled, and '0' indicates it is disabled. Toggle the value for the components that you want to visualize, for example, the 'PerspectiveTransformer' or the 'Thresholder' etc.
 
 ### Design
 
-The following sections discuss the implemented components/algorithms of this project. Each component's configuration is illustrated for further clarity. The goal of the configuration sections below was to separate the user-configurable parts from the actual code, though basic familiarity with JSON files would still be expected of any user. A look at the configuration should serve as a convenient segue into the implementation details.
+The following sections discuss the implemented components/algorithms of this project, categorized by the functionality they target -- vehicle detection vs lane finding -- with the exception of the 'Pipeline' itself which is discussed first. Each component's configuration is illustrated for further clarity as well. The goal of the configuration (as excerpted below) was to separate the user-configurable parts from the actual code, though basic familiarity with JSON files would still be expected of any user. A look at the configuration should serve as a convenient segue into the implementation details.
 
 #### Pipeline
 This lays out the processor pipeline that each frame is put through prior to being returned to the user for lane visualization. Each processor supports a 'ToPlot' setting that dictates whether the illustrations produced by the processor are to be displayed to the user, or whether they are to be kept silent. In essence, it serves as a sort of 'silencing' flag ('0' indicating silence).
@@ -182,12 +210,16 @@ This lays out the processor pipeline that each frame is put through prior to bei
 {
 
 "Pipeline": [
-    	"StatsWriter",
+    	"StatsWriter",              ---------> Lane Finding component
     	"Undistorter",
-    	"Thresholder",
-    	"PerspectiveTransformer",
-    	"LaneFinder",
-    	"LaneFiller"
+    	"VehicleFinder",            ------\
+    	"VehicleClusterer",         -------\__ Vehicle Detection components
+    	"VehicleTracker",           -------/
+    	"VehicleMarker",            ------/
+    	"Thresholder",              ------\
+    	"PerspectiveTransformer",   -------\__ Lane Finding competition
+    	"LaneFinder",               -------/
+    	"LaneFiller"                ------/
     ],
 ```
 
@@ -199,25 +231,116 @@ A top level pipeline object is created, that sets up the processor pipeline afte
 
 In essence, for the configuration above, the following pipeline is generated:
 ```
-StatsWriter --> Undistorter --> Thresholder --> PerspectiveTransformer --> LaneFinder --> LaneFiller
-                                                                                              V
-                                                                                              V
-StatsWriter <-- Undistorter <-- Thresholder <-- PerspectiveTransformer <-- LaneFinder <-- LaneFiller 
+StatsWriter --> Undistorter --> 
+		VehicleFinder --> VehicleClusterer --> VehicleTracker --> VehicleMarker -->
+				Thresholder --> PerspectiveTransformer --> LaneFinder --> LaneFiller
+                                                                                          V
+                                                                                          V
+				Thresholder <-- PerspectiveTransformer <-- LaneFinder <-- LaneFiller
+		VehicleFinder <-- VehicleClusterer <-- VehicleTracker <-- VehicleMarker <--			
+StatsWriter <-- Undistorter <-- 
 ```
-The first line is the 'upstream' pipeline, and the lower line is the 'downstream' pipeline, which is always a reversal of the upstream, based on the Chain Of Responsibility design pattern.
+The forward section ('-->') is the 'upstream' pipeline, and the backward ('<--') section is the 'downstream' pipeline, which is an unwind of the upstream sequence, as per the Chain Of Responsibility design pattern.
+
+The handlers are broken down here based on the feature they target.
+
+### Vehicle Detection Handlers
+
+#### Vehicle Finder
+
+This handler has a few sub-components:
+* Sliding window search
+* Feature extraction
+* Logging of hits and misses (that can be utilized for hard negative/positive training of the classifier)
+
+*Sliding Window Search*
+This sub-component scans the input image for vehicles by invoking the vehicle classifer on the features extracted from each of the sub-windows of different sizes across the searchable area of the image. The features to be extracted are also configurable (see 'Feature Extraction' sub-component below). The search region is configurable (as can be seen by the 'SlidingWindow' settings), but can be safely limited to the lower half of the image, considering a regular dashboard mounted camera. The collection of all positive detections (called 'boxes') are then passed upstream to the subsequent handler (the 'Vehicle Clusterer') in the pipeline, for clustering. There is a 'ConfidenceThreshold' setting here which allows low confidence detections (as per the output from the SVC) to be filterd out of this list of detections.
+
+*Feature Extraction*
+This sub-component is configured with a configurable list of extractors that each sub-window is to be passed through before classification as a vehicle or non-vehicle. The same configuration is (by design) also used by the trainer.py utility discussed above, when training the classifier, so that the same features are being extracted for both training and classification.
+
+*Logging*
+This last sub-component is only useful for data generation, to prune the training data used to better train the classifier. It is not enabled during the actual use of the utility. The way it works is to log each sub-window based on whether hits or misses (or both) are being logged, and puts them into corresponding folders -- called 'Hits' or 'Misses' -- nested under a folder dedicated to the given run of the utility. Each run generates a new such folder, with its corresponding 'Hits' and 'Misses' folders containing the relevant images obtained through the video. These folders, understandably, can be rather large, depending on the number of hits. Typically however, it is the misses that contribute the most images to a run. To reduce not just the overhead of saving such files to disk, but also the hassle of sifting through so many files for gathering training data, there are additional settings to prune the misses (and hits) based on bounding coordinates for the sub-window concerned. There are also settings to restrict the logging to specific frame numbers, or a range of frames. This utility is invaluable during the training phase of the vehicle classifier. However, it is to be used cautiously, in order to avoid overfitting the data to the given input video.
+
+It should be noted that beyond confidence-based filtering discussed above, this handler does not deal with elimination of false positives, which will almost certainly exist in the list it outputs to the subsequent upstream handler. The removal of these false positives occurs through a combination of clustering, filtering and merging techniques employed in the subsequent upstream handlers -- the 'Vehicle Clusterer' and the 'Vehicle Tracker'.
+
+The data representing each vehicle detection comprises of:
+- Center coordinates
+- Diagonal length
+- Slope of the diagonal along the X-axis
+- Score (a weighting metric that is used for subsequent clustering)
+
+```
+"VehicleFinder": {
+	"ToPlot": 0,
+	"ClassifierFile": "config/svm.dump",
+	"SlidingWindow": {
+		"DepthRangeRatio": [0.99, 0.59],
+		"WindowRangeRatio": [0.10, 0.50],
+		"SizeVariations": 12,
+		"CenterShiftRatio": 0.0,
+		"StepRatio": 0.25,
+		"ConfidenceThreshold": 0.8
+    	},
+    	"FeatureExtractors": [
+    		{"SpatialBinning":{"Space": "RGB", "Size": [16,16], "Channel": null}},
+    		{"HOGExtractor":{"Orientations": 8, "Space": "GRAY", "Size": [128, 128], "Channel": 0, "PixelsPerCell": 8, "CellsPerBlock":2}}
+    	],
+    	"Logging": {
+	    	"LogHits": 0,
+	    	"LogMisses": 0,
+	    	"FrameRange": null,
+	    	"Frames": [530,540,550,560,570],
+	    	"HitsXRange": [0, 640],
+	    	"MissesXRange": [640, 1280],
+	    	"LogFolder": "../data/runs"
+    	}
+}
+```
+
+#### Vehicle Clusterer
+
+```
+"VehicleClusterer": {
+	"ToPlot": 0,
+	"Clusterer": {"HeatmapClustererImpl": {"min_samples_ratio": 8}}
+}
+```
+
+#### Vehicle Tracker
+
+```
+"VehicleTracker": {
+    	"ToPlot": 0,
+    	"LookBackFrames": 5,
+	"Clusterer": {"ManhattanDBSCANClustererImpl": {"min_samples_ratio": 4, "cluster_range_ratio": 0.05}}
+}
+```
+
+#### Vehicle Marker
+
+This is a downstream processor that draws the bounding boxes for detected->clustered->tracked vehicles to the final processed image. It kicks in on the unwind of the stack of pipeline handlers. The bounding data in this case is generated by the 'Vehicle Tracker' component that kicks in during upstream processing of the pipeline, whose output is available to this processor on the unwind.
+
+```
+"VehicleMarker": {
+	"ToPlot": 0
+}
+```
+
+### Lane Finding Handlers
 
 #### Stats Writer
-This is a downstream processor that writes various pipeline stats to the final processed image. It is placed first, but actually kicks in last on the unwind of pipeline stack. The pipeline stats in this case are generated by the 'LaneFinder' component that kicks in during upstream processing of the pipeline, which is available to this processor downstream.
+This is a downstream processor that writes various pipeline stats to the final processed image. It is placed first, but actually kicks in last on the unwind of pipeline stack. The pipeline stats in this case are generated by the 'Lane Finder' component that kicks in during upstream processing of the pipeline, which is available to this processor downstream.
 
 ```
 "StatsWriter": {
-		"ToPlot": 0
+	"ToPlot": 0
 },
 ```
 The output produced by this processor is depicted in the image below. It appears at the bottom of the video outputted by the utility:
 ![Statistics][StatsWriter]
 
-The format/meaning of the stats printed above is:
+The format/meaning of the lane stats printed above is:
 
 ```
 {Curvature-Of-Left-Lane} m << {Confidence-In-Detected-Left-Lane}% << [{Drift-From-Center} m]  >> {Confidence-In-Detected-Right-Lane}% >> {Curvature-Of-Right-Lane} m
@@ -299,7 +422,9 @@ This is an upstream processor that is one of the most configuration-heavy compon
     },
 ```
 
-Here's an illustration of the transformations generated by the Thresholder from the configuration above:
+Since this component has multiple sub-steps (each corresponding to a thresholding operation), each such sub-step is provided with it's own illustration setting. In other words, the 'ToPlot' flag exists not just at the Thresholder level but also using the finer grained 'ToPlot' settings on each individual threshold operation contained within it.
+
+Here's an illustration of the transformations generated by the Thresholder from the configuration above, by enabling finer illustrations at the sub-step levels:
 ![Various thresholds applied to image][Thresholding]
 
 And here's the same threshold pipeline applied to another video:
@@ -418,26 +543,35 @@ Furthermore, as is illustreated below, the lane filler also detects when the car
 
 ### Areas for Improvement & Potential Failure Scenarios:
 
-Areas where this project could improve are discussed below, outlining scenarios where the algorithm would likel fail. I could not implement these options due to time considerations, but I might revisit them further "down the road' (pun intended).
+Areas where this project could improve are discussed below, outlining scenarios where the algorithm would likely fail. I could not implement these options due to time considerations, but I might revisit them further "down the road' (pun intended).
 
-#### Mid-Line for Left/Rigth Peak Categorization
+#### Vehicle Detection Scenarios
+
+##### A
+
+##### B
+
+##### C
+
+#### Lane Finding Scenarios
+
+##### Mid-Line for Left/Rigth Peak Categorization
 
 Presently, the algorithm for searching for histogram peaks searches on each side of a straight vertical 'center' line that is calculated based on the fitted X-values of the first and last slice of the previous frame. However, the lanes could at times have such a short radius of curvature that the histogram peaks further down on each lane could spill over to the adjacent lane's search region causing the lane peaks to be inaccurately categorized by the search algorithm. This would most certainly be the case if the turns are very sharp.
 
 A more robust solution for this situation would be to not use a straight line separator for left/right lanes, but rather, to use another 2nd order polynomial fit for the midpoints of the 2 lanes as well (in the same way as was used to fit each lane). Alternatively, the points for this mid-line polynomial could be obtained by averaging the fitted X-values from the previous frame. Using this fitted center line would be a far more accurate approach for meandering or curvy roads.
 
-#### Erroneous lane noise elimination using pixel-to-standard-lane-width translation
+##### Erroneous lane noise elimination using pixel-to-standard-lane-width translation
 
 Lane detection at present does not utilize the expected lane width, established by US road standards. This information, when combined with the confidence metric discussed earlier, could greatly improve the accuracy of the detection by allowing the system to choose the best option (or drop the unlikely option) in case of ambiguity.
 
-#### Dynamic identification of perspective points
+##### Dynamic identification of perspective points
 
 Depending on the camera height relative to the road, and the contour of the road, the points used to transform the perspective for lane detection may vary. At present, a static set of points is being utilized, which assumes that both the above factors will remain static.
 
 One option to avoid this limitation is to dynamically adjust the perspective used for the perspective transform, the goal being to (a) consistently obtain mostly parallel lane lines when scanning the transformation perspective, and (b) to advance the perspective only as far as not to include more than one curve in the transformation.
 
-
-#### Using a 3rd order polynomial
+##### Using a 3rd order polynomial
 
 Lanes that are particularly curvy or meandering may not always fit to a 2nd order polynomial. This is because the stretch of the lane over the same line of sight might include not just one curve, but two curves. In fact, in extreme circumstances, particularly when the camera is higher above the ground, multiple curves might be visible within the line of sight.
 
@@ -445,13 +579,17 @@ One option that was mentioned previously is to dynamically adjust the perspectiv
 
 Another alternative, instead of shortening the perpspective, is to use a higher order polynomial to fit the discovered peaks. This would allow the car to potentially not have to slow down as much, and to also make higher confidence driving decisions.
 
-#### Adaptive window for limiting peak searches
+##### Adaptive window for limiting peak searches
 
 Presently, a static window is used to determine the bounds of the points used to detect a histogram peak, relative to the location of the peak in the slice right below the present slice, or the peak in the subsequent slice of the previous frame. Though these approaches allow a more efficient scan, it is possible to get stuck looking for a lane close to an erroneous lane or peak that was previously detected. To avoid this, it might be beneficial to increase the window size proportional to the confidence of the previously detected lane, or the confidence of the peaks obtained in the slices below. The lower the confidence, the larger the window becomes, upto a maximum size of the search region itself. The higher the confidence, the smaller the window gets, upto a minimum of the configured window size.
 
 ### Open Defects
 
 I will get to these when time permits. Until then, am calling them out here. Please see the 'Issues' section of this github repository for further details.
+
+#### Vehicle Detection defects
+
+#### Lane Finding defects
 
 * Performance of this utility is below par at the moment. Output from performance profiling suggests the culprit is the extensive use of matplotlib to illustrate the transformations/processing steps for each frame in the video. Switching off illustration speeds up performance significantly, but not sufficiently enough to ensure real-time detection during actual use on the road.
 
