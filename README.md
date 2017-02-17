@@ -23,6 +23,23 @@
 
 This is a combination of project # 4 (Advanced Lane Finding) and # 5 (Vehicle Detection) of the Self Driving Car curriculum at Udacity. It was aimed at advanced lane detection and vehicle detection for a front-facing camera on the car. No additional sensor inputs were utilized for this project.
 
+The utility as it stands now, is built around a Chain of Responsibility design pattern wherein execution proceeds through a nested sequence of 'handlers', first in one direction, and then in the reverse direction (unwind). Each of the features above is supported by a collection of such handlers that will be discussed in further detail later in this document.
+
+I've tried to make the utility extensible and configurable. All configuration settings involving locations of points on images have been expressed as a fraction of the 2 (X and Y) dimenions. So, for such configurations, no changes are necessary when changing the input video frame size. A significant amount of time was spent building a 'framework' which could both support the needs of the project, and to allow for such configurability for the addition of subsequent such features. In as much as the parameters for this project were known to me, the implementation does a reasonably good job of providing for such configuragbility and further extensibility. However, a _lot_ still remains to be commented, cleaned up and refactored. Please bear this in mind during any inspection of the code base.
+
+The image above was produced by this utility by processing a sample frame of an input video.
+
+#### Vehicle Detection
+
+The steps for vehicle detection were the following:
+
+* Train a classifier to detect if an image is that of a vehicle
+* Utilize the classifier to detect cars in each frame by utilizing a sliding window search over the frame
+* Utilize clustering algorithms (spatial and temporal) to eliminate false positive car detections
+* Merge the clustered detections into single bounding boxes using various types of merging algorithms
+* Output the resultant bounding boxes around detected cars as they progress across the road on the screen
+
+#### Advanced Lane Finding
 The goals / steps of the advanced lane finding project were the following:
 
 * Compute the camera calibration matrix and distortion coefficients given a set of chessboard images.
@@ -33,18 +50,6 @@ The goals / steps of the advanced lane finding project were the following:
 * Determine curvature of the lane and vehicle position with respect to center.
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
-
-Similarly, the steps for vehicle detection were the following:
-
-* Train a classifier to detect if an image is that of a vehicle
-* Utilize the classifier to detect cars in each frame by utilizing a sliding window search over the frame
-* Utilize clustering algorithms (spatial and temporal) to eliminate false positive car detections
-* Merge the clustered detections into single bounding boxes using various types of merging algorithms
-* Output the resultant bounding boxes around detected cars as they progress across the road on the screen
-
-The utility as it stands now, is built around a Chain of Responsibility design pattern wherein execution proceeds through a nested sequence of 'handlers', first in one direction, and then in the reverse direction (unwind). Each of the features above is supported by a collection of such handlers that will be discussed in further detail later in this document.
-
-I've tried to make the utility extensible and configurable. All configuration settings involving locations of points on images have been expressed as a fraction of the 2 (X and Y) dimenions. So, for such configurations, no changes are necessary when changing the input video frame size. A significant amount of time was spent building a 'framework' which could support the needs of the project, and to allow for such configurability. In as much as the parameters for this project were known to me, the implementation does a reasonably good job of providing for such configuragbility and further extensibility. However, a _lot_ still remains to be commented, cleaned up and refactored. Please bear this in mind during any inspection of the code base.
 
 ### Installation
 
@@ -57,17 +62,15 @@ This is a python utility requiring the following libraries to be installed prior
 * matplotlib
 * scipy
 
-The image above was produced by this utility from a sample frame of an input video.
-
 ### Execution
 
-There are three utilities in this project. One is the Trainer (trainer.py) that is used to train the vehicle detection classifier, the second is the calibrator (calibrator.py) that is to be run as a preparatory step prior to running the third, which is the lane mapper (lanemapper.py) that processes the input video itself by running each frame through a pipeline of operations.
+There are four utilities in this project.
 
-#### Vehicle Detection Classification Trainer (Component of Project 5)
+#### Vehicle Detection Classification Trainer (trainer.py)
 
-The output of this utility run against a set of input images is a linear Support Vector Machine classifier whose parameters are stored in a file that can then be used to reload the classifier when processing the input video through lanemapper.py.
+This utility is used to train the vehicle detection classifier. The output of this utility when run against a set of input images is a trained Support Vector Machine classifier whose parameters are stored in a file that can then be used for vehicle detection/classification when processing the input video through lanemapper.py (discussed later).
 
-The utility is in the file trainer.py. It is a command line utility, with a sample invocation as follows:
+It is a command line utility, with a sample invocation as follows:
 
 ```
 /Users/safdar/git/advanced-lane-detection/src> python3.5 trainer.py -v ../data/training/vehicles -n ../data/training/nonvehicles -f config/svm.dump -c config/lanemapper.json -t 0.15 -o
@@ -94,11 +97,36 @@ optional arguments:
   -d                Dry run. Will not save anything to disk (default: false).
   -o                Will save over existing file on disk (default: false).
   ```
-  
+
 Note the '-f' parameter because the value used here will need to be provided in the 'VehicleFinder' section of the configuration settings for the 'Lane Mapper' utility below. Please see the 'Implementation' section below for details.
 
+#### Feature Engineering Debugger (debugger.py)
 
-#### Image Calibration (Component of Project 4)
+This utility is used to visualize the features being extracted from images when training the vehicle classifier. The output of this utility when run against a set of input images is a plot window with two sections, the upper one showing the picture of a car and the features extracted from it, and the lower one showing the picture of a non-car and same features extracted from it.
+
+It is a command line utility, with a sample invocation as follows:
+```
+/Users/safdar/git/advanced-lane-detection/src> python3.5 debugger.py 
+```
+
+Here's the help menu:
+```
+###############################################
+#          VEHICLE FEATURE EXPLORER           #
+###############################################
+usage: debugger.py [-h] -v VEHICLEDIR -n NONVEHICLEDIR -c CONFIGFILE
+
+Object Classifier
+
+optional arguments:
+  -h, --help        show this help message and exit
+  -v VEHICLEDIR     Path to folder containing vehicle images.
+  -n NONVEHICLEDIR  Path to folder containing non-vehicle images.
+  -c CONFIGFILE     Path to configuration file (.json).
+```
+
+
+#### Image Calibration
 
 The output of this utility run against a folder of images is stored in a file that is then used to undistort/redistort images during advanced lane detection. The utility is in the file calibrator.py. It is a command line utility, with a sample invocation as follows:
 
@@ -184,10 +212,14 @@ This lays out the processor pipeline that each frame is put through prior to bei
 "Pipeline": [
     	"StatsWriter",
     	"Undistorter",
-    	"Thresholder",
-    	"PerspectiveTransformer",
-    	"LaneFinder",
-    	"LaneFiller"
+	"VehicleFinder",            ------\
+	"VehicleClusterer",         -------\__ Vehicle Detection pipeline
+	"VehicleTracker",           -------/
+	"VehicleMarker",            ------/
+    	"Thresholder",              ------\
+    	"PerspectiveTransformer",   -------\__ Lane Finding pipeline
+    	"LaneFinder",               -------/
+    	"LaneFiller"                ------/
     ],
 ```
 
