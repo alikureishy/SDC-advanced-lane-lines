@@ -68,7 +68,7 @@ There are four utilities in this project.
 
 #### Vehicle Detection Classification Trainer (trainer.py)
 
-This utility is used to train the vehicle detection classifier. The output of this utility when run against a set of input images is a trained Support Vector Machine classifier whose parameters are stored in a file that can then be used for vehicle detection/classification when processing the input video through lanemapper.py (discussed later).
+This utility is used to train the vehicle detection classifier. The output of this utility when run against a labeled (car vs non-car) set of input images is a trained Support Vector Machine classifier whose parameters are stored in a file that can then be used for vehicle detection/classification when processing the input video through lanemapper.py (discussed later).
 
 It is a command line utility, with a sample invocation as follows:
 
@@ -98,7 +98,7 @@ optional arguments:
   -o                Will save over existing file on disk (default: false).
   ```
 
-Note the '-f' parameter because the value used here will need to be provided in the 'VehicleFinder' section of the configuration settings for the 'Lane Mapper' utility below. Please see the 'Implementation' section below for details.
+Note the '-f' parameter because the value used here will need to be provided in the 'VehicleFinder:ClassifierFile' setting for the 'Lane Mapper' utility configuration (discussed later in this document). Please see the 'Implementation' section below for details.
 
 #### Feature Engineering Debugger (debugger.py)
 
@@ -125,8 +125,7 @@ optional arguments:
   -c CONFIGFILE     Path to configuration file (.json).
 ```
 
-
-#### Image Calibration
+#### Image Calibration (calibrator.py)
 
 The output of this utility run against a folder of images is stored in a file that is then used to undistort/redistort images during advanced lane detection. The utility is in the file calibrator.py. It is a command line utility, with a sample invocation as follows:
 
@@ -155,10 +154,11 @@ optional arguments:
 
 Note the '-o' parameter because the value used here will need to be provided in the 'Calibrator' section of the configuration settings for the 'Lane Mapper' utility below. Please see the 'Implementation' section below for details.
 
+#### Lane Mapper Utility (lanemapper.py)
 
-#### Lane Mapper Utility
+This is the main utility of this project, that loads the pipeline configuration from a configuration file and then reads in the input video, passing each frame of the video (subject to some filters) through the pipeline, and outputing the result of the pipeline into an output video, an example of which can be seen by following the YouTube link via the image at the top of this document.
 
-This utility is in the file lanemapper.py. It is also a command line utility, invoked as in the following example:
+This is also a command line utility, invoked as in the following example:
 
 ```
 /Users/safdar/git/advanced-lane-detection/src> python3.5 lanemapper.py -i ../project_video.mp4 -o ../sample_out.mp4 -c config/lanemapper.json -x 1 -p -r 100 400
@@ -201,7 +201,7 @@ Note: To switch off these illustrations, remove the '-p' flag. Removing the -p f
 
 ### Design
 
-The following sections discuss the implemented components/algorithms of this project. Each component's configuration is illustrated for further clarity. The goal of the configuration sections below was to separate the user-configurable parts from the actual code, though basic familiarity with JSON files would still be expected of any user. A look at the configuration should serve as a convenient segue into the implementation details.
+The following sections discuss the implemented components/algorithms of this project, categorized by the functionality they target -- vehicle detection vs lane finding -- with the exception of the 'Pipeline' itself which is discussed first. Each component's configuration is illustrated for further clarity as well. The goal of the configuration (as excerpted below) was to separate the user-configurable parts from the actual code, though basic familiarity with JSON files would still be expected of any user. A look at the configuration should serve as a convenient segue into the implementation details.
 
 #### Pipeline
 This lays out the processor pipeline that each frame is put through prior to being returned to the user for lane visualization. Each processor supports a 'ToPlot' setting that dictates whether the illustrations produced by the processor are to be displayed to the user, or whether they are to be kept silent. In essence, it serves as a sort of 'silencing' flag ('0' indicating silence).
@@ -244,20 +244,20 @@ The forward section ('-->') is the 'upstream' pipeline, and the backward ('<--')
 
 The handlers are broken down here based on the feature they target.
 
-#### Vehicle Detection Handlers
+### Vehicle Detection Handlers
 
-##### Vehicle Finder
+#### Vehicle Finder
 
-##### Vehicle Clusterer
+#### Vehicle Clusterer
 
-##### Vehicle Tracker
+#### Vehicle Tracker
 
-##### Vehicle Marker
+#### Vehicle Marker
 
 
-#### Lane Finding Handlers
+### Lane Finding Handlers
 
-##### Stats Writer
+#### Stats Writer
 This is a downstream processor that writes various pipeline stats to the final processed image. It is placed first, but actually kicks in last on the unwind of pipeline stack. The pipeline stats in this case are generated by the 'Lane Finder' component that kicks in during upstream processing of the pipeline, which is available to this processor downstream. However, it could also be used to output stats from the 'Vehicle Detecion' pipeline.
 
 ```
@@ -274,7 +274,7 @@ The format/meaning of the lane stats printed above is:
 {Curvature-Of-Left-Lane} m << {Confidence-In-Detected-Left-Lane}% << [{Drift-From-Center} m]  >> {Confidence-In-Detected-Right-Lane}% >> {Curvature-Of-Right-Lane} m
 ```
 
-##### Undistorter
+#### Undistorter
 This is an upstream and downstream processor that respectively undistorts/redistorts the image based on calibration data generated through a different utility ('calibrator.py'), which is expected to have been previously saved to the 'CalibrationFile' below. The image is UNdistorted on the upstream path, and re-distorted on the downstream path before being written out to disk.
 
 ```
@@ -284,7 +284,7 @@ This is an upstream and downstream processor that respectively undistorts/redist
 },
 ```
 
-##### Thresholder
+#### Thresholder
 This is an upstream processor that is one of the most configuration-heavy components in the pipeline. It is still a W-I-P but at present supports expressions combining Color- and Sobel- based transformations of the images in any number of desired ways (including multi-level nesting). The image that is output by this processor at present is necessarily a binary image.
 
 ```
@@ -363,7 +363,7 @@ In the case of the project test video, color thresholding seemed sufficient to d
 Sobel thresholding, though potentially a useful tool, proved largely unnecessary for the test video. I see it being more useful in the challenge videos. The intention around the configurability, as mentioned, was precisely to be able to play around with various settings. It is my goal to polish up this configurability and come up with an expression that will work for different types of videos.
 
 
-##### Perspective Transformer
+#### Perspective Transformer
 This component, as is obvious, performs a perspective transformation of the input image. The 'DefaultHeadingRatios' setting is of the form '[X-Origin-Ratio, Orientation]' and in conjunction with the 'DepthRangeRatio', specifies the source points for transformation. The 'TransformRatios' setting is of the form '[XRatio, YRatio]' and is used to specify the transformed points desired. The order is [UpperLeft, UpperRight, LowerLeft, LowerRight]. All points are expressed as ratios of the length of the corresponding dimension. It transforms the persective from source to destination during upstream processing, and destination back to source during the downstream pipeline.
 
 This configuration makes it easy to modify the perspective without needing to know the image size etc, since every point is expressed as a fraction of the corresponding dimension.
@@ -385,7 +385,7 @@ This configuration makes it easy to modify the perspective without needing to kn
 },
 ```
 
-##### Lane Finder
+#### Lane Finder
 This upstream processor locates the lane lines in the frame. It is where all the lane detection algorithms are used. Data discovered about the current frame, and a few of the previous frames (as history), is output by this component, for subsequent processors in the pipeline to utilize. Specifically, it generates data about the left and right lane polynomial fits, the associated X/Y points observed (as well as the fit-generated X/Y points) for each lane. It also detects the position of the car relative to the center of the lane. Confidence levels are also associated with each discoved lane line, for each frame.
 
 ```
@@ -409,14 +409,14 @@ In this other illustration (below), the 'SliceRatio' setting has been reduced to
 ![Illustration of lane searching][LaneFinder2]
 
 
-###### Algorithms / Heuristics
+##### Algorithms / Heuristics
 
 The lane detection process (and illustrations) above can be broken down into the following components, each using a different heuristic, and each tweakable through the 'LaneFinder' configuration settings listed above. In fact, there is almost a 1-1 correspondence between the configuration settings above, and the heuristics discussed below.
 
-####### Horizontal slicing
+###### Horizontal slicing
 This is controlled by the 'SliceRatio' parameter, that specifies the fraction of the vertical dimension (y dimension) that each horizontal slice should cover. The smaller the fraction, the more the slices, and higher the sensitivity of the lane detection. The larger the slices, the coarser the peaks, and lesser the sensitivity. It appeared that a fraction of 0.05 - 0.10 was rather effective for the first video. This may not be the case for the challenge videos, where the curvature of the lane lines is smaller, and changes more rapidly.
 
-####### Horizontal search
+###### Horizontal search
 
 This refers to the directional scan of the histogram calculated for each horizontal slice above, looking for the point with the highest magnitude of aggregated pixels. The 'SliceRatio' parameter essentially limits the magnitude of all such points along the histogram to within a [0-SliceSize] range, assuming binary pixel values.
 
@@ -427,7 +427,7 @@ The 'CameraPositionRatio' setting specifies the position of the camera, relatiav
 The search progresses outward from the center of the lane, comprising of one scan from mid -> left extreme, and another scan from mid -> right extreme. The decision of this 'mid point' for the adjacent scans is configurable via the 'DynamicVerticalSplit' setting. When switched off, the left-right partitioning of the lane is *always* done at the center of the X-dimension. It's worth noting here that actually, the center of the lane moves from frame to frame. So, using a fixed value for the midpoint of the horizontal slice is not optimal. The 'DynamicVerticalSplit' setting allows one to either use the fixed value above, or to determine the partition center dynamically. If set to '1', then the determination of the partition is made dynamically on each frame, by calculating the mean of the fitted x values of both the first slice and the last slice of the previous frame - i.e, the mean of 4 points. This is so that, as far as possible, the lanes don't bleed over to the other side further down the road. At present, this setting is switched off in the configuration, so a fixed partition point is used for all frames.
 
 
-####### Aggressive peak search bounding
+###### Aggressive peak search bounding
 In addition to the 'PeakRangeRatios' heuristic, the scan of either side of a histogram can be further optimized by looking for the peak within a narrower horizontal range (dictated by the 'PeakWindowRatio' config param), and centered around a combination of:
 - the position of the peak on the same side of the *earlier* slice (for the same frame), and
 - the position of the peak for the same side of the *subsequent* slice (predicted by the polynomial of the lane from the previous frame).
@@ -437,7 +437,7 @@ There is a risk of getting caught detecting points that are not along either of 
 - using an improved heuristic based on the expected width (in pixels) of the lane (discussed in the limitations section), or
 - improving the thresholding expression to eliminate or minimize this noise.
 
-####### Lookback period and lane smoothing
+###### Lookback period and lane smoothing
 Since detection is not perfect, every new frame may bring with it some surprises -- either missing peaks, or inaccurate peaks that deviate from the expectation. The 2nd illustration above with the missing peaks on the right lane is an example of this. Notice that despite the missing peaks, the lane is still discernable. It is also essential to smooth out the detection of lanes to be robust to such surprises.
 
 A convenient heuristic for filling in these missing peaks, and for smoothing, is to utilize the discovered peaks from previous frames in addition to those discovered from the latest frame, when trying to fit a polynomial to the lane. This avoids any sudden jerky projections of the lane lines, bringing out a smoother progression of the lane mapping. Note that only the previous *discovered* peaks are used, not the peaks fitted by the corresponding polynomial function.
@@ -446,12 +446,12 @@ The approach of using previously discovered peaks has another advantage, which i
 
 The extent of this influence is determined by the 'LookbackPeriod' config setting. The higher this number, the further back the algorithm looks when mapping lane lines, and the smoother the progression of the lanes with each subsequent frame. However, the disadvantage from this inertia is that the algorithm will adapt slower to lane changes, and worse, to correcting erroneous detections. I have used a lookback period of about 4 frames, which I found achieves a balance between too much inertia and smoothness.
 
-####### Peak detection & Confidence
+###### Peak detection & Confidence
 Each slice is ideally expected to generate 2 peaks -- one on the left and the other on the right. This is not always the case, however. Nevertheless, even with a few such peaks discerned from the slices across a given frame, it is possible to fit a polynomial function to then determine the expected lane line. Once the functions have been fitted, it can be used to 'fill-in' unknown X-values that can facilitate the detection of subsequent peaks in the following frames (as discussed above), as well as paint between the disambiguated lane lines.
 
 However, each polynomial fit is only as reliable as the points feeding it. This reliability is difficult to ascertain immediately, but generally becomes apparent over subsequent frames. This is because, assuming the thresholding function minimizes noise, any erroneous lane detection will narrow the search window for seeking out subsequent peaks to within that erroneous area, yielding fewer and fewer peaks in subsequent frames. The fewer the number of peaks in a given lane detection, the lower its contribution toward detecting new lanes.
 
-##### Lane Filler
+#### Lane Filler
 This downstream processor takes the lane and car data generated by the 'LaneFinder' and 'fills' in the lane.
 
 ```
@@ -514,6 +514,10 @@ Presently, a static window is used to determine the bounds of the points used to
 ### Open Defects
 
 I will get to these when time permits. Until then, am calling them out here. Please see the 'Issues' section of this github repository for further details.
+
+#### Vehicle Detection defects
+
+#### Lane Finding defects
 
 * Performance of this utility is below par at the moment. Output from performance profiling suggests the culprit is the extensive use of matplotlib to illustrate the transformations/processing steps for each frame in the video. Switching off illustration speeds up performance significantly, but not sufficiently enough to ensure real-time detection during actual use on the road.
 
