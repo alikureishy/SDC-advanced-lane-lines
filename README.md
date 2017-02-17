@@ -252,10 +252,38 @@ The handlers are broken down here based on the feature they target.
 
 #### Vehicle Finder
 
-This handler has a few sub-components:
+This handler has a few sub-components, as can be seen in the following configuration excerpt:
 * Sliding window search
 * Feature extraction
 * Logging of hits and misses (that can be utilized for hard negative/positive training of the classifier)
+
+```
+"VehicleFinder": {
+	"ToPlot": 0,
+	"ClassifierFile": "config/svm.dump",
+	"SlidingWindow": {
+		"DepthRangeRatio": [0.99, 0.59],
+		"WindowRangeRatio": [0.10, 0.50],
+		"SizeVariations": 12,
+		"CenterShiftRatio": 0.0,
+		"StepRatio": 0.25,
+		"ConfidenceThreshold": 0.8
+    	},
+	"FeatureExtractors": [
+    		{"SpatialBinning":{"Space": "RGB", "Size": [16,16], "Channel": null}},
+    		{"HOGExtractor":{"Orientations": 8, "Space": "GRAY", "Size": [128, 128], "Channel": 0, "PixelsPerCell": 8, "CellsPerBlock":2}}
+    	],
+	"Logging": {
+	    	"LogHits": 0,
+	    	"LogMisses": 0,
+	    	"FrameRange": null,
+	    	"Frames": [530,540,550,560,570],
+	    	"HitsXRange": [0, 640],
+	    	"MissesXRange": [640, 1280],
+	    	"LogFolder": "../data/runs"
+    	}
+}
+```
 
 *Sliding Window Search*
 This sub-component scans the input image for vehicles by invoking the vehicle classifer on the features extracted from each of the sub-windows of different sizes across the searchable area of the image. The features to be extracted are also configurable (see 'Feature Extraction' sub-component below). The search region is configurable (as can be seen by the 'SlidingWindow' settings), but can be safely limited to the lower half of the image, considering a regular dashboard mounted camera. The collection of all positive detections (called 'boxes') are then passed upstream to the subsequent handler (the 'Vehicle Clusterer') in the pipeline, for clustering. There is a 'ConfidenceThreshold' setting here which allows low confidence detections (as per the output from the SVC) to be filterd out of this list of detections.
@@ -274,35 +302,14 @@ The data representing each vehicle detection comprises of:
 - Slope of the diagonal along the X-axis
 - Score (a weighting metric that is used for subsequent clustering)
 
-```
-"VehicleFinder": {
-	"ToPlot": 0,
-	"ClassifierFile": "config/svm.dump",
-	"SlidingWindow": {
-		"DepthRangeRatio": [0.99, 0.59],
-		"WindowRangeRatio": [0.10, 0.50],
-		"SizeVariations": 12,
-		"CenterShiftRatio": 0.0,
-		"StepRatio": 0.25,
-		"ConfidenceThreshold": 0.8
-    	},
-    	"FeatureExtractors": [
-    		{"SpatialBinning":{"Space": "RGB", "Size": [16,16], "Channel": null}},
-    		{"HOGExtractor":{"Orientations": 8, "Space": "GRAY", "Size": [128, 128], "Channel": 0, "PixelsPerCell": 8, "CellsPerBlock":2}}
-    	],
-    	"Logging": {
-	    	"LogHits": 0,
-	    	"LogMisses": 0,
-	    	"FrameRange": null,
-	    	"Frames": [530,540,550,560,570],
-	    	"HitsXRange": [0, 640],
-	    	"MissesXRange": [640, 1280],
-	    	"LogFolder": "../data/runs"
-    	}
-}
-```
-
 ![VehicleFinder-Illustration]
+
+Note that there are 3 types of bounding boxes depicted in the illustration above:
+* Nearly transparent boxes indicating the set of boxes evaluated during the vehicle search
+* Somewhat opaque boxes representing those search boxes that resulted in a positive detection, but not a sufficient confidence level to be considered.
+* Opaque boxes representing those boxes that yielded a high confidence vehicle detection. This confidence threshold can easily be controlled in the aforementioned configuration (under the 'SlidingWindow' section).
+
+Also note the statistic shown in the label of the illustration, depicting the # of total boxes/weak detections/strong detections found on the given frame. By definition, it will always be the case that Total count > Weak count > Strong count.
 
 #### Vehicle Clusterer
 
@@ -341,7 +348,7 @@ Another advantage of this approach is that the merging of clustered detections i
 
 A disadvantage of this type of clustering is that it can create 'holes', depending on the threshold chosen, because it only considers overlapping detections towards forming clusters. Detections that do not overlap get clustered separately. Furthermore, a threshold that is too high might cause some regions of an overlapping heatmap to be excluded from the resulting detection vehicle, thereby resulting in islands that do not correspond to the entire span of a vehicle. This disadvantage however can be minimized by subsequently employing a DBSCAN-based clustering algorithm, to consolidate these islands into what more closely corresponds to the vehicle span. (Note: It is precisely this consolidative clustering that is performed by the 'Vehicle Tracker' handler, as discussed later in this document).
 
-Note the 'min_samples_ratio' setting. This is the threshold setting referenced above. It is essentially a threshold for the minimum number of overlapping detections required for the overlap region to be considered a cluster. Any overlapping detections that do not reach this threshold are dropped from the cluster entirely. It therefore serves as a threshold of the minimum number of detections required for a resulting cluster to be recognized.
+Note the 'min_samples_ratio' setting. This is the threshold setting referenced above. It is essentially a threshold for the minimum number of overlapping detections required for the overlap region to be considered a cluster. Any overlapping detections that do not reach this threshold are dropped from the cluster entirely. It therefore serves as a threshold of the minimum number of detections required for a resulting cluster to be recognized. A value between 0-1.0 is considered a proportion setting, implying the proportion of total detections that must overlap in order for the heatmap to register as a cluster. A value > 1.0 (for obvious reasons) can easily be interpreted as an absolute count of the number of samples required for a cluster to emerge. This project has utilized the absolute representation, for convenience, however, in the generic case, a relative proportion could be utilized that would adapt more robustly to changes in the number of underying detections found. 
 
 ###### DBSCAN-Based Clustering:
 DBSCAN-based clustering has the advantage of combining detections that do not have any overlap, which makes up for the disadvantage of heatmap clustering, and was found to be useful for this project when performed over a set of heatmap-based detections.
@@ -360,13 +367,19 @@ However, this mechanism is simple, and less error-prone than one using a perspec
 
 ####### PrespectiveDBSCAClustererImpl
 
-DBSCAN employed using a custom distance matrix generated based on perspective depth and box size to more accurately mimic actual distances between detections.
+DBSCAN employed here uses a custom distance matrix generated based on perspective depth and box size to more accurately mimic actual distances between detections.
 
 ```
 	{"PerspectiveDBSCANClustererImpl": {"min_samples_ratio": 4, "cluster_range_ratio": 0.05}}
 ```
 
+This has not been used in this project (yet) because it is still a WIP. The accuracy of this mechanism is a matter of subsequent study/investigation and at present, though there is a rough sketch of code in place, it remains an open issue warranting further work. This has also been listed in the 'Open issues' section of this document.
+
 #### Vehicle Tracker
+
+We finally come to the handler that eliminates a vast majority of the false positives that might have remained in the output of the 'Vehicle Clusterer'. This handler performs a clustering + merging of the spatial clusters detected in not just the existing frame but also a configurable history of frames prior to it.
+
+It not only achieves a smoothing of the final vehicle detection, but also achieves a higher confidence detection by using a corresponding 'min_samples_ratio' setting for the clustering implementation used (see section above for a description of clustering implementations).
 
 ```
 "VehicleTracker": {
