@@ -394,10 +394,13 @@ Note that the clustering mechanism used here is the 'EuclidianDBSCANClustererImp
 Given an input video of a reasonably high FPS value, it is likely that a 'LookBackFrames' setting of several frames would achieve a near accurate span of the object. A value that is too high would however generate detections that are wider than the actual vehicle, while a value that is too small would be jittery and would also not eliminate sufficient false positives collected over the configured period. The min_samples_ratio setting is important when eliminating false positives, for any given 'LookBackFrames' setting value and should necessarily be less than the latter, but not too low either. A gap of 1-2 samples achieves a sufficiently high-quality detection (as depicted in the configuration above).
 
 Here is an illustration of the tempero-spatial clustering (last window -- bottom right) that is occurring due to the output from the 'Vehicle Clusterer'. The final result of that tempero-spatial clustering is not shown here but will be shown on the next illustration:
+
 ![VehicleTracker-Illustration]
 
 ...and as promised, here at the bottom right is the final output of the tempero-spatial clustering. Note how the configuration settings above -- namely the 'LookBackFrames' and 'min_samples_ratio' settings above are taking effect:
+
 ![VehicleMarker-Illustration]
+
 (The lower right window illustrated here is actually created by the 'Vehicle Marker', but the data for it is produced by the 'Vehicle Tracker' and is therefore being illustrated here).
 
 #### Vehicle Marker
