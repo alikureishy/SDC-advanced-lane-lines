@@ -6,6 +6,7 @@ Created on Jan 19, 2017
 import matplotlib
 from utils.utilities import getallpathsunder
 from random import shuffle
+from extractors.featurecombiner import FeatureCombiner
 matplotlib.use('TKAgg')
 from matplotlib.pyplot import get_current_fig_manager
 from utils.plotter import Illustrator, Image, Graph
@@ -51,19 +52,18 @@ if __name__ == '__main__':
     config = json.load(open(args.configfile))
     extractorsequence = config[VehicleFinder.__name__][VehicleFinder.FeatureExtractors]
     extractors = getextractors(extractorsequence)
+    combiner = FeatureCombiner(extractors)
     
     print ("Performing extraction...")
     illustrator = Illustrator(True)
-    for (carfile, notcarfile) in zipped:
+    for i, (carfile, notcarfile) in enumerate(zipped):
         car = mpimg.imread(carfile)
         notcar = mpimg.imread(notcarfile)
-        frame = illustrator.nextframe()
+        frame = illustrator.nextframe(i)
         frame.newsection("Car")
         frame.newsection("Not-Car")
         frame.add(Image("Car", car, None), index=0)
         frame.add(Image("Not-Car", notcar, None), index=1)
-        feature = []
-        car_bin, notcar_bin = [], []
         for (extractor,config) in zip(extractors, extractorsequence):
             if type(extractor) is HogExtractor:
                 car_features, car_hogimage = extractor.extract(car, visualize=True)
@@ -79,18 +79,10 @@ if __name__ == '__main__':
                 frame.add(Graph("{}".format(extractor.__class__.__name__), None, notcar_features, None, None), index=1)
             else:
                 raise "Debugger is not aware of the extractor type: {}".format(extractor)
-            car_bin.append(car_features)
-            notcar_bin.append(notcar_features)
         # Finally, graph the entire feature vector:
-        carvector = np.concatenate(car_bin)
-        carvector /= np.max(np.abs(carvector),axis=0)
-        
-#         scalar = StandardScaler().fit([carvector])
-#         carvector = scalar.transform([carvector])
-        
+        carvector = combiner.extract(car)
         frame.add(Graph("Total Vector", None, carvector, None, None), index=0)
-        notcarvector = np.concatenate(notcar_bin)
-        notcarvector /= np.max(np.abs(notcarvector),axis=0)
+        notcarvector = combiner.extract(notcar)
         frame.add(Graph("Total Vector", None, notcarvector, None, None), index=1)
         frame.render()
 
