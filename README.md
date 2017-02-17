@@ -11,6 +11,10 @@
 [VehicleDetector1]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration10.png "Vehicle Detection Green Lane"
 [VehicleDetector2]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration11.png "Vehicle Detection Red Lane"
 [HighLevel-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration12.png "High Level Illustration"
+[VehicleFinder-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration13.png "Vehicle Finder Illustration"
+[VehicleClusterer-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration14.png "Vehicle Clusterer Illustration"
+[VehicleTracker-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration15.png "Vehicle Tracker Illustration"
+[VehicleMarker-Illustration]: https://github.com/safdark/advanced-lane-lines/blob/vehicle-detection/docs/images/illustration16.png "Vehicle Marker Illustration"
 
 <!--
 [![Mapped Lane][MappedLane]](https://youtu.be/jzAWMtA1zX8 "Click to see video on youtube")
@@ -248,27 +252,10 @@ The handlers are broken down here based on the feature they target.
 
 #### Vehicle Finder
 
-This handler has a few sub-components:
+This handler has a few sub-components, as can be seen in the following configuration excerpt:
 * Sliding window search
 * Feature extraction
 * Logging of hits and misses (that can be utilized for hard negative/positive training of the classifier)
-
-*Sliding Window Search*
-This sub-component scans the input image for vehicles by invoking the vehicle classifer on the features extracted from each of the sub-windows of different sizes across the searchable area of the image. The features to be extracted are also configurable (see 'Feature Extraction' sub-component below). The search region is configurable (as can be seen by the 'SlidingWindow' settings), but can be safely limited to the lower half of the image, considering a regular dashboard mounted camera. The collection of all positive detections (called 'boxes') are then passed upstream to the subsequent handler (the 'Vehicle Clusterer') in the pipeline, for clustering. There is a 'ConfidenceThreshold' setting here which allows low confidence detections (as per the output from the SVC) to be filterd out of this list of detections.
-
-*Feature Extraction*
-This sub-component is configured with a configurable list of extractors that each sub-window is to be passed through before classification as a vehicle or non-vehicle. The same configuration is (by design) also used by the trainer.py utility discussed above, when training the classifier, so that the same features are being extracted for both training and classification.
-
-*Logging*
-This last sub-component is only useful for data generation, to prune the training data used to better train the classifier. It is not enabled during the actual use of the utility. The way it works is to log each sub-window based on whether hits or misses (or both) are being logged, and puts them into corresponding folders -- called 'Hits' or 'Misses' -- nested under a folder dedicated to the given run of the utility. Each run generates a new such folder, with its corresponding 'Hits' and 'Misses' folders containing the relevant images obtained through the video. These folders, understandably, can be rather large, depending on the number of hits. Typically however, it is the misses that contribute the most images to a run. To reduce not just the overhead of saving such files to disk, but also the hassle of sifting through so many files for gathering training data, there are additional settings to prune the misses (and hits) based on bounding coordinates for the sub-window concerned. There are also settings to restrict the logging to specific frame numbers, or a range of frames. This utility is invaluable during the training phase of the vehicle classifier. However, it is to be used cautiously, in order to avoid overfitting the data to the given input video.
-
-It should be noted that beyond confidence-based filtering discussed above, this handler does not deal with elimination of false positives, which will almost certainly exist in the list it outputs to the subsequent upstream handler. The removal of these false positives occurs through a combination of clustering, filtering and merging techniques employed in the subsequent upstream handlers -- the 'Vehicle Clusterer' and the 'Vehicle Tracker'.
-
-The data representing each vehicle detection comprises of:
-- Center coordinates
-- Diagonal length
-- Slope of the diagonal along the X-axis
-- Score (a weighting metric that is used for subsequent clustering)
 
 ```
 "VehicleFinder": {
@@ -282,11 +269,11 @@ The data representing each vehicle detection comprises of:
 		"StepRatio": 0.25,
 		"ConfidenceThreshold": 0.8
     	},
-    	"FeatureExtractors": [
+	"FeatureExtractors": [
     		{"SpatialBinning":{"Space": "RGB", "Size": [16,16], "Channel": null}},
     		{"HOGExtractor":{"Orientations": 8, "Space": "GRAY", "Size": [128, 128], "Channel": 0, "PixelsPerCell": 8, "CellsPerBlock":2}}
     	],
-    	"Logging": {
+	"Logging": {
 	    	"LogHits": 0,
 	    	"LogMisses": 0,
 	    	"FrameRange": null,
@@ -298,7 +285,39 @@ The data representing each vehicle detection comprises of:
 }
 ```
 
+*Sliding Window Search*
+This sub-component scans the input image for vehicles by invoking the vehicle classifer on the features extracted from each of the sub-windows of different sizes across the searchable area of the image. The features to be extracted are also configurable (see 'Feature Extraction' sub-component below). The search region is configurable (as can be seen by the 'SlidingWindow' settings), but can be safely limited to the lower half of the image, considering a regular dashboard mounted camera. The collection of all positive detections (called 'boxes') are then passed upstream to the subsequent handler (the 'Vehicle Clusterer') in the pipeline, for clustering. There is a 'ConfidenceThreshold' setting here which allows low confidence detections (as per the output from the SVC) to be filterd out of this list of detections.
+
+*Feature Extraction*
+This sub-component is configured with a configurable list of extractors that each sub-window is to be passed through before classification as a vehicle or non-vehicle. The same configuration is (by design) also used by the trainer.py utility discussed above, when training the classifier, so that the same features are being extracted for both training and classification.
+
+*Logging*
+This last sub-component is only useful for data generation, to prune the training data used to better train the classifier. It is not enabled during the actual use of the utility. The way it works is to log each sub-window based on whether hits or misses (or both) are being logged, and puts them into corresponding folders -- called 'Hits' or 'Misses' -- nested under a folder dedicated to the given run of the utility. Each run generates a new such folder, with its corresponding 'Hits' and 'Misses' folders containing the relevant images obtained through the video. These folders, understandably, can be rather large, depending on the number of hits. Typically however, it is the misses that contribute the most images to a run. To reduce not just the overhead of saving such files to disk, but also the hassle of sifting through so many files for gathering training data, there are additional settings to prune the misses (and hits) based on bounding coordinates for the sub-window concerned. There are also settings to restrict the logging to specific frame numbers, or a range of frames. This utility is invaluable during the training phase of the vehicle classifier. However, it is to be used with restraint, in order to avoid overfitting the data to the given input video.
+
+It should be noted that beyond confidence-based filtering discussed above, this handler does not deal with elimination of false positives, which will almost certainly exist in the list of detections it outputs to the subsequent upstream handler. The removal of these false positives occurs through a combination of clustering, filtering and merging techniques employed in the subsequent upstream handlers -- the 'Vehicle Clusterer' and the 'Vehicle Tracker'.
+
+The data representing each vehicle detection comprises of:
+- Center coordinates
+- Diagonal length
+- Slope of the diagonal along the X-axis
+- Score (a weighting metric that is used for subsequent clustering)
+
+![VehicleFinder-Illustration]
+
+Note that there are 3 types of bounding boxes depicted in the illustration above:
+* Nearly transparent boxes indicating the set of boxes evaluated during the vehicle search
+* Somewhat opaque boxes representing those search boxes that resulted in a positive detection, but not a sufficient confidence level to be considered.
+* Opaque boxes representing those boxes that yielded a high confidence vehicle detection. This confidence threshold can easily be controlled in the aforementioned configuration (under the 'SlidingWindow' section).
+
+Also note the statistic shown in the label of the illustration, depicting the # of total boxes/weak detections/strong detections found on the given frame. By definition, it will always be the case that Total count > Weak count > Strong count.
+
 #### Vehicle Clusterer
+
+This handler processes a list of detections obtained from the 'Vehicle Finder' handler. It's role is to cluster (including filtering) and then merge those detections into single detections of cars across the image. Though lower than the 'Vehicle Finder', this stage also has a likeyhood of false positives emerging out of the clustering. However, these occurrences will be far fewer.
+
+This step can be summarized as *spatial clustering*, since clustering is performed only on the detections for the given frame (in 'space'). Spatial *and* temporal clustering is performed by the subsequent handler (the 'Vehicle Tracker'), which achieves an even more robust clustering, eliminating a far higher percentage of false positives.
+
+There is presently support for 3 types of clustering methods, one of which can be selected in the configuration below. Those implementations are discussed further below. The choice of the clustering method is specified via the 'Clusterer' setting in the configuration of this handler, as shown below. The sub params should be self explanatory.
 
 ```
 "VehicleClusterer": {
@@ -307,7 +326,60 @@ The data representing each vehicle detection comprises of:
 }
 ```
 
+![VehicleClusterer-Illustration]
+
+##### Clustering Implementations
+
+Though these implementations are also used by the 'Vehicle Tracker' handler. This was an appropriate point in the document to introduce them.
+
+###### HeatmapClustererImpl
+
+A simple heatmap based clustering is employed here. The goal is to find the area of greatest overlap, subject to a minimum threshold.
+
+Here is a sample setting that invokes heatmap clustering:
+
+```
+	{"HeatmapClustererImpl": {"min_samples_ratio": 8}}
+```
+
+An advantage of this type of clustering is that it maximizes the 'likelyhood' of the resulting detection, based on a superposition of the likelyhoods of a copious set of participatory detections. It can be viewed as a logical 'AND' operation being applied to the participating detection regions.
+
+Another advantage of this approach is that the merging of clustered detections is largely implicit in the heatmap, barring some approximations when generating a rectangular bounding box from a non-rectangular heatmap.
+
+A disadvantage of this type of clustering is that it can create 'holes', depending on the threshold chosen, because it only considers overlapping detections towards forming clusters. Detections that do not overlap get clustered separately. Furthermore, a threshold that is too high might cause some regions of an overlapping heatmap to be excluded from the resulting detection vehicle, thereby resulting in islands that do not correspond to the entire span of a vehicle. This disadvantage however can be minimized by subsequently employing a DBSCAN-based clustering algorithm, to consolidate these islands into what more closely corresponds to the vehicle span. (Note: It is precisely this consolidative clustering that is performed by the 'Vehicle Tracker' handler, as discussed later in this document).
+
+Note the 'min_samples_ratio' setting. This is the threshold setting referenced above. It is essentially a threshold for the minimum number of overlapping detections required for the overlap region to be considered a cluster. Any overlapping detections that do not reach this threshold are dropped from the cluster entirely. It therefore serves as a threshold of the minimum number of detections required for a resulting cluster to be recognized. A value between 0-1.0 is considered a proportion setting, implying the proportion of total detections that must overlap in order for the heatmap to register as a cluster. A value > 1.0 (for obvious reasons) can easily be interpreted as an absolute count of the number of samples required for a cluster to emerge. This project has utilized the absolute representation, for convenience, however, in the generic case, a relative proportion could be utilized that would adapt more robustly to changes in the number of underying detections found. 
+
+###### DBSCAN-Based Clustering:
+DBSCAN-based clustering has the advantage of combining detections that do not have any overlap, which makes up for the disadvantage of heatmap clustering, and was found to be useful for this project when performed over a set of heatmap-based detections.
+
+The disadvantage of DBSCAN-based clustering is that it can generate clusters that do not accurately reflect the span of the vehicle whose detections were clustered. It is then upto the merge algorithm to appropriately merge these clustered detections. It can be viewed as a logical 'OR' operation being applied to the participating detection regions.
+
+####### ManhattanDBSCANClustererImpl
+
+DBSCAN employed without a custom distance matrix. In other words, this is a regular DBSCAN clustering invocation, using the default manhattan-distance distane metric under the cover. It is ignorant of perspective depth, and treats distances between box centers closer in the perspective in the same way as those further out in the perspective depth, even though the 'real' distances between those latter centers would be significantly greater than those of the former.
+
+However, this mechanism is simple, and less error-prone than one using a perspective-based distance metric, and is therefore the one that is used in this project.
+
+```
+	{"ManhattanDBSCANClustererImpl": {"min_samples_ratio": 4, "cluster_range_ratio": 0.05}}
+```
+
+####### PrespectiveDBSCAClustererImpl
+
+DBSCAN employed here uses a custom distance matrix generated based on perspective depth and box size to more accurately mimic actual distances between detections.
+
+```
+	{"PerspectiveDBSCANClustererImpl": {"min_samples_ratio": 4, "cluster_range_ratio": 0.05}}
+```
+
+This has not been used in this project (yet) because it is still a WIP. The accuracy of this mechanism is a matter of subsequent study/investigation and at present, though there is a rough sketch of code in place, it remains an open issue warranting further work. This has also been listed in the 'Open issues' section of this document.
+
 #### Vehicle Tracker
+
+We finally come to the handler that eliminates a vast majority of the false positives that might have remained in the output of the 'Vehicle Clusterer'. This handler performs a clustering + merging of the spatial clusters detected in not just the existing frame but also a configurable history of frames prior to it. In other words, it performs a temporo-spatial clustering + merging of a configurable set of sequential frames ending with the current frame.
+
+It not only achieves a smoothing of the final vehicle detection, but also achieves a higher confidence detection by using a corresponding 'min_samples_ratio' setting for the clustering implementation used (see section above for a description of clustering implementations).
 
 ```
 "VehicleTracker": {
@@ -316,6 +388,12 @@ The data representing each vehicle detection comprises of:
 	"Clusterer": {"ManhattanDBSCANClustererImpl": {"min_samples_ratio": 4, "cluster_range_ratio": 0.05}}
 }
 ```
+
+Note that the clustering mechanism used here is the 'ManhattanDBSCANClustererImpl' (discussed in previous section). This is an appropriate mechanism to use since the previous handler's heatmap-based clustering would have generated a high probability detection.
+
+Given an input video of a reasonably high FPS value, it is likely that a 'LookBackFrames' setting of several frames would achieve a near accurate span of the object. A value that is too high would however generate detections that are wider than the actual vehicle, while a value that is too small would be jittery and would also not eliminate sufficient false positives collected over the configured period. The min_samples_ratio setting is important when eliminating false positives, for any given 'LookBackFrames' setting value and should necessarily be less than the latter, but not too low either. A gap of 1-2 samples achieves a sufficiently high-quality detection (as depicted in the configuration above).
+
+![VehicleTracker-Illustration]
 
 #### Vehicle Marker
 
@@ -326,6 +404,7 @@ This is a downstream processor that draws the bounding boxes for detected->clust
 	"ToPlot": 0
 }
 ```
+![VehicleMarker-Illustration]
 
 ### Lane Finding Handlers
 
@@ -427,7 +506,7 @@ Since this component has multiple sub-steps (each corresponding to a thresholdin
 Here's an illustration of the transformations generated by the Thresholder from the configuration above, by enabling finer illustrations at the sub-step levels:
 ![Various thresholds applied to image][Thresholding]
 
-And here's the same threshold pipeline applied to another video:
+And here's the same threshold pipeline applied to another video frame:
 ![Various thresholds applied to image][Thresholding2]
 
 In the case of the project test video, color thresholding seemed sufficient to detect the lane lines. Most of the ambiguity was with the right lane, rather than the left yellow lane. Though the right lane was sufficiently detected in most cases, it is two regions of the highway that posed a slight problem. There is room for improvement. The hope has been, as should be evident from the configurability of this system, to spend some more time to tweak and tune the parameters to find a more robust thresholding. However, as shall be obvious in the 'LaneFinder' section, a large part of this ambiguity was usually addressed by the lane finding algorithm, at least for the project test video. The challenge videos require further changes and enhancements not just to the thresholding expression but to some of the algorithmic nuances that I have highlighted in more detail in the 'Areas for improvement' section further down in this document.
