@@ -377,7 +377,7 @@ This has not been used in this project (yet) because it is still a WIP. The accu
 
 #### Vehicle Tracker
 
-We finally come to the handler that eliminates a vast majority of the false positives that might have remained in the output of the 'Vehicle Clusterer'. This handler performs a clustering + merging of the spatial clusters detected in not just the existing frame but also a configurable history of frames prior to it.
+We finally come to the handler that eliminates a vast majority of the false positives that might have remained in the output of the 'Vehicle Clusterer'. This handler performs a clustering + merging of the spatial clusters detected in not just the existing frame but also a configurable history of frames prior to it. In other words, it performs a temporo-spatial clustering + merging of a configurable set of sequential frames ending with the current frame.
 
 It not only achieves a smoothing of the final vehicle detection, but also achieves a higher confidence detection by using a corresponding 'min_samples_ratio' setting for the clustering implementation used (see section above for a description of clustering implementations).
 
@@ -388,6 +388,10 @@ It not only achieves a smoothing of the final vehicle detection, but also achiev
 	"Clusterer": {"ManhattanDBSCANClustererImpl": {"min_samples_ratio": 4, "cluster_range_ratio": 0.05}}
 }
 ```
+
+Note that the clustering mechanism used here is the 'ManhattanDBSCANClustererImpl' (discussed in previous section). This is an appropriate mechanism to use since the previous handler's heatmap-based clustering would have generated a high probability detection.
+
+Given an input video of a reasonably high FPS value, it is likely that a 'LookBackFrames' setting of several frames would achieve a near accurate span of the object. A value that is too high would however generate detections that are wider than the actual vehicle, while a value that is too small would be jittery and would also not eliminate sufficient false positives collected over the configured period. The min_samples_ratio setting is important when eliminating false positives, for any given 'LookBackFrames' setting value and should necessarily be less than the latter, but not too low either. A gap of 1-2 samples achieves a sufficiently high-quality detection (as depicted in the configuration above).
 
 ![VehicleTracker-Illustration]
 
